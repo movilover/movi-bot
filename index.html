@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Movi Lover</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@500;600;700&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDse8sC_hsrHrLx92zUobO7PezW0SUChHQ",
+    authDomain: "movi-vairal.firebaseapp.com",
+    projectId: "movi-vairal",
+    storageBucket: "movi-vairal.firebasestorage.app",
+    messagingSenderId: "343081500219",
+    appId: "1:343081500219:web:072eaec3f2d47a4c36661e",
+    measurementId: "G-LGJJWFXDPX"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  window._db = db;
+  window._storage = storage;
+  window._col = collection;
+  window._addDoc = addDoc;
+  window._getDocs = getDocs;
+  window._doc = doc;
+  window._updateDoc = updateDoc;
+  window._deleteDoc = deleteDoc;
+  window._query = query;
+  window._orderBy = orderBy;
+  window._onSnapshot = onSnapshot;
+  window._getDoc = getDoc;
+  window._setDoc = setDoc;
+
+  window.dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- Ad network: GigaPub only. Zone ID is loaded from Admin Panel → Settings → বিজ্ঞাপন নেটওয়ার্ক. -->
+
+<style>
+:root {
+  --bg-deep: #f4f3fa;
+  --bg-card: #ffffff;
+  --bg-card2: #f0eefaee;
+  --accent: #d4283f;
+  --accent2: #ff5470;
+  --gold: #c98a1f;
+  --gold2: #b8791b;
+  --gold3: #8a6d1f;
+  --purple: #7b3fe4;
+  --purple2: #a06ce8;
+  --pink: #ff3d81;
+  --green: #1b8f5f;
+  --text: #16141f;
+  --text-muted: #5c5975;
+  --border: rgba(90,60,150,0.16);
+  --glow: rgba(212,40,63,0.35);
+  --glow-gold: rgba(240,192,90,0.4);
+  --nav-h: 68px;
+  --header-h: 62px;
+  --card-radius: 20px;
+  --btn-radius: 16px;
+  --film-hole: rgba(0,0,0,0.06);
+  --grad-btn: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+  --grad-btn-done: linear-gradient(135deg, var(--green) 0%, #0d9166 100%);
+}
+
+body.theme-blue { --accent:#2563eb; --accent2:#60a5fa; --purple:#1d4ed8; --purple2:#3b82f6; --pink:#3b82f6; --glow:rgba(37,99,235,0.4); --border:rgba(37,99,235,0.22); }
+body.theme-green { --accent:#059669; --accent2:#34d399; --purple:#047857; --purple2:#10b981; --pink:#10b981; --glow:rgba(5,150,105,0.4); --border:rgba(5,150,105,0.22); }
+body.theme-purple { --accent:#7c3aed; --accent2:#a78bfa; --purple:#5b21b6; --purple2:#8b5cf6; --pink:#c026d3; --glow:rgba(124,58,237,0.5); --border:rgba(124,58,237,0.3); }
+body.theme-gold { --accent:#d97706; --accent2:#fbbf24; --purple:#92400e; --purple2:#f59e0b; --pink:#f59e0b; --glow:rgba(217,119,6,0.4); --border:rgba(217,119,6,0.22); }
+body.theme-pink { --accent:#db2777; --accent2:#f472b6; --purple:#9d174d; --purple2:#ec4899; --pink:#ec4899; --glow:rgba(219,39,119,0.4); --border:rgba(219,39,119,0.22); }
+body.theme-light { --bg-deep:#f1f0f6; --bg-card:#ffffff; --bg-card2:#f5f5ffcc; --text:#111122; --text-muted:#666688; --border:rgba(0,0,0,0.1); --film-hole:rgba(0,0,0,0.06); }
+body.theme-dark { --bg-deep:#0a0812; --bg-card:#15121f; --bg-card2:#1c1830c0; --gold:#f0c05a; --gold2:#e0a63a; --gold3:#ffe08a; --green:#23b47a; --text:#f3f0ff; --text-muted:#8b87a6; --border:rgba(160,108,232,0.22); --film-hole:rgba(255,255,255,0.09); }
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; background:var(--bg-deep); color:var(--text); font-family:'Hind Siliguri',sans-serif; }
+
+/* ============ LOADING ============ */
+#loading-screen {
+  position:fixed; inset:0; z-index:9999;
+  background:radial-gradient(ellipse at 50% 30%, #ece9fb 0%, var(--bg-deep) 70%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:18px; transition:opacity 0.5s;
+}
+.loader-logo { font-family:'Cinzel Decorative',serif; font-size:32px; letter-spacing:2px; color:var(--text); }
+.loader-logo span { color:var(--accent); text-shadow:0 0 24px var(--glow); }
+.loader-reel { width:58px; height:58px; position:relative; }
+.loader-reel svg { animation: spin 1.4s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loader-sub { font-size:13px; color:var(--text-muted); letter-spacing:1px; }
+.sparkles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+.sparkle { position:absolute; width:4px; height:4px; border-radius:50%; background:var(--gold); opacity:0; animation: sparkleAnim 3s infinite; }
+@keyframes sparkleAnim { 0%,100%{opacity:0;transform:translateY(0) scale(0)} 50%{opacity:1;transform:translateY(-60px) scale(1)} }
+
+#app { height:100%; display:flex; flex-direction:column; opacity:0; transition:opacity 0.5s; }
+#app.visible { opacity:1; }
+
+/* ============ HEADER ============ */
+header {
+  height:var(--header-h); flex-shrink:0;
+  background: linear-gradient(135deg, #ffffff 0%, #f7f6fd 100%);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 14px; position:relative; z-index:100;
+  box-shadow:0 2px 24px rgba(0,0,0,0.06);
+}
+.header-logo { font-family:'Cinzel Decorative',serif; font-size:21px; font-weight:900; letter-spacing:1px; display:flex; align-items:center; gap:2px; user-select:none; }
+.logo-movi { color:var(--text); }
+.logo-lover { color:var(--accent); text-shadow:0 0 20px var(--glow); }
+.header-actions { display:flex; gap:10px; align-items:center; }
+.icon-btn { width:36px; height:36px; border-radius:50%; background:rgba(123,63,228,0.08); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; color:var(--text); font-size:18px; position:relative; }
+.icon-btn:active { transform:scale(0.88); background:rgba(212,40,63,0.15); }
+.notif-badge { position:absolute; top:5px; right:5px; width:9px; height:9px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-deep); animation: pulse 2s infinite; display:none; }
+.notif-badge.show { display:block; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+#pages { flex:1; overflow:hidden; position:relative; }
+.page { position:absolute; inset:0; overflow-y:auto; padding-bottom:calc(var(--nav-h) + 10px); display:none; flex-direction:column; }
+.page.active { display:flex; animation: pageIn 0.3s cubic-bezier(.22,.68,0,1.2); }
+@keyframes pageIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ============ CATEGORIES ============ */
+.categories { display:flex; gap:8px; padding:12px 14px 8px; overflow-x:auto; flex-shrink:0; }
+.categories::-webkit-scrollbar { display:none; }
+.cat-btn { flex-shrink:0; padding:8px 16px; border-radius:20px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-muted); font-family:'Hind Siliguri',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+.cat-btn.active { background:linear-gradient(135deg,var(--purple),var(--pink)); border-color:transparent; color:#fff; box-shadow:0 0 14px rgba(123,63,228,0.35); }
+
+.section-title { font-size:12px; font-weight:700; color:var(--text-muted); padding:8px 14px 6px; letter-spacing:1.5px; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
+.section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ============ VIDEO LIST / CARD ============ */
+.video-grid { padding:8px 14px; display:flex; flex-direction:column; gap:20px; }
+.video-card {
+  background:var(--bg-card);
+  border-radius:var(--card-radius); overflow:hidden;
+  border:1px solid var(--border); position:relative;
+  box-shadow:0 10px 30px rgba(30,20,60,0.08);
+  transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.4s ease;
+  animation: cardIn 0.4s cubic-bezier(.22,.68,0,1.15) backwards;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(14px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+.video-card:active { transform:scale(0.99); }
+
+/* Deep-link highlight: pulsing colored glow ring shown around the video
+   that was opened via a per-video share link, so the person who clicked
+   the shared link can instantly see which video it points to. */
+.video-card.shared-highlight {
+  border-color:transparent;
+  animation: cardIn 0.4s cubic-bezier(.22,.68,0,1.15) backwards, sharedGlow 1.6s ease-in-out infinite;
+}
+@keyframes sharedGlow {
+  0%,100% { box-shadow:0 0 0 3px rgba(123,63,228,0.55), 0 0 22px 4px rgba(255,61,129,0.45), 0 10px 30px rgba(30,20,60,0.08); }
+  50% { box-shadow:0 0 0 3px rgba(255,61,129,0.65), 0 0 34px 10px rgba(123,63,228,0.55), 0 10px 30px rgba(30,20,60,0.08); }
+}
+.found-toast { position:fixed; top:14px; left:50%; transform:translateX(-50%) translateY(-30px); background:linear-gradient(135deg,var(--purple),var(--pink)); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; letter-spacing:0.3px; padding:12px 22px; border-radius:30px; box-shadow:0 10px 28px rgba(123,63,228,0.4); z-index:950; opacity:0; transition:all 0.35s cubic-bezier(.22,.68,0,1.4); pointer-events:none; }
+.found-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+.video-thumb-wrap { padding:8px 8px 0; }
+.video-thumb { width:100%; aspect-ratio:4/3; object-fit:cover; background:linear-gradient(135deg,#efedfa,#e4e1f4); display:flex; align-items:center; justify-content:center; font-size:32px; position:relative; overflow:hidden; cursor:pointer; border-radius:14px; border:1.5px solid rgba(0,0,0,0.08); }
+.video-thumb img { position:absolute;inset:0;width:100%; height:100%; object-fit:cover; }
+.thumb-play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.15); opacity:0; transition:opacity 0.2s; }
+.video-thumb:active .thumb-play { opacity:1; }
+.thumb-play .material-icons-round { font-size:40px; color:#fff; text-shadow:0 0 12px rgba(0,0,0,0.8); }
+.badge-new { position:absolute; top:8px; left:8px; background:var(--green); color:#fff; font-size:10px; font-weight:700; padding:3px 9px; border-radius:8px; font-family:'Rajdhani',sans-serif; letter-spacing:1px; z-index:2; box-shadow:0 2px 8px rgba(0,0,0,0.35); }
+.badge-parts { position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); color:var(--gold3); font-size:10px; font-weight:700; padding:3px 9px; border-radius:8px; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; z-index:2; display:flex; align-items:center; gap:4px; }
+.badge-parts .material-icons-round { font-size:12px; }
+.badge-premium { position:absolute; top:8px; right:44px; background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#000; font-size:10px; font-weight:700; padding:3px 9px; border-radius:8px; z-index:2; box-shadow:0 2px 8px rgba(0,0,0,0.35); }
+.fav-icon-card { position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:17px; color:#fff; transition:transform 0.15s; }
+.fav-icon-card:active { transform:scale(0.85); }
+.share-icon-card { position:absolute; bottom:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:16px; color:#fff; transition:transform 0.15s; }
+.share-icon-card:active { transform:scale(0.85); }
+.video-info { padding:14px 16px 16px; }
+.video-site { font-size:11px; color:var(--purple2); font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:4px; letter-spacing:0.3px; }
+.video-site .material-icons-round { font-size:12px; }
+.video-title { font-size:15px; font-weight:600; color:var(--text); line-height:1.4; margin-bottom:8px; }
+.video-meta { display:flex; align-items:center; gap:14px; margin-bottom:6px; flex-wrap:wrap; }
+.video-stat { font-size:11.5px; color:var(--text-muted); display:flex; align-items:center; gap:3px; }
+.video-stat .material-icons-round { font-size:14px; }
+.video-hint { font-size:11px; color:var(--text-muted); font-style:italic; margin-bottom:12px; display:flex; align-items:center; gap:4px; }
+
+/* Inline unlock progress row */
+.unlock-progress-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:14px; }
+.unlock-dot { width:42px; height:42px; border-radius:12px; border:2px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; flex-shrink:0; position:relative; transition:all 0.35s cubic-bezier(.22,.68,0,1.4); background:rgba(0,0,0,0.02); }
+.unlock-dot .num { font-size:13px; font-weight:700; font-family:'Rajdhani',sans-serif; color:var(--text-muted); }
+.unlock-dot .lbl { font-size:7.5px; color:var(--text-muted); font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.5px; }
+.unlock-dot.done { border-color:var(--green); background:rgba(27,143,95,0.12); transform:scale(1.04); }
+.unlock-dot.done .num { color:var(--green); }
+.unlock-dot.done::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(27,143,95,0.18); border-radius:10px; color:var(--green); font-weight:700; font-size:16px; animation: popIn 0.3s cubic-bezier(.22,.68,0,1.6); }
+@keyframes popIn { from{transform:scale(0.4);opacity:0} to{transform:scale(1);opacity:1} }
+.unlock-dot.active { border-color:var(--purple2); cursor:pointer; box-shadow:0 0 0 3px rgba(160,108,232,0.15); }
+.unlock-dot.active .material-icons-round { color:var(--purple2); font-size:16px; }
+.unlock-connector { width:16px; height:2px; background:var(--border); flex-shrink:0; transition:background 0.35s; }
+.unlock-connector.done { background:var(--green); }
+.unlock-btn { width:100%; padding:14px; border-radius:var(--btn-radius); background:var(--grad-btn); border:none; color:#fff; font-family:'Rajdhani',sans-serif; font-size:15.5px; font-weight:700; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.15s, box-shadow 0.2s; box-shadow:0 6px 20px rgba(123,63,228,0.35); }
+.unlock-btn:active { transform:scale(0.97); }
+.unlock-btn.play-btn { background:var(--grad-btn-done); box-shadow:0 6px 20px rgba(35,180,122,0.3); }
+.unlock-btn .material-icons-round { font-size:18px; }
+.unlock-btn .cnt { background:rgba(255,255,255,0.22); padding:2px 9px; border-radius:20px; font-size:12px; }
+.expiry-hint { font-size:11px; color:var(--gold3); display:flex; align-items:center; gap:4px; justify-content:center; margin-bottom:10px; font-weight:600; }
+.expiry-hint .material-icons-round { font-size:14px; }
+
+/* Share row under each card: lets a member copy/share a unique deep link
+   for THAT exact video via Telegram (or any share sheet). */
+.card-share-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:10px; padding:9px; border-radius:12px; background:rgba(123,63,228,0.06); border:1px dashed var(--border); color:var(--purple2); font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:0.4px; cursor:pointer; transition:transform 0.15s, background 0.2s; }
+.card-share-row:active { transform:scale(0.97); background:rgba(123,63,228,0.12); }
+.card-share-row .material-icons-round { font-size:15px; }
+
+/* Skeleton loading */
+.skel-card { background:var(--bg-card); border-radius:var(--card-radius); overflow:hidden; border:1px solid var(--border); }
+.skel-thumb { width:100%; aspect-ratio:4/3; margin:8px; width:calc(100% - 16px); border-radius:14px; background:linear-gradient(90deg,#eceafa 25%,#f6f5fd 37%,#eceafa 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; }
+.skel-line { height:9px; border-radius:4px; margin:14px 16px 0; background:linear-gradient(90deg,#eceafa 25%,#f6f5fd 37%,#eceafa 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; }
+.skel-line.short { width:55%; margin-bottom:14px; }
+@keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+
+/* ============ VERIFY OVERLAY (in-site ad embed) ============ */
+#verify-modal { display:none; position:fixed; inset:0; z-index:600; background:rgba(20,15,35,0.55); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px; }
+#verify-modal.open { display:flex; animation:fadeIn 0.2s; }
+.verify-box { width:100%; max-width:340px; background:#ffffff; border-radius:26px; padding:32px 26px 26px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+.verify-dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; }
+.verify-step-dot { width:9px; height:9px; border-radius:50%; background:#e3e0f0; transition:background 0.3s; }
+.verify-step-dot.on { background:var(--purple); }
+.verify-ring-box { position:relative; width:96px; height:96px; margin:0 auto 20px; }
+.verify-ring-box svg { transform:rotate(-90deg); }
+.ring-bg { fill:none; stroke:#ece9f7; stroke-width:5; }
+.ring-fg { fill:none; stroke:var(--purple); stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+.verify-ring-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-size:32px; font-weight:700; color:var(--purple); }
+.verify-ring-icon .material-icons-round { font-size:32px; color:var(--purple); }
+.verify-title { font-size:19px; font-weight:800; color:#181624; margin-bottom:6px; font-family:'Rajdhani',sans-serif; }
+.verify-sub { font-size:13px; color:#8b899e; margin-bottom:18px; line-height:1.5; }
+.verify-pill { display:inline-block; padding:9px 20px; border-radius:30px; background:#f1eafd; color:var(--purple); font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.5px; margin-bottom:16px; }
+.verify-progressbar-wrap { height:6px; border-radius:6px; background:#ece9f5; overflow:hidden; margin-bottom:18px; display:none; }
+.verify-progressbar-fill { height:100%; width:0%; background:var(--purple); border-radius:6px; transition:width 1s linear; }
+.verify-hint { display:flex; align-items:center; gap:8px; background:#fdf6e3; border:1px solid #f5e6b8; border-radius:12px; padding:10px 12px; font-size:11.5px; color:#8a6d1f; text-align:left; line-height:1.5; }
+.verify-hint .material-icons-round { font-size:16px; color:#c9971f; flex-shrink:0; }
+
+#task-complete-popup { display:none; position:fixed; inset:0; z-index:700; background:rgba(0,0,0,0.5); backdrop-filter:blur(6px); align-items:center; justify-content:center; }
+#task-complete-popup.open { display:flex; animation:fadeIn 0.2s; }
+.tcp-box { background:linear-gradient(145deg,#ffffff,#f4f1ff); border:1px solid var(--gold); border-radius:22px; padding:32px 28px; text-align:center; max-width:300px; width:90%; box-shadow:0 0 40px rgba(240,192,90,0.25); animation:scaleIn 0.35s cubic-bezier(.22,.68,0,1.4); }
+@keyframes scaleIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+.tcp-icon { font-size:54px; margin-bottom:12px; line-height:1; }
+.tcp-title { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--gold2); margin-bottom:6px; }
+.tcp-sub { font-size:13px; color:var(--text-muted); }
+
+/* ============ ACCOUNT LOCKED OVERLAY ============ */
+#locked-modal { display:none; position:fixed; inset:0; z-index:900; background:rgba(20,15,35,0.6); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:24px; }
+#locked-modal.open { display:flex; animation:fadeIn 0.2s; }
+.locked-box { width:100%; max-width:340px; background:linear-gradient(180deg,#ffffff,#f7f0f2); border:1px solid rgba(212,40,63,0.3); border-radius:24px; padding:30px 24px; text-align:center; box-shadow:0 0 50px rgba(212,40,63,0.15); }
+.locked-icon { font-size:52px; margin-bottom:10px; }
+.locked-title { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700; color:var(--accent); margin-bottom:8px; }
+.locked-sub { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:18px; }
+.locked-contact-btn { display:inline-flex; align-items:center; gap:6px; padding:11px 20px; border-radius:14px; background:var(--grad-btn); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; text-decoration:none; border:none; cursor:pointer; }
+
+/* ============ PLAYER ============ */
+#player-modal { display:none; position:fixed; inset:0; z-index:600; background:#000; flex-direction:column; }
+#player-modal.open { display:flex; animation: fadeIn 0.25s; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.player-header { padding:12px 14px; display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.7); }
+.player-back { color:#fff; cursor:pointer; }
+.player-title { font-size:14px; font-weight:600; color:#fff; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.player-video { width:100%; aspect-ratio:16/9; background:#000; flex-shrink:0; }
+.player-video video { width:100%; height:100%; }
+.player-info-wrap { flex:1; overflow-y:auto; background:var(--bg-deep); }
+
+/* ============ PART SELECTOR (multi-part videos) ============ */
+.part-selector-row { display:flex; gap:8px; padding:14px 14px 0; flex-wrap:wrap; }
+.part-btn { padding:9px 18px; border-radius:12px; border:1.5px solid var(--border); background:var(--bg-card); color:var(--text-muted); font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px; }
+.part-btn .material-icons-round { font-size:16px; }
+.part-btn.active { background:var(--grad-btn); border-color:transparent; color:#fff; box-shadow:0 4px 14px rgba(123,63,228,0.35); }
+
+/* ============ AD BANNER (player, active ad network) ============ */
+.player-ad-banner { margin:14px; border-radius:16px; overflow:hidden; border:1px solid rgba(201,138,31,0.3); background:linear-gradient(135deg,rgba(201,138,31,0.08),rgba(123,63,228,0.08)); position:relative; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform 0.15s; }
+.player-ad-banner:active { transform:scale(0.98); }
+.player-ad-banner .ad-tag { position:absolute; top:8px; right:10px; font-size:9px; letter-spacing:1px; color:var(--text-muted); background:rgba(0,0,0,0.08); padding:2px 7px; border-radius:6px; }
+.player-ad-banner-icon { width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,var(--gold),var(--gold2)); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 14px rgba(201,138,31,0.3); }
+.player-ad-banner-icon .material-icons-round { color:#000; font-size:20px; }
+.player-ad-banner-text { flex:1; }
+.player-ad-banner-title { font-size:13.5px; font-weight:700; color:var(--text); }
+.player-ad-banner-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+.premium-desc-panel { margin:14px; border-radius:18px; overflow:hidden; background:var(--bg-card); border:1px solid var(--border); box-shadow:0 0 30px rgba(123,63,228,0.08), inset 0 1px 0 rgba(255,255,255,0.6); position:relative; }
+.premium-desc-panel::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--purple),var(--gold)); }
+.pdp-top { padding:16px 16px 0; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.pdp-site { font-size:11px; color:var(--purple2); font-weight:700; display:flex; align-items:center; gap:4px; }
+.pdp-cat-badge { font-size:10px; font-weight:700; padding:4px 10px; border-radius:20px; font-family:'Rajdhani',sans-serif; letter-spacing:1px; flex-shrink:0; background:linear-gradient(135deg,rgba(123,63,228,0.16),rgba(212,40,63,0.12)); border:1px solid rgba(123,63,228,0.25); color:var(--purple2); }
+.pdp-title { font-size:16px; font-weight:700; line-height:1.4; padding:12px 16px 8px; color:var(--text); }
+.pdp-meta { padding:0 16px 12px; display:flex; gap:14px; flex-wrap:wrap; }
+.pdp-meta-item { font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:4px; cursor:default; }
+.pdp-meta-item.likeable { cursor:pointer; }
+.pdp-meta-item .material-icons-round { font-size:13px; }
+.pdp-meta-item.liked { color:var(--accent2); }
+.pdp-divider { height:1px; background:var(--border); margin:0 16px; }
+.pdp-desc { padding:14px 16px; font-size:13px; color:var(--text-muted); line-height:1.7; }
+.pdp-actions { padding:14px 16px 18px; display:flex; gap:10px; }
+.pdp-action-btn { flex:1; padding:11px; border-radius:12px; border:none; cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.5px; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s; }
+.pdp-action-btn:active { transform:scale(0.96); }
+.pdp-fav-btn { background:rgba(212,40,63,0.08); border:1px solid rgba(212,40,63,0.25); color:var(--accent); }
+.pdp-fav-btn.faved { background:rgba(212,40,63,0.16); border-color:var(--accent); }
+.pdp-share-btn { background:rgba(123,63,228,0.08); border:1px solid var(--border); color:var(--purple2); }
+
+/* ============ UNLOCKED CARD (in-card "Watch Now" state, no separate page) ============
+   Once a video finishes all its ad steps, the card itself switches to this look:
+   a green "Unlocked!" pill, a "Link expires in" row with a live countdown + gradient
+   progress bar, then a red "Watch Now" button (or one small button per part). */
+.unlocked-badge { background:rgba(27,143,95,0.1); border:1px solid rgba(27,143,95,0.35); color:var(--green); font-weight:700; font-family:'Rajdhani',sans-serif; font-size:14.5px; letter-spacing:0.5px; padding:11px; border-radius:14px; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px; }
+.unlocked-badge .dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); }
+.unlocked-badge .material-icons-round { font-size:17px; }
+.expiry-row2 { display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--text-muted); margin-bottom:7px; gap:10px; }
+.expiry-row2 .lbl { display:flex; align-items:center; gap:6px; }
+.expiry-row2 .lbl .material-icons-round { font-size:15px; }
+.expiry-row2 .val { color:var(--gold2); font-weight:700; font-family:'Rajdhani',sans-serif; background:rgba(201,138,31,0.1); padding:3px 12px; border-radius:10px; flex-shrink:0; }
+.expiry-bar-track { height:5px; border-radius:4px; background:rgba(0,0,0,0.08); overflow:hidden; margin-bottom:14px; }
+.expiry-bar-fill { height:100%; background:linear-gradient(90deg,var(--gold2),var(--accent)); border-radius:4px; transition:width 1s linear; }
+.watch-now-btn { width:100%; padding:14px; border-radius:var(--btn-radius); border:none; color:#fff; font-family:'Rajdhani',sans-serif; font-size:15.5px; font-weight:700; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg,var(--accent) 0%,#8f1830 100%); box-shadow:0 6px 20px rgba(212,40,63,0.35); transition:transform 0.15s; }
+.watch-now-btn:active { transform:scale(0.97); }
+.watch-now-btn .material-icons-round { font-size:18px; }
+
+/* ============ PROFILE (reorganized) ============ */
+.profile-card { margin:14px; padding:22px 20px; border-radius:18px; background:var(--bg-card); border:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; overflow:hidden; box-shadow:0 6px 24px rgba(30,20,60,0.06); }
+.profile-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--purple),var(--accent),var(--gold)); }
+.profile-avatar { width:76px; height:76px; border-radius:50%; background:linear-gradient(135deg,var(--purple),var(--accent)); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:900; color:#fff; box-shadow:0 0 20px rgba(123,63,228,0.4); overflow:hidden; flex-shrink:0; }
+.profile-avatar img { width:100%; height:100%; object-fit:cover; }
+.profile-name { font-size:18px; font-weight:700; color:var(--text); }
+.profile-handle { font-size:12px; color:var(--text-muted); }
+.profile-stats { display:flex; gap:0; width:100%; margin-top:8px; }
+.pstat { flex:1; text-align:center; padding:10px 0; border-right:1px solid var(--border); }
+.pstat:last-child { border-right:none; }
+.pstat-val { font-size:19px; font-weight:700; color:var(--purple2); font-family:'Rajdhani',sans-serif; }
+.pstat-lbl { font-size:10px; color:var(--text-muted); margin-top:2px; }
+
+.profile-section-label { font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:1.5px; text-transform:uppercase; padding:16px 18px 8px; }
+
+.referral-card { margin:0 14px 14px; padding:16px; border-radius:16px; background:linear-gradient(135deg,rgba(201,138,31,0.07),rgba(123,63,228,0.07)); border:1px solid rgba(201,138,31,0.25); position:relative; overflow:hidden; }
+.ref-label { font-size:11px; color:var(--gold2); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.ref-link-row { display:flex; gap:8px; align-items:center; }
+.ref-link-box { flex:1; background:rgba(0,0,0,0.04); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:10.5px; color:var(--text-muted); font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ref-copy-btn { padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background:linear-gradient(135deg,var(--gold2),#c98a1f); color:#fff; font-size:12px; font-weight:700; font-family:'Rajdhani',sans-serif; white-space:nowrap; transition:all 0.2s; }
+.ref-copy-btn:active { transform:scale(0.95); }
+.ref-stats { display:flex; gap:16px; margin-top:10px; }
+.ref-stat { font-size:11px; color:var(--text-muted); }
+.ref-stat span { color:var(--gold2); font-weight:700; }
+
+.menu-list { margin:0 14px 4px; display:flex; flex-direction:column; gap:8px; }
+.menu-item { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.2s; }
+.menu-item:active { transform:scale(0.97); background:var(--bg-card2); }
+.menu-icon { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.menu-icon .material-icons-round { font-size:18px; }
+.menu-text { flex:1; }
+.menu-text-title { font-size:13.5px; font-weight:700; color:var(--text); }
+.menu-text-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
+.menu-arrow { color:var(--text-muted); font-size:19px; }
+
+.collapse-card { margin:0 14px 10px; border-radius:14px; background:var(--bg-card); border:1px solid var(--border); overflow:hidden; }
+.collapse-head { padding:14px 16px; display:flex; align-items:center; gap:10px; cursor:pointer; }
+.collapse-head .material-icons-round:first-child { font-size:18px; }
+.collapse-head .material-icons-round.chev { margin-left:auto; transition:transform 0.25s; color:var(--text-muted); font-size:18px; }
+.collapse-head.open .chev { transform:rotate(180deg); }
+.collapse-title { font-size:13.5px; font-weight:700; color:var(--text); }
+.collapse-count { font-size:10.5px; color:var(--text-muted); background:rgba(0,0,0,0.05); padding:2px 8px; border-radius:10px; }
+.collapse-body { max-height:0; overflow:hidden; transition:max-height 0.3s ease; }
+.collapse-body.open { max-height:400px; overflow-y:auto; }
+.hist-row { display:flex; align-items:center; gap:10px; padding:8px 16px; border-top:1px solid var(--border); }
+.hist-thumb { width:48px; height:34px; border-radius:6px; object-fit:cover; background:var(--bg-card2); flex-shrink:0; display:flex; align-items:center;justify-content:center;font-size:16px; overflow:hidden; }
+.hist-thumb img { width:100%;height:100%;object-fit:cover; }
+.hist-info { flex:1; min-width:0; }
+.hist-title { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); }
+.hist-time { font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+.hist-empty { padding:16px; text-align:center; font-size:12px; color:var(--text-muted); }
+
+.channels-list { margin:0 14px; display:flex; flex-direction:column; gap:8px; }
+.channel-item { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.2s; }
+.channel-item:active { transform:scale(0.97); }
+.channel-icon { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,var(--purple),#4527a0); display:flex; align-items:center; justify-content:center; font-size:22px; }
+.channel-info { flex:1; }
+.channel-name { font-size:14px; font-weight:700; color:var(--text); }
+.channel-desc { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+.tutorial-video-card { margin:14px 14px 0; border-radius:16px; overflow:hidden; background:var(--bg-card); border:1px solid var(--border); position:relative; }
+.tutorial-video-thumb { width:100%; aspect-ratio:16/9; background:linear-gradient(135deg,#efedfa,#e4e1f4); display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; overflow:hidden; }
+.tutorial-video-thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.tutorial-video-thumb .play-btn { width:56px; height:56px; border-radius:50%; background:rgba(212,40,63,0.85); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; box-shadow:0 0 24px rgba(212,40,63,0.5); position:relative; }
+.tutorial-video-thumb .play-btn .material-icons-round { font-size:28px; color:#fff; }
+.tutorial-video-label { padding:12px 14px; font-size:14px; font-weight:600; color:var(--text); }
+
+.tutorial-card { margin:10px 14px; padding:20px; border-radius:18px; background:linear-gradient(135deg,rgba(123,63,228,0.06),rgba(212,40,63,0.04)); border:1px solid var(--border); }
+.tutorial-step { display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); }
+.tutorial-step:last-child { border-bottom:none; }
+.step-num { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--accent),var(--purple)); display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:#fff; }
+.step-text { font-size:13px; line-height:1.6; color:var(--text-muted); }
+.step-text strong { color:var(--text); }
+
+.empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px; }
+
+/* ============ FAVORITES (pill header + simple row list) ============ */
+.fav-header-row { padding:14px 14px 6px; }
+.fav-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border-radius:30px; background:linear-gradient(135deg,var(--purple),var(--pink)); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; box-shadow:0 4px 16px rgba(123,63,228,0.35); }
+.fav-pill .material-icons-round { font-size:17px; }
+.fav-pill-count { background:rgba(255,255,255,0.28); padding:1px 9px; border-radius:12px; font-size:12.5px; }
+.fav-list { margin:6px 14px 0; display:flex; flex-direction:column; gap:8px; }
+.fav-row { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:14px; background:var(--bg-card); border:1px solid var(--border); cursor:pointer; transition:transform 0.15s, background 0.2s; }
+.fav-row:active { transform:scale(0.98); background:var(--bg-card2); }
+.fav-row-thumb { width:64px; height:48px; border-radius:10px; object-fit:cover; background:linear-gradient(135deg,#efedfa,#e4e1f4); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px; overflow:hidden; }
+.fav-row-thumb img { width:100%; height:100%; object-fit:cover; }
+.fav-row-info { flex:1; min-width:0; }
+.fav-row-title { font-size:13.5px; font-weight:600; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--text); }
+.fav-row-sub { font-size:11.5px; color:var(--text-muted); margin-top:4px; }
+.fav-row-chevron { color:var(--text-muted); font-size:20px; flex-shrink:0; }
+.empty-icon { font-size:56px; opacity:0.3; }
+.empty-text { font-size:16px; color:var(--text-muted); text-align:center; }
+
+#search-modal { display:none; position:fixed; inset:0; z-index:400; background:rgba(20,15,35,0.65); backdrop-filter:blur(10px); }
+#search-modal.open { display:block; animation:fadeIn 0.2s; }
+.search-box { background:var(--bg-card); border-bottom:1px solid var(--border); padding:12px 14px; display:flex; align-items:center; gap:10px; }
+.search-input { flex:1; background:rgba(0,0,0,0.04); border:1px solid var(--border); border-radius:12px; padding:10px 14px; color:var(--text); font-size:14px; font-family:'Hind Siliguri',sans-serif; outline:none; }
+.search-input::placeholder { color:var(--text-muted); }
+.search-cancel { font-size:13px; color:var(--accent); cursor:pointer; font-weight:600; }
+.search-results { padding:14px; }
+.search-video-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:10px; display:flex; gap:10px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+.search-video-card:active { transform:scale(0.97); }
+.search-thumb { width:80px; height:55px; border-radius:8px; object-fit:cover; background:var(--bg-card2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:24px; overflow:hidden; }
+.search-thumb img { width:100%; height:100%; object-fit:cover; }
+
+#notif-modal { display:none; position:fixed; inset:0; z-index:450; background:rgba(20,15,35,0.6); backdrop-filter:blur(8px); align-items:flex-start; justify-content:center; padding-top:80px; }
+#notif-modal.open { display:flex; animation:fadeIn 0.2s; }
+.notif-box { background:var(--bg-card); border:1px solid var(--border); border-radius:18px; width:calc(100% - 28px); max-width:440px; padding:20px; max-height:60vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+.notif-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.notif-title { font-size:16px; font-weight:700; color:var(--text); }
+.notif-item { padding:10px 0; border-bottom:1px solid var(--border); display:flex; gap:10px; }
+.notif-item:last-child { border-bottom:none; }
+.notif-dot-icon { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:5px; }
+.notif-content { font-size:13px; line-height:1.5; color:var(--text); }
+.notif-time { font-size:11px; color:var(--text-muted); margin-top:3px; }
+
+nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(180deg,#ffffff 0%,#f7f6fd 100%); border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-around; position:relative; z-index:100; box-shadow:0 -2px 16px rgba(0,0,0,0.04); }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; padding:6px 0; transition:all 0.2s; color:var(--text-muted); font-size:10px; font-weight:600; font-family:'Hind Siliguri',sans-serif; position:relative; }
+.nav-item .material-icons-round { font-size:22px; transition:all 0.2s; }
+.nav-item.active { color:var(--accent); }
+.nav-item.active .material-icons-round { color:var(--accent); filter:drop-shadow(0 0 8px var(--glow)); transform:scale(1.1); }
+.nav-fav-badge { position:absolute; top:2px; right:22%; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--accent); color:#fff; font-size:9px; font-weight:700; display:none; align-items:center; justify-content:center; line-height:16px; box-shadow:0 0 0 2px var(--bg-deep); }
+.nav-fav-badge.show { display:flex; }
+
+#toast { position:fixed; bottom:calc(var(--nav-h) + 14px); left:50%; transform:translateX(-50%) translateY(20px); background:var(--bg-card); border:1px solid var(--border); color:var(--text); padding:10px 20px; border-radius:30px; font-size:13px; opacity:0; transition:all 0.3s; z-index:999; pointer-events:none; white-space:nowrap; max-width:90vw; text-align:center; backdrop-filter:blur(6px); box-shadow:0 10px 30px rgba(0,0,0,0.15); }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+.ripple { position:relative; overflow:hidden; }
+.ripple-effect { position:absolute; border-radius:50%; background:rgba(0,0,0,0.08); transform:scale(0); animation:rippleAnim 0.5s linear; pointer-events:none; }
+@keyframes rippleAnim { to { transform:scale(4); opacity:0; } }
+
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* ============ RESPONSIVE FINE-TUNING (320 / 360 / 390 / 412) ============ */
+@media (max-width:340px) {
+  .header-logo { font-size:18px; }
+  .video-title { font-size:13.5px; }
+  .unlock-dot { width:36px; height:36px; }
+  .unlock-btn { font-size:14px; padding:12px; }
+  .video-info { padding:12px 12px 14px; }
+  .cat-btn { padding:7px 12px; font-size:12px; }
+}
+@media (min-width:341px) and (max-width:400px) {
+  .unlock-dot { width:40px; height:40px; }
+}
+@media (min-width:600px) {
+  .video-grid { max-width:520px; margin:0 auto; width:100%; }
+}
+
+/* ============ ALL-ONLY CATEGORY PILL (categories bar simplified to one icon) ============ */
+.categories-simple { display:flex; align-items:center; padding:12px 14px 8px; flex-shrink:0; }
+.all-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 20px; border-radius:20px; background:linear-gradient(135deg,var(--purple),var(--pink)); border:none; color:#fff; font-family:'Hind Siliguri',sans-serif; font-size:13.5px; font-weight:700; box-shadow:0 0 14px rgba(123,63,228,0.35); }
+.all-pill .material-icons-round { font-size:16px; }
+
+/* ============ PREMIUM TUTORIAL PAGE ============ */
+.tut-hero { position:relative; margin:14px; border-radius:24px; overflow:hidden; padding:30px 22px 26px; background:radial-gradient(120% 140% at 20% 0%, rgba(123,63,228,0.16), transparent 60%), radial-gradient(120% 140% at 100% 0%, rgba(212,40,63,0.12), transparent 55%), linear-gradient(180deg,#ffffff,#f7f5ff); border:1px solid var(--border); box-shadow:0 14px 40px rgba(30,20,60,0.10); }
+.tut-hero::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--purple),var(--gold)); }
+.tut-hero-eyebrow { display:inline-flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:11.5px; font-weight:700; letter-spacing:2px; color:var(--purple2); text-transform:uppercase; background:rgba(123,63,228,0.08); border:1px solid rgba(123,63,228,0.2); padding:5px 12px; border-radius:20px; margin-bottom:14px; }
+.tut-hero-title { font-family:'Rajdhani',sans-serif; font-size:26px; font-weight:700; line-height:1.25; color:var(--text); margin-bottom:8px; }
+.tut-hero-title span { color:var(--accent); }
+.tut-hero-sub { font-size:13px; color:var(--text-muted); line-height:1.6; max-width:340px; }
+
+.tut-steps-wrap { margin:4px 14px 10px; position:relative; }
+.tut-step-card { display:flex; gap:14px; padding:16px; margin-bottom:12px; border-radius:18px; background:var(--bg-card); border:1px solid var(--border); box-shadow:0 6px 22px rgba(30,20,60,0.06); position:relative; overflow:hidden; }
+.tut-step-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--purple),var(--pink)); }
+.tut-step-card.warn::before { background:linear-gradient(180deg,var(--accent),#8f1830); }
+.tut-step-card.link::before { background:linear-gradient(180deg,var(--gold),var(--gold2)); }
+.tut-step-num { width:40px; height:40px; border-radius:13px; flex-shrink:0; background:linear-gradient(135deg,var(--purple),var(--pink)); display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:800; color:#fff; box-shadow:0 6px 16px rgba(123,63,228,0.3); }
+.tut-step-card.warn .tut-step-num { background:linear-gradient(135deg,var(--accent),#8f1830); box-shadow:0 6px 16px rgba(212,40,63,0.3); }
+.tut-step-card.link .tut-step-num { background:linear-gradient(135deg,var(--gold),var(--gold2)); box-shadow:0 6px 16px rgba(201,138,31,0.3); }
+.tut-step-body { flex:1; padding-top:2px; }
+.tut-step-title { font-family:'Rajdhani',sans-serif; font-size:14.5px; font-weight:700; color:var(--text); margin-bottom:4px; letter-spacing:0.2px; }
+.tut-step-desc { font-size:12.5px; line-height:1.65; color:var(--text-muted); }
+.tut-step-desc strong { color:var(--text); font-weight:700; }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="sparkles" id="sparkles"></div>
+  <div class="loader-logo">Movi <span>Lover</span></div>
+  <div class="loader-reel">
+    <svg width="58" height="58" viewBox="0 0 58 58">
+      <circle cx="29" cy="29" r="25" fill="none" stroke="rgba(212,40,63,0.15)" stroke-width="3"/>
+      <circle cx="29" cy="29" r="25" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="40 118" stroke-linecap="round"/>
+      <circle cx="29" cy="12" r="4" fill="var(--accent)"/><circle cx="44" cy="29" r="4" fill="var(--purple2)"/><circle cx="29" cy="46" r="4" fill="var(--gold)"/><circle cx="14" cy="29" r="4" fill="var(--accent2)"/>
+    </svg>
+  </div>
+  <div class="loader-sub">লোড হচ্ছে...</div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="header-logo">
+      <span class="logo-movi">Movi</span>&nbsp;<span class="logo-lover">Lover</span>
+    </div>
+    <div class="header-actions">
+      <div class="icon-btn ripple" onclick="openSearch()"><span class="material-icons-round">search</span></div>
+      <div class="icon-btn ripple" onclick="openNotif()">
+        <span class="material-icons-round">notifications</span>
+        <div class="notif-badge" id="notif-badge"></div>
+      </div>
+    </div>
+  </header>
+
+  <div id="pages">
+    <div class="page active" id="page-home">
+      <div class="categories-simple">
+        <span class="all-pill"><span class="material-icons-round">apps</span>সব</span>
+      </div>
+      <div class="section-title">সকল ভিডিও</div>
+      <div class="video-grid" id="video-grid"></div>
+    </div>
+
+    <div class="page" id="page-favorites">
+      <div class="fav-header-row">
+        <span class="fav-pill"><span class="material-icons-round">favorite</span>Favorites <span class="fav-pill-count" id="fav-pill-count">0</span></span>
+      </div>
+      <div class="fav-list" id="fav-list"></div>
+      <div class="empty-state" id="fav-empty" style="display:none;">
+        <div class="empty-icon">💔</div>
+        <div class="empty-text">এখনো কোনো ভিডিও পছন্দ করা হয়নি</div>
+      </div>
+    </div>
+
+    <div class="page" id="page-tutorial">
+      <div id="tutorial-video-section"></div>
+
+      <div class="tut-hero">
+        <div class="tut-hero-eyebrow"><span class="material-icons-round" style="font-size:14px;">auto_awesome</span>গাইড</div>
+        <div class="tut-hero-title">কিভাবে <span>ব্যবহার</span> করবেন</div>
+        <div class="tut-hero-sub">মাত্র কয়েকটি ধাপে ভিডিও আনলক ও উপভোগ করুন — নিচে পুরো প্রক্রিয়াটি সাজানো আছে।</div>
+      </div>
+
+      <div class="tut-steps-wrap" id="tutorial-steps"></div>
+    </div>
+
+    <div class="page" id="page-channels">
+      <div class="section-title" style="padding-top:14px;">টেলিগ্রাম চ্যানেল</div>
+      <div class="channels-list" id="channels-list"></div>
+    </div>
+
+    <div class="page" id="page-profile">
+      <div class="profile-card">
+        <div class="profile-avatar" id="profile-avatar">?</div>
+        <div class="profile-name" id="profile-name">ব্যবহারকারী</div>
+        <div class="profile-handle" id="profile-handle">@user</div>
+        <div class="profile-stats">
+          <div class="pstat"><div class="pstat-val" id="stat-fav">0</div><div class="pstat-lbl">Favorites</div></div>
+          <div class="pstat"><div class="pstat-val" id="stat-unlocked">0</div><div class="pstat-lbl">Unlocked</div></div>
+          <div class="pstat"><div class="pstat-val" id="stat-watched">0</div><div class="pstat-lbl">Watched</div></div>
+        </div>
+      </div>
+
+      <div class="menu-list">
+        <div class="menu-item ripple" onclick="copyRefLink()">
+          <div class="menu-icon" style="background:rgba(123,63,228,0.14);"><span class="material-icons-round" style="color:var(--purple2);">link</span></div>
+          <div class="menu-text"><div class="menu-text-title">Copy My Link</div></div>
+          <span class="material-icons-round menu-arrow">chevron_right</span>
+        </div>
+        <div class="menu-item ripple" onclick="showPage('tutorial')">
+          <div class="menu-icon" style="background:rgba(37,99,235,0.14);"><span class="material-icons-round" style="color:#2563eb;">info</span></div>
+          <div class="menu-text"><div class="menu-text-title">View Tutorial</div></div>
+          <span class="material-icons-round menu-arrow">chevron_right</span>
+        </div>
+        <div class="menu-item ripple" onclick="shareApp()">
+          <div class="menu-icon" style="background:rgba(27,143,95,0.16);"><span class="material-icons-round" style="color:#0f9d64;">share</span></div>
+          <div class="menu-text"><div class="menu-text-title">Share App</div></div>
+          <span class="material-icons-round menu-arrow">chevron_right</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-item active ripple" data-page="home" onclick="showPage('home')"><span class="material-icons-round">home</span>হোম</div>
+    <div class="nav-item ripple" data-page="favorites" onclick="showPage('favorites')">
+      <span class="material-icons-round">favorite</span>পছন্দ
+      <span class="nav-fav-badge" id="nav-fav-badge">0</span>
+    </div>
+    <div class="nav-item ripple" data-page="tutorial" onclick="showPage('tutorial')"><span class="material-icons-round">menu_book</span>টিউটোরিয়াল</div>
+    <div class="nav-item ripple" data-page="channels" onclick="showPage('channels')"><span class="material-icons-round">send</span>চ্যানেল</div>
+    <div class="nav-item ripple" data-page="profile" onclick="showPage('profile')"><span class="material-icons-round">person</span>প্রোফাইল</div>
+  </nav>
+</div>
+
+<div id="found-toast" class="found-toast">পোস্টটি খুঁজে পাওয়া গেছে!</div>
+
+<!-- VERIFY OVERLAY: light "ad progress" card (auto-runs: 3s starting -> real ad via GigaPub
+     -> 5s verifying -> auto-continues). No manual close/continue buttons. -->
+<div id="verify-modal">
+  <div class="verify-box">
+    <div class="verify-dots" id="verify-dots"></div>
+    <div class="verify-ring-box">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle class="ring-bg" cx="48" cy="48" r="41"/>
+        <circle class="ring-fg" id="ring-fg" cx="48" cy="48" r="41" stroke-dasharray="258" stroke-dashoffset="0"/>
+      </svg>
+      <div class="verify-ring-icon" id="verify-ring-icon"><span class="material-icons-round">play_arrow</span></div>
+    </div>
+    <div class="verify-title" id="verify-title">Ad 1 of 3 Playing</div>
+    <div class="verify-sub" id="verify-sub">Step 1 of 3 — Please watch the full ad</div>
+    <div class="verify-pill" id="verify-pill">AD STARTING...</div>
+    <div class="verify-progressbar-wrap" id="verify-progressbar-wrap"><div class="verify-progressbar-fill" id="verify-progressbar-fill"></div></div>
+    <div class="verify-hint"><span class="material-icons-round">info</span>এই বিজ্ঞাপনটি আপনার কাজে আসতে পারে</div>
+  </div>
+</div>
+
+<div id="task-complete-popup">
+  <div class="tcp-box">
+    <div class="tcp-icon" id="tcp-icon">🎉</div>
+    <div class="tcp-title" id="tcp-title">টাস্ক ১ কমপ্লিট!</div>
+    <div class="tcp-sub" id="tcp-sub">দারুণ! পরের টাস্কে যান।</div>
+  </div>
+</div>
+
+<!-- ACCOUNT LOCKED (after 3 incomplete-ad strikes) — only admin can unlock -->
+<div id="locked-modal">
+  <div class="locked-box">
+    <div class="locked-icon">🔒</div>
+    <div class="locked-title">অ্যাকাউন্ট লক করা হয়েছে</div>
+    <div class="locked-sub" id="locked-sub">বিজ্ঞাপন সম্পূর্ণ না দেখে বারবার বের হয়ে যাওয়ার কারণে আপনার অ্যাকাউন্টটি লক করা হয়েছে। আনলক করতে এডমিনের সাথে যোগাযোগ করুন।</div>
+    <button class="locked-contact-btn ripple" onclick="contactAdminAboutLock()"><span class="material-icons-round" style="font-size:17px;">support_agent</span> এডমিনের সাথে যোগাযোগ</button>
+  </div>
+</div>
+
+<div id="player-modal">
+  <div class="player-header">
+    <span class="material-icons-round player-back ripple" onclick="closePlayer()">arrow_back</span>
+    <div class="player-title" id="player-title-text">ভিডিও</div>
+  </div>
+  <div class="player-video"><video id="main-video" controls autoplay playsinline></video></div>
+  <div class="player-info-wrap">
+    <div class="part-selector-row" id="part-selector-row" style="display:none;"></div>
+    <div class="player-ad-banner ripple" id="player-ad-banner" onclick="showBannerAd()">
+      <span class="ad-tag">বিজ্ঞাপন</span>
+      <div class="player-ad-banner-icon"><span class="material-icons-round">card_giftcard</span></div>
+      <div class="player-ad-banner-text">
+        <div class="player-ad-banner-title">🎁 এক্সট্রা রিওয়ার্ড দেখুন</div>
+        <div class="player-ad-banner-sub">একটি বিজ্ঞাপন দেখে সাপোর্ট করুন</div>
+      </div>
+    </div>
+    <div class="premium-desc-panel" id="premium-panel">
+      <div class="pdp-top">
+        <div class="pdp-site" id="pdp-site"><span class="material-icons-round">verified</span>Movi Lover</div>
+        <div class="pdp-cat-badge" id="pdp-cat">ALL</div>
+      </div>
+      <div class="pdp-title" id="pdp-title"></div>
+      <div class="pdp-meta">
+        <div class="pdp-meta-item"><span class="material-icons-round">visibility</span><span id="pdp-views">0 ভিউ</span></div>
+        <div class="pdp-meta-item likeable" id="pdp-like-item" onclick="toggleLike()"><span class="material-icons-round" id="pdp-like-icon">thumb_up_off_alt</span><span id="pdp-likes">0</span></div>
+        <div class="pdp-meta-item"><span class="material-icons-round">schedule</span><span id="pdp-time">এখনই</span></div>
+      </div>
+      <div class="pdp-divider"></div>
+      <div class="pdp-desc" id="pdp-desc">কোনো বিবরণ নেই।</div>
+      <div class="pdp-actions">
+        <button class="pdp-action-btn pdp-fav-btn ripple" id="pdp-fav-btn" onclick="toggleFav()"><span class="material-icons-round" id="pdp-fav-icon">favorite_border</span><span id="pdp-fav-label">পছন্দ</span></button>
+        <button class="pdp-action-btn pdp-share-btn ripple" onclick="shareCurrentVideo()"><span class="material-icons-round">share</span>শেয়ার</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="search-modal">
+  <div class="search-box">
+    <input class="search-input" id="search-input" placeholder="ভিডিও খুঁজুন..." oninput="doSearch()" />
+    <div class="search-cancel" onclick="closeSearch()">বাতিল</div>
+  </div>
+  <div class="search-results" id="search-results"></div>
+</div>
+
+<div id="notif-modal">
+  <div class="notif-box">
+    <div class="notif-header-row">
+      <div class="notif-title">🔔 নোটিফিকেশন</div>
+      <span class="material-icons-round ripple" onclick="closeNotif()" style="cursor:pointer;color:var(--text-muted);">close</span>
+    </div>
+    <div id="notif-list"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STATE = {
+  currentPage: 'home',
+  currentVideo: null,
+  taskStep: 0,
+  taskAdsRequired: 3,
+  verifyActive: false,
+  verifyModalOpen: false,
+  verifyInterval: null,
+  verifyCountdownInterval: null,
+  verifyMinWaitDone: false,
+  taskTimerDuration: 15,
+  siteName: 'Movi Lover',
+  favorites: JSON.parse(localStorage.getItem('ml_favs')||'[]'),
+  unlocked: JSON.parse(localStorage.getItem('ml_unlocked')||'[]'),
+  unlockExpiry: JSON.parse(localStorage.getItem('ml_unlock_expiry')||'{}'),
+  likes: JSON.parse(localStorage.getItem('ml_likes')||'[]'),
+  watchHistory: JSON.parse(localStorage.getItem('ml_history')||'[]'),
+  unlockHistory: JSON.parse(localStorage.getItem('ml_unlock_history')||'[]'),
+  watched: parseInt(localStorage.getItem('ml_watched')||'0')||0,
+  allVideos: [],
+  videosLoaded: false,
+  filteredVideos: [],
+  notifications: [],
+  channels: [],
+  categories: [],
+  categoriesLoaded: false,
+  currentFilter: 'all',
+  tgUser: null,
+  userId: null,
+  tgUserId: null,
+  tutorialVideo: null,
+  theme: localStorage.getItem('ml_theme')||'default',
+  adSkipStrikes: 0,
+  accountLocked: false,
+  adminContactUrl: 'https://t.me/',
+  adNetwork: { gigapubZoneId:'6814' },
+  currentParts: null,
+  currentPartIdx: 0,
+  taskStepByVideo: JSON.parse(localStorage.getItem('ml_task_step')||'{}'),
+  sharedVideoId: null,
+  sharedHighlightDone: false,
+};
+
+const UNLOCK_WINDOW_MS = 3*60*1000; // 3 minutes — after this the video re-locks and ads must be watched again
+const MAX_AD_SKIP_STRIKES = 3; // 3 incomplete ad views => account gets locked (admin unlock only)
+
+(function(){
+  let uid = localStorage.getItem('ml_uid');
+  if(!uid){ uid = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); localStorage.setItem('ml_uid',uid); }
+  STATE.userId = uid;
+})();
+
+(function(){
+  const t = STATE.theme;
+  if(t && t!=='default') document.body.classList.add('theme-'+t);
+  const cr = localStorage.getItem('ml_card_radius');
+  const br = localStorage.getItem('ml_btn_radius');
+  if(cr){ document.documentElement.style.setProperty('--card-radius', cr+'px'); }
+  if(br){ document.documentElement.style.setProperty('--btn-radius', br+'px'); }
+  const acc = localStorage.getItem('ml_custom_accent');
+  if(acc) document.documentElement.style.setProperty('--accent', acc);
+})();
+
+/* ===================== PER-VIDEO SHARE LINK (Telegram-friendly deep link) =====================
+   Every video gets its own shareable URL: <site>?vid=<videoId>. Sharing this
+   link (via the Share button on a card, in the player, or via Telegram's
+   own forward/share) lets the recipient open the exact same video: the
+   link is parsed on load, the app jumps straight to that video's card and
+   plays the "found" highlight animation so it's obvious which post it is. */
+function buildVideoShareLink(id){
+  const base = location.href.split('?')[0];
+  return `${base}?vid=${encodeURIComponent(id)}&ref=${encodeURIComponent(effectiveRefId())}`;
+}
+function shareVideoById(id, evt){
+  if(evt) evt.stopPropagation();
+  const v = findVideo(id);
+  if(!v) return;
+  const url = buildVideoShareLink(id);
+  const text = `🎬 ${v.title||'ভিডিও'}\n${STATE.siteName} এ দেখুন:`;
+  if(navigator.share){
+    navigator.share({ title: v.title||'ভিডিও', text, url }).catch(()=>{});
+  } else {
+    openLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
+  }
+}
+
+const AC = window.AudioContext || window.webkitAudioContext;
+let _ac = null;
+function gAC(){ if(!_ac) _ac = new AC(); return _ac; }
+function playTone(f=440,t='sine',d=0.08,v=0.12){ try{const ac=gAC(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+d);o.start();o.stop(ac.currentTime+d);}catch(e){} }
+function clickSnd(){ playTone(800,'sine',0.05,0.08); }
+function successSnd(){ [440,554,659].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.15,0.15),i*80)); }
+function unlockSnd(){ [330,415,523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'triangle',0.18,0.18),i*90)); }
+function taskCompleteSnd(){ [523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.2,0.2),i*100)); }
+function lockSnd(){ [392,330,261].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.22,0.14),i*110)); }
+
+document.addEventListener('click',function(e){
+  clickSnd();
+  const el=e.target.closest('.ripple');
+  if(!el)return;
+  const r=document.createElement('span');
+  r.className='ripple-effect';
+  const rect=el.getBoundingClientRect();
+  const sz=Math.max(rect.width,rect.height);
+  r.style.cssText=`width:${sz}px;height:${sz}px;left:${e.clientX-rect.left-sz/2}px;top:${e.clientY-rect.top-sz/2}px`;
+  el.appendChild(r);
+  setTimeout(()=>r.remove(),500);
+});
+
+(function(){
+  const c=document.getElementById('sparkles');
+  for(let i=0;i<20;i++){
+    const s=document.createElement('div');s.className='sparkle';
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*2}s`;
+    c.appendChild(s);
+  }
+})();
+
+renderTutorialSteps();
+
+// skeleton loading while first video batch loads
+renderSkeletons();
+function renderSkeletons(){
+  const grid=document.getElementById('video-grid');
+  let html='';
+  for(let i=0;i<3;i++){ html+=`<div class="skel-card"><div class="skel-thumb"></div><div class="skel-line"></div><div class="skel-line short"></div></div>`; }
+  grid.innerHTML=html;
+}
+
+window.addEventListener('firebaseReady', async()=>{
+  checkExpiries();
+  await loadSettings();
+  await loadAdNetworkConfig();
+  await loadUserAccountState();
+  await loadTutorialVideo();
+  subscribeVideos();
+  await loadChannels();
+  await loadNotifications();
+  initProfile();
+  hideSplash();
+});
+setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },4500);
+
+function hideSplash(){
+  const s=document.getElementById('loading-screen');
+  s.style.opacity='0';
+  setTimeout(()=>s.style.display='none',500);
+  document.getElementById('app').classList.add('visible');
+}
+
+/* ===================== AD NETWORK (GigaPub only) =====================
+   ইউজার সাইট শুধুমাত্র GigaPub ব্যবহার করে। শুধু অ্যাডমিন প্যানেল থেকে
+   সেট করা GigaPub Zone ID পড়া হয়। প্রতিটি UNLOCK চাপে ঠিক একটি অ্যাড
+   দেখানো হয়। */
+async function loadAdNetworkConfig(){
+  try{
+    const cfg = await fbGetDoc('settings','adnetwork');
+    if(cfg && cfg.gigapubZoneId){
+      STATE.adNetwork.gigapubZoneId = cfg.gigapubZoneId;
+    }
+  }catch(e){ /* keep default gigapub zone if settings can't be read */ }
+  injectAdNetworkScript();
+}
+function injectAdNetworkScript(){
+  const zone = STATE.adNetwork.gigapubZoneId || '6814';
+  const s = document.createElement('script');
+  s.src = `https://ad.gigapub.tech/script?id=${zone}`;
+  document.head.appendChild(s);
+}
+function isAdNetworkReady(){
+  return typeof window.showGiga === 'function';
+}
+function showRewardedAd(){
+  if(typeof window.showGiga === 'function') return window.showGiga();
+  return Promise.reject(new Error('GigaPub ad SDK not ready'));
+}
+
+/* ===================== ACCOUNT LOCK SYSTEM =====================
+   Each time a user backs out of an ad before it finishes (or the ad
+   fails/errors), we count a "strike" against their user doc in Firestore
+   (collection: users, doc id = STATE.userId, fields: skipStrikes, banned).
+   After MAX_AD_SKIP_STRIKES strikes, the account is locked (banned:true)
+   and only the admin can reset it (set banned:false, skipStrikes:0 in
+   the admin panel for that user id). */
+async function loadUserAccountState(){
+  try{
+    let d = await fbGetDoc('users', STATE.userId);
+    if(!d){
+      d = { skipStrikes:0, banned:false, adsWatched:0, createdAt: Date.now() };
+      await fbSet('users', STATE.userId, d);
+    }
+    STATE.adSkipStrikes = d.skipStrikes||0;
+    STATE.accountLocked = !!d.banned;
+  }catch(e){ /* offline fallback: keep local defaults */ }
+  if(STATE.accountLocked) showLockedModal();
+}
+async function registerAdSkipStrike(){
+  if(STATE.accountLocked) return;
+  STATE.adSkipStrikes = (STATE.adSkipStrikes||0) + 1;
+  const willLock = STATE.adSkipStrikes >= MAX_AD_SKIP_STRIKES;
+  try{
+    await fbSet('users', STATE.userId, {
+      skipStrikes: STATE.adSkipStrikes,
+      banned: willLock ? true : undefined,
+      lastSkipAt: Date.now()
+    });
+  }catch(e){}
+  if(willLock){
+    STATE.accountLocked = true;
+    document.getElementById('verify-modal').classList.remove('open');
+    lockSnd();
+    showLockedModal();
+  } else {
+    const left = MAX_AD_SKIP_STRIKES - STATE.adSkipStrikes;
+    toast(`⚠️ বিজ্ঞাপন সম্পূর্ণ না দেখে বের হয়েছেন (${STATE.adSkipStrikes}/${MAX_AD_SKIP_STRIKES})। আর ${left} বার এমন হলে অ্যাকাউন্ট লক হয়ে যাবে।`);
+  }
+}
+/* প্রতিবার একটি রিওয়ার্ডেড অ্যাড সম্পূর্ণ দেখা শেষ হলে (verify ধাপ শুরুর
+   আগে) ইউজারের Firestore ডকুমেন্টে totalAdsWatched কাউন্টার ১ বাড়ানো হয়,
+   যাতে এডমিন প্যানেলে প্রতিটি ইউজার কতগুলো অ্যাড দেখেছে তা দেখা যায়। */
+async function registerAdWatched(){
+  STATE.totalAdsWatched = (STATE.totalAdsWatched||0) + 1;
+  try{
+    const cur = await fbGetDoc('users', STATE.userId);
+    const newCount = ((cur && cur.adsWatched) || 0) + 1;
+    await fbSet('users', STATE.userId, { adsWatched: newCount, lastAdAt: Date.now() });
+  }catch(e){}
+}
+function showLockedModal(){
+  document.getElementById('locked-modal').classList.add('open');
+}
+function contactAdminAboutLock(){
+  openLink(STATE.adminContactUrl || 'https://t.me/');
+}
+
+/* ===================== UNLOCK EXPIRY (recurring 3-minute lock cycle) =====================
+   After finishing all ad steps, the video is unlocked for 3 minutes. Once
+   that window passes — whether or not the user actually watched it — the
+   video re-locks automatically and the user must complete the ad steps
+   again to re-unlock it. This repeats every time. */
+function checkExpiries(){
+  const now = Date.now();
+  let changed = false;
+  Object.keys(STATE.unlockExpiry).forEach(id=>{
+    if(STATE.unlockExpiry[id] <= now){
+      delete STATE.unlockExpiry[id];
+      const idx = STATE.unlocked.indexOf(id);
+      if(idx>-1){ STATE.unlocked.splice(idx,1); changed = true; }
+      // if the user is currently watching this exact video, kick them back out
+      if(STATE.currentVideo && STATE.currentVideo.id===id && document.getElementById('player-modal').classList.contains('open')){
+        closePlayer();
+        toast('⏰ সময় শেষ — ভিডিওটি আবার লক হয়ে গেছে, আবার আনলক করুন।');
+      }
+    }
+  });
+  if(changed){
+    localStorage.setItem('ml_unlocked', JSON.stringify(STATE.unlocked));
+    localStorage.setItem('ml_unlock_expiry', JSON.stringify(STATE.unlockExpiry));
+    renderVideos(STATE.filteredVideos);
+    updateProfileStats();
+  }
+}
+setInterval(checkExpiries, 1000);
+setInterval(()=>{
+  document.querySelectorAll('.expiry-countdown').forEach(el=>{
+    const id = el.dataset.vid;
+    const ts = STATE.unlockExpiry[id];
+    if(!ts){ return; }
+    const remain = Math.max(0, ts-Date.now());
+    const mm=Math.floor(remain/60000), ss=Math.floor((remain%60000)/1000);
+    el.textContent = mm+':'+String(ss).padStart(2,'0');
+  });
+  document.querySelectorAll('.expiry-bar-fill').forEach(el=>{
+    const id = el.dataset.vid;
+    const ts = STATE.unlockExpiry[id];
+    if(!ts){ return; }
+    const remain = Math.max(0, ts-Date.now());
+    const pct = Math.max(0, Math.min(100, (remain/UNLOCK_WINDOW_MS)*100));
+    el.style.width = pct+'%';
+  });
+},1000);
+
+/* ===================== IN-SITE AD SCRIPT EXECUTION =====================
+   innerHTML-inserted <script> tags don't execute by default, so we rebuild them. */
+function reExecuteScripts(container){
+  container.querySelectorAll('script').forEach(old=>{
+    const s=document.createElement('script');
+    [...old.attributes].forEach(a=>s.setAttribute(a.name,a.value));
+    s.text = old.textContent;
+    old.parentNode.replaceChild(s, old);
+  });
+}
+
+function subscribeVideos(){
+  if(!window._onSnapshot || !window._col || !window._db) return;
+  try {
+    const q = window._query(window._col(window._db,'videos'), window._orderBy('createdAt','desc'));
+    window._onSnapshot(q, snap=>{
+      STATE.allVideos = snap.docs.map(d=>({id:d.id,...d.data()}));
+      STATE.videosLoaded = true;
+      renderVideos(STATE.allVideos);
+      STATE.filteredVideos = STATE.allVideos;
+      maybeJumpToSharedVideo();
+    }, ()=>loadVideosFallback());
+  } catch(e) { loadVideosFallback(); }
+}
+async function loadVideosFallback(){
+  STATE.allVideos = await fbGet('videos');
+  STATE.allVideos.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  STATE.videosLoaded = true;
+  STATE.filteredVideos = STATE.allVideos;
+  renderVideos(STATE.filteredVideos);
+  maybeJumpToSharedVideo();
+}
+
+function initProfile(){
+  const tg=window.Telegram?.WebApp;
+  if(tg?.initDataUnsafe?.user){
+    const u=tg.initDataUnsafe.user;
+    STATE.tgUser=u;
+    STATE.tgUserId = u.id ? String(u.id) : null;
+    const name=((u.first_name||'')+' '+(u.last_name||'')).trim();
+    document.getElementById('profile-name').textContent=name||'ব্যবহারকারী';
+    document.getElementById('profile-handle').textContent='@'+(u.username||'user');
+
+    const avatarEl = document.getElementById('profile-avatar');
+    if(u.photo_url){
+      avatarEl.innerHTML = `<img src="${escHtml(u.photo_url)}" onerror="this.parentElement.textContent='${escHtml((name[0]||'U').toUpperCase())}'"/>`;
+    } else {
+      avatarEl.textContent=(name[0]||'U').toUpperCase();
+    }
+  }
+  buildReferralLink();
+  updateProfileStats();
+  renderHistoryLists();
+}
+/* রেফারেল লিংক এখন ব্যবহারকারীর টেলিগ্রাম ইউজার আইডি (পাওয়া গেলে) দিয়ে
+   তৈরি হয় — না পাওয়া গেলে লোকাল রেন্ডম আইডিতে ফলব্যাক করে। */
+function effectiveRefId(){ return STATE.tgUserId || STATE.userId; }
+function buildReferralLink(){
+  const base = location.href.split('?')[0];
+  STATE.refLink = `${base}?ref=${effectiveRefId()}`;
+}
+function updateProfileStats(){
+  document.getElementById('stat-fav').textContent = STATE.favorites.length;
+  document.getElementById('stat-unlocked').textContent = STATE.unlocked.length;
+  document.getElementById('stat-watched').textContent = STATE.watched;
+  updateFavNavBadge();
+}
+function updateFavNavBadge(){
+  const badge = document.getElementById('nav-fav-badge');
+  if(!badge) return;
+  const n = STATE.favorites.length;
+  badge.textContent = n>99 ? '99+' : n;
+  badge.classList.toggle('show', n>0);
+}
+
+async function fbGet(col){ try{ const s=await window._getDocs(window._col(window._db,col)); return s.docs.map(d=>({id:d.id,...d.data()})); }catch(e){return [];} }
+async function fbAdd(col,data){ return await window._addDoc(window._col(window._db,col),{...data,createdAt:Date.now()}); }
+async function fbGetDoc(col,id){ try{ const d=await window._getDoc(window._doc(window._db,col,id)); return d.exists()?{id:d.id,...d.data()}:null; }catch(e){return null;} }
+async function fbUpdate(col,id,data){ await window._updateDoc(window._doc(window._db,col,id),data); }
+async function fbSet(col,id,data){ await window._setDoc(window._doc(window._db,col,id),data,{merge:true}); }
+
+async function loadSettings(){
+  const s=await fbGetDoc('settings','site');
+  if(s && s.name){ STATE.siteName = s.name; document.getElementById('pdp-site').innerHTML = `<span class="material-icons-round">verified</span>${escHtml(s.name)}`; }
+  if(s && s.adminContactUrl){ STATE.adminContactUrl = s.adminContactUrl; }
+  const t=await fbGetDoc('settings','taskads');
+  if(t && t.timer){ STATE.taskTimerDuration = parseInt(t.timer||'15')||15; }
+}
+
+/* Banner tap in the player: shows one extra rewarded ad via GigaPub. */
+function showBannerAd(){
+  if (!isAdNetworkReady()){
+    toast('⚠️ অ্যাড এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন।');
+    return;
+  }
+  toast('বিজ্ঞাপন লোড হচ্ছে...');
+  showRewardedAd()
+    .then(()=>{ registerAdWatched(); toast('✅ ধন্যবাদ! বিজ্ঞাপন দেখা হয়েছে।'); })
+    .catch(()=>{ toast('বিজ্ঞাপনটি সম্পূর্ণ দেখা হয়নি।'); });
+}
+
+async function loadTutorialVideo(){
+  const d = await fbGetDoc('settings','tutorial');
+  STATE.tutorialVideo = d;
+  renderTutorialVideo();
+}
+function renderTutorialVideo(){
+  const sec = document.getElementById('tutorial-video-section');
+  const v = STATE.tutorialVideo;
+  if(!v || !v.url){ sec.innerHTML=''; return; }
+  sec.innerHTML=`
+    <div class="tutorial-video-card">
+      <div class="tutorial-video-thumb" onclick="playTutorialVideo('${escHtml(v.url)}')">
+        ${v.thumb?`<img src="${escHtml(v.thumb)}" onerror="this.style.display='none'"/>`:''}
+        <div class="play-btn"><span class="material-icons-round">play_arrow</span></div>
+      </div>
+      <div class="tutorial-video-label">${escHtml(v.label||'টিউটোরিয়াল ভিডিও')}</div>
+    </div>`;
+}
+function playTutorialVideo(url){
+  document.getElementById('part-selector-row').style.display='none';
+  document.getElementById('part-selector-row').innerHTML='';
+  document.getElementById('player-title-text').textContent = 'টিউটোরিয়াল ভিডিও';
+  document.getElementById('main-video').src = url;
+  document.getElementById('pdp-title').textContent = 'টিউটোরিয়াল ভিডিও';
+  document.getElementById('pdp-desc').textContent = 'অ্যাপটি কীভাবে ব্যবহার করবেন।';
+  document.getElementById('pdp-views').textContent = 'টিউটোরিয়াল';
+  document.getElementById('pdp-cat').textContent = 'GUIDE';
+  document.getElementById('pdp-fav-btn').style.display='none';
+  document.getElementById('pdp-like-item').style.display='none';
+  document.getElementById('player-modal').classList.add('open');
+}
+
+/* ===================== PREMIUM TUTORIAL STEPS (redesigned) ===================== */
+function renderTutorialSteps(){
+  const wrap = document.getElementById('tutorial-steps');
+  if(!wrap) return;
+  const steps = [
+    {n:'১', title:'হোমপেজে যান', desc:'<strong>হোম পেজে</strong> যান এবং পছন্দের ভিডিও বেছে নিন।'},
+    {n:'২', title:'UNLOCK চাপুন', desc:'ভিডিও কার্ডের নিচে <strong>UNLOCK বাটনে</strong> ক্লিক করুন।'},
+    {n:'৩', title:'বিজ্ঞাপন দেখুন', desc:'প্রতিটি ধাপে একটি <strong>বিজ্ঞাপন</strong> সরাসরি অ্যাপের ভিতরেই দেখানো হবে। বিজ্ঞাপনটি সম্পূর্ণ দেখা শেষ হলে আপনি আবার <strong>হোমপেজে</strong> ফিরে আসবেন এবং ঐ ভিডিওর নিচে কতগুলো ধাপ সম্পন্ন হয়েছে তা দেখতে পাবেন।'},
+    {n:'৪', title:'পরের ধাপে যান', desc:'এরপর আবার সেই ভিডিওর <strong>UNLOCK বাটনে</strong> ক্লিক করলে পরবর্তী ধাপের বিজ্ঞাপনটি শুরু হবে — যতগুলো ধাপ থাকবে (১, ২ বা ৩টি) ততবার এভাবে করতে হবে।'},
+    {n:'৫', title:'ভিডিও উপভোগ করুন', desc:'সবগুলো ধাপ শেষ হলে ঐ ভিডিওর কার্ডেই একটি সবুজ <strong>"Unlocked!"</strong> ব্যাজ এবং সময় গণনা দেখাবে, নিচে <strong>"Watch Now"</strong> বাটন (বা একাধিক পার্ট থাকলে প্রতিটি পার্টের বাটন) থাকবে — সেখানে ট্যাপ করলেই ভিডিওটি চালু হবে। আনলকের ৩ মিনিট পর ভিডিওটি আবার লক হয়ে যাবে — আবার আনলক করতে হবে। উপভোগ করুন! ❤️'},
+    {n:'🔗', title:'ভিডিও শেয়ার করুন', desc:'প্রতিটি ভিডিও কার্ডের নিচে <strong>"শেয়ার করুন"</strong> বাটনে ট্যাপ করলে সেই ভিডিওর জন্য একটি <strong>আলাদা/ইউনিক লিংক</strong> তৈরি হয়ে যাবে, যা সরাসরি <strong>টেলিগ্রামে</strong> শেয়ার করা যায়। কেউ সেই লিংকে ক্লিক করলে সাইট খুলে সরাসরি সেই ভিডিওর কার্ডে চলে যাবে এবং কার্ডটির চারপাশে কিছুক্ষণ রঙিন আলো (glow) জ্বলবে, যাতে বোঝা যায় এটাই শেয়ার করা ভিডিও।', kind:'link'},
+    {n:'⚠️', title:'অ্যাকাউন্ট লক সতর্কতা', desc:'বিজ্ঞাপন সম্পূর্ণ না দেখে <strong>বারবার বের হয়ে গেলে (৩ বার)</strong> আপনার অ্যাকাউন্ট লক হয়ে যাবে। তখন শুধু এডমিনের মাধ্যমে আনলক করা সম্ভব হবে।', kind:'warn'},
+  ];
+  wrap.innerHTML = steps.map(s=>`
+    <div class="tut-step-card ${s.kind?s.kind:''}">
+      <div class="tut-step-num">${s.n}</div>
+      <div class="tut-step-body">
+        <div class="tut-step-title">${escHtml(s.title)}</div>
+        <div class="tut-step-desc">${s.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderVideos(videos){
+  const grid=document.getElementById('video-grid');
+  grid.innerHTML='';
+  if(!STATE.videosLoaded){ renderSkeletons(); return; }
+  if(!videos.length){ grid.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted);">কোনো ভিডিও নেই</div>'; return; }
+  videos.forEach((v,i)=>{ const el=buildVideoCard(v); el.style.animationDelay=(i*0.04)+'s'; grid.appendChild(el); });
+  // re-apply the shared-video highlight if it's currently active and the
+  // grid was just re-rendered (e.g. after an unlock tick)
+  if(STATE.sharedVideoId){
+    const el = grid.querySelector(`.video-card[data-vid="${cssEscape(STATE.sharedVideoId)}"]`);
+    if(el) el.classList.add('shared-highlight');
+  }
+}
+function cssEscape(s){ return String(s).replace(/["\\]/g,'\\$&'); }
+function adsReq(v){ return Math.max(1,Math.min(3,parseInt(v.adsRequired)||3)); }
+function videoParts(v){ return (v.parts && v.parts.length) ? v.parts : [{url:v.url}]; }
+function getTaskStep(id){ return STATE.taskStepByVideo[id]||0; }
+function setTaskStep(id, step){
+  STATE.taskStepByVideo[id]=step;
+  localStorage.setItem('ml_task_step', JSON.stringify(STATE.taskStepByVideo));
+}
+function buildVideoCard(v){
+  const unlocked=STATE.unlocked.includes(v.id);
+  const faved=STATE.favorites.includes(v.id);
+  const req = adsReq(v);
+  const doneSteps = unlocked ? req : getTaskStep(v.id);
+  const expiryTs = STATE.unlockExpiry[v.id];
+  const partsCount = videoParts(v).length;
+  const card=document.createElement('div');
+  card.className='video-card';
+  card.dataset.vid = v.id;
+
+  let dotsHtml='';
+  for(let i=1;i<=req;i++){
+    let cls='unlock-dot';
+    let inner=`<span class="num">${i}</span><span class="lbl">AD</span>`;
+    if(i<=doneSteps) cls+=' done';
+    else if(i===doneSteps+1){ cls+=' active'; inner=`<span class="material-icons-round">play_arrow</span><span class="lbl">AD</span>`; }
+    else cls+=' locked';
+    dotsHtml+=`<div class="${cls}" data-step="${i}">${inner}</div>`;
+    if(i<req) dotsHtml+=`<div class="unlock-connector ${i<=doneSteps?'done':''}"></div>`;
+  }
+
+  // ============ UNLOCKED STATE: "Unlocked!" pill + expiry countdown/progress bar + Watch Now ============
+  let unlockedBlockHtml = '';
+  if(unlocked){
+    const remain = expiryTs ? Math.max(0, expiryTs - Date.now()) : 0;
+    const mm = Math.floor(remain/60000), ss = Math.floor((remain%60000)/1000);
+    const pct = expiryTs ? Math.max(0, Math.min(100, (remain/UNLOCK_WINDOW_MS)*100)) : 100;
+    const watchBtnHtml = `<button class="watch-now-btn ripple" onclick="event.stopPropagation();openWatchNow('${v.id}')"><span class="material-icons-round">play_arrow</span> Watch Now</button>`;
+    unlockedBlockHtml = `
+      <div class="unlocked-badge"><span class="dot"></span><span class="material-icons-round">check_circle</span>Unlocked!</div>
+      <div class="expiry-row2">
+        <span class="lbl"><span class="material-icons-round">schedule</span>Link expires in</span>
+        <span class="val expiry-countdown" data-vid="${v.id}">${mm}:${String(ss).padStart(2,'0')}</span>
+      </div>
+      <div class="expiry-bar-track"><div class="expiry-bar-fill" data-vid="${v.id}" style="width:${pct}%;"></div></div>
+      ${watchBtnHtml}
+    `;
+  }
+
+  const btnHtml = unlocked
+    ? ''
+    : `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">lock_open</span> UNLOCK <span class="cnt">${doneSteps}/${req}</span></button>`;
+
+  card.innerHTML=`
+    <div class="video-thumb-wrap">
+      <div class="video-thumb" onclick="openVideoById('${v.id}')">
+        ${v.thumbnail?`<img src="${escHtml(v.thumbnail)}" loading="lazy" onerror="this.style.display='none'"/>`:'<span style="font-size:32px;">🎬</span>'}
+        <div class="thumb-play"><span class="material-icons-round">play_circle_filled</span></div>
+        ${v.featured?'<div class="badge-new">NEW</div>':''}
+        ${partsCount>1?`<div class="badge-parts"><span class="material-icons-round">video_library</span>${partsCount} পার্ট</div>`:''}
+        ${v.category==='premium'?'<div class="badge-premium">👑</div>':''}
+        <div class="fav-icon-card" onclick="event.stopPropagation();quickToggleFav('${v.id}')"><span class="material-icons-round" style="color:${faved?'var(--accent2)':'#fff'};">${faved?'favorite':'favorite_border'}</span></div>
+        <div class="share-icon-card" onclick="shareVideoById('${v.id}',event)"><span class="material-icons-round">share</span></div>
+      </div>
+    </div>
+    <div class="video-info">
+      <div class="video-site"><span class="material-icons-round">verified</span>${escHtml(STATE.siteName)}</div>
+      <div class="video-title">${escHtml(v.title||'ভিডিও')}</div>
+      <div class="video-meta">
+        <div class="video-stat"><span class="material-icons-round">visibility</span>${fmtNum(v.views||0)}</div>
+        <div class="video-stat"><span class="material-icons-round">thumb_up</span>${fmtNum(v.likes||0)}</div>
+        <div class="video-stat"><span class="material-icons-round">schedule</span>${timeAgo(v.createdAt)}</div>
+      </div>
+      ${!unlocked?`<div class="video-hint"><span class="material-icons-round" style="font-size:13px;">info</span>দেখতে ${req}টি বিজ্ঞাপন সম্পূর্ণ দেখতে হবে (প্রতি ধাপে একবার UNLOCK চাপুন)</div>`:''}
+      ${!unlocked?`<div class="unlock-progress-row">${dotsHtml}</div>`:''}
+      ${unlocked?unlockedBlockHtml:btnHtml}
+      <div class="card-share-row ripple" onclick="shareVideoById('${v.id}',event)"><span class="material-icons-round">send</span>এই ভিডিওর লিংক টেলিগ্রামে শেয়ার করুন</div>
+    </div>`;
+  return card;
+}
+function quickToggleFav(id){
+  const wasF = STATE.favorites.includes(id);
+  if(wasF) STATE.favorites=STATE.favorites.filter(f=>f!==id);
+  else { STATE.favorites.push(id); successSnd(); }
+  localStorage.setItem('ml_favs',JSON.stringify(STATE.favorites));
+  renderVideos(STATE.filteredVideos); updateProfileStats();
+}
+
+/* ===================== SHARED-LINK DEEP LINK HANDLING =====================
+   When someone opens a link like <site>?vid=<id> (e.g. shared via
+   Telegram), once the video list is loaded we: switch to the Home tab,
+   scroll straight to that video's card, and flash a pulsing colored glow
+   around it for a few seconds plus a small "পোস্টটি খুঁজে পাওয়া গেছে!"
+   toast — so the person instantly recognizes this is the exact video that
+   was shared with them. */
+function maybeJumpToSharedVideo(){
+  if(!STATE.sharedVideoId || STATE.sharedHighlightDone) return;
+  const id = STATE.sharedVideoId;
+  const v = findVideo(id);
+  if(!v) return; // video not loaded yet or doesn't exist
+  STATE.sharedHighlightDone = true;
+
+  showPage('home');
+  renderVideos(STATE.filteredVideos);
+
+  setTimeout(()=>{
+    const grid = document.getElementById('video-grid');
+    const el = grid.querySelector(`.video-card[data-vid="${cssEscape(id)}"]`);
+    if(!el) return;
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.classList.add('shared-highlight');
+    showFoundToast();
+    setTimeout(()=>{ el.classList.remove('shared-highlight'); }, 6000);
+  }, 250);
+}
+function showFoundToast(){
+  const t = document.getElementById('found-toast');
+  if(!t) return;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* Opening a video from anywhere: if locked -> start the ad-unlock flow; if
+   already unlocked -> open the admin-set video link directly in a new
+   browser tab (Chrome/etc), NOT inside this site's own player. Simple:
+   one "Watch Now" button on the card, tap it, the link opens externally. */
+function openVideo(video){
+  STATE.currentVideo=video;
+  if(STATE.unlocked.includes(video.id)) openWatchNow(video.id);
+  else startUnlockFromCard(video.id);
+}
+function openVideoById(id){
+  const v = findVideo(id);
+  if(v) openVideo(v);
+}
+function playFromCard(id){
+  openWatchNow(id);
+}
+/* Tapping "Watch Now": opens that video's link (the first/only part) in a
+   new external tab. View count + watch history are still recorded exactly
+   as before; the video itself never plays inside the site. */
+function openWatchNow(id){
+  if(STATE.accountLocked){ showLockedModal(); return; }
+  const v = findVideo(id);
+  if(!v) return;
+  const parts = videoParts(v);
+  const url = (parts[0] && parts[0].url) || v.url;
+  if(!url){ toast('⚠️ এই ভিডিওর লিংক পাওয়া যায়নি।'); return; }
+
+  try{ fbUpdate('videos', v.id, {views:(v.views||0)+1}); }catch(e){}
+  STATE.watched++; localStorage.setItem('ml_watched', STATE.watched); updateProfileStats();
+  STATE.watchHistory.unshift({ id: v.id, title: v.title||'ভিডিও', thumb: v.thumbnail||'', ts: Date.now() });
+  STATE.watchHistory = STATE.watchHistory.slice(0,50);
+  localStorage.setItem('ml_history', JSON.stringify(STATE.watchHistory));
+  renderHistoryLists();
+
+  window.open(url, '_blank');
+}
+function findVideo(id){ return STATE.allVideos.find(x=>x.id===id); }
+
+/* ===================== ONE-AD-PER-TAP UNLOCK FLOW =====================
+   প্রতিবার UNLOCK বাটনে ক্লিক করলে শুধু ১টি অ্যাড দেখানো হবে। সেই অ্যাডটি
+   সম্পূর্ণ দেখা শেষ হলে (Continue করলে) ইউজারকে আবার হোমপেজে ফেরত আনা হবে,
+   এবং ভিডিও কার্ডের নিচে UNLOCK প্রগ্রেস (যেমন ১/৩) আপডেট হয়ে দেখাবে।
+   ইউজার আবার সেই কার্ডের UNLOCK বাটনে চাপলে পরের ধাপের অ্যাড শুরু হবে।
+   এভাবে req সংখ্যক ধাপ শেষ হলে ভিডিওটি Unlock হয়ে যাবে। */
+function startUnlockFromCard(id){
+  if(STATE.accountLocked){ showLockedModal(); return; }
+  const v = findVideo(id);
+  if(!v) return;
+  STATE.currentVideo = v;
+  const req = adsReq(v);
+  STATE.taskAdsRequired = req;
+  STATE.currentCardId = id;
+  STATE.taskStep = getTaskStep(id);
+  runNextTaskStep();
+}
+
+function runNextTaskStep(){
+  const req = STATE.taskAdsRequired;
+  if(STATE.taskStep >= req){ finishUnlock(); return; }
+  openVerifyModal();
+}
+
+/* ===================== VERIFY MODAL: automatic 3-phase ad cycle =====================
+   Phase 1 (3s): light card shows "Ad X of Y Playing" / "Step X of Y — Please
+   watch the full ad" with a play-icon ring and an "AD STARTING..." pill.
+   Phase 2: the actual GigaPub rewarded ad plays (its own UI takes over the
+   screen — we don't build that part, we just await it).
+   Phase 3 (5s): once the ad resolves, the card shows "Ad X of Y Done!" /
+   "Step X of Y — Next ad in a moment" with a countdown-number ring, a
+   filling progress bar and a "VERIFYING NOW..." pill, then it automatically
+   continues (no manual close/continue button anywhere in this cycle).
+   If the ad fails, or the tab/app is hidden or closed at ANY point while the
+   verify modal is open (starting, playing, or verifying), it's counted as a
+   strike via registerAdSkipStrike() (3 strikes locks the account, admin-only
+   unlock). */
+function openVerifyModal(){
+  if(STATE.accountLocked){ showLockedModal(); return; }
+  const step = STATE.taskStep+1, total = STATE.taskAdsRequired;
+  STATE.verifyModalOpen = true;
+  document.getElementById('verify-modal').classList.add('open');
+
+  const dotsEl = document.getElementById('verify-dots');
+  dotsEl.innerHTML='';
+  for(let i=1;i<=total;i++){ dotsEl.innerHTML += `<div class="verify-step-dot ${i<=step?'on':''}"></div>`; }
+
+  startAdStartingPhase(step, total);
+}
+function startAdStartingPhase(step, total){
+  document.getElementById('verify-title').textContent = `Ad ${step} of ${total} Playing`;
+  document.getElementById('verify-sub').textContent = `Step ${step} of ${total} — Please watch the full ad`;
+  document.getElementById('verify-pill').textContent = 'AD STARTING...';
+  document.getElementById('verify-progressbar-wrap').style.display = 'none';
+  document.getElementById('verify-ring-icon').innerHTML = '<span class="material-icons-round">play_arrow</span>';
+
+  const ringFg = document.getElementById('ring-fg');
+  const RING_LEN = 258;
+  ringFg.style.strokeDashoffset = 0;
+  clearInterval(STATE.verifyCountdownInterval);
+  const startTime = 3;
+  let remain = startTime;
+  STATE.verifyCountdownInterval = setInterval(()=>{
+    remain--;
+    ringFg.style.strokeDashoffset = RING_LEN * (1 - Math.max(0,remain)/startTime);
+    if(remain<=0){
+      clearInterval(STATE.verifyCountdownInterval);
+      triggerActualAd(step, total);
+    }
+  },1000);
+}
+function triggerActualAd(step, total){
+  if (!isAdNetworkReady()) {
+    STATE.verifyModalOpen = false;
+    document.getElementById('verify-modal').classList.remove('open');
+    toast('⚠️ অ্যাড স্ক্রিপ্ট এখনো লোড হয়নি — একটু পর আবার UNLOCK চাপুন।');
+    return;
+  }
+  STATE.verifyActive = true;
+  showRewardedAd()
+    .then(()=>{
+      STATE.verifyActive = false;
+      registerAdWatched();
+      startVerifyingPhase(step, total);
+    })
+    .catch((e)=>{
+      STATE.verifyActive = false;
+      STATE.verifyModalOpen = false;
+      document.getElementById('verify-modal').classList.remove('open');
+      toast('বিজ্ঞাপন সম্পূর্ণ দেখা হয়নি — আবার UNLOCK চাপুন।');
+      registerAdSkipStrike();
+      console.error('Rewarded ad error:', e);
+    });
+}
+function startVerifyingPhase(step, total){
+  document.getElementById('verify-title').textContent = `Ad ${step} of ${total} Done!`;
+  document.getElementById('verify-sub').textContent = `Step ${step} of ${total} — Next ad in a moment`;
+  document.getElementById('verify-pill').textContent = 'VERIFYING NOW...';
+  document.getElementById('verify-progressbar-wrap').style.display = 'block';
+
+  const ringIcon = document.getElementById('verify-ring-icon');
+  const ringFg = document.getElementById('ring-fg');
+  const fillBar = document.getElementById('verify-progressbar-fill');
+  const RING_LEN = 258;
+  const verifyTime = 5;
+  let remain = verifyTime;
+  ringIcon.textContent = remain;
+  ringFg.style.strokeDashoffset = 0;
+  fillBar.style.width = '0%';
+  clearInterval(STATE.verifyCountdownInterval);
+  STATE.verifyCountdownInterval = setInterval(()=>{
+    remain--;
+    const pct = (verifyTime - Math.max(0,remain)) / verifyTime;
+    ringFg.style.strokeDashoffset = RING_LEN * (1 - pct);
+    fillBar.style.width = (pct*100)+'%';
+    if(remain<=0){
+      clearInterval(STATE.verifyCountdownInterval);
+      STATE.verifyModalOpen = false;
+      document.getElementById('verify-modal').classList.remove('open');
+      continueAfterVerify();
+    } else {
+      ringIcon.textContent = remain;
+    }
+  },1000);
+}
+// Safety: if the app is minimized / tab is hidden or closed at any point
+// while the verify modal is open (ad starting, real ad in progress, or
+// verifying), treat it as leaving early and register a strike.
+function handleEarlyExit(){
+  if(STATE.verifyModalOpen){
+    STATE.verifyActive = false;
+    STATE.verifyModalOpen = false;
+    clearInterval(STATE.verifyCountdownInterval);
+    document.getElementById('verify-modal').classList.remove('open');
+    registerAdSkipStrike();
+  }
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) handleEarlyExit(); });
+window.addEventListener('pagehide', handleEarlyExit);
+/* একটি অ্যাডের পুরো সাইকেল (৩ সেকেন্ড স্টার্টিং → আসল অ্যাড → ৫ সেকেন্ড ভেরিফাইং)
+   শেষ হলে এটি স্বয়ংক্রিয়ভাবে কল হয়:
+   - সেই ভিডিওর জন্য taskStep ১ বাড়িয়ে সংরক্ষণ করা হয় (localStorage-এ persist)।
+   - "টাস্ক কমপ্লিট" পপআপ দেখানো হয়।
+   - এরপর (চেইন না করে) সরাসরি হোমপেজে (ভিডিও গ্রিড) ফেরত আনা হয়, যেখানে
+     কার্ডের নিচে আপডেট হওয়া প্রগ্রেস (যেমন ১/৩) দেখা যাবে।
+   - বাকি ধাপ থাকলে ইউজারকে আবার একই কার্ডের UNLOCK বাটনে ট্যাপ করতে হবে
+     পরের অ্যাডের জন্য — এটি অটোমেটিক চেইন হবে না।
+   - সব ধাপ শেষ হলে (isLast) সরাসরি finishUnlock() কল হয়ে ভিডিওটি আনলক
+     হয়ে যায়। */
+function continueAfterVerify(){
+  document.getElementById('verify-modal').classList.remove('open');
+  STATE.verifyModalOpen = false;
+  const v = STATE.currentVideo;
+  STATE.taskStep++;
+  if(v) setTaskStep(v.id, STATE.taskStep);
+  taskCompleteSnd();
+  const isLast = STATE.taskStep >= STATE.taskAdsRequired;
+
+  document.getElementById('tcp-icon').textContent = isLast?'🏆':'🎉';
+  document.getElementById('tcp-title').textContent = isLast?'যাচাই সফল! ভিডিও আনলক হচ্ছে...':`টাস্ক ${STATE.taskStep} কমপ্লিট!`;
+  document.getElementById('tcp-sub').textContent = isLast?'পরবর্তী পেজে যান 🎬':'হোমপেজে ফিরে যাচ্ছেন — আবার UNLOCK চাপুন পরবর্তী ধাপের জন্য।';
+  document.getElementById('task-complete-popup').classList.add('open');
+  setTimeout(()=>{
+    document.getElementById('task-complete-popup').classList.remove('open');
+    if(isLast){
+      finishUnlock();
+    } else {
+      // পরের ধাপে অটো-চেইন না করে হোমপেজে ফেরত পাঠানো হচ্ছে
+      showPage('home');
+      renderVideos(STATE.filteredVideos);
+    }
+  },1400);
+}
+function finishUnlock(){
+  const v = STATE.currentVideo;
+  if(!v) return;
+  if(!STATE.unlocked.includes(v.id)){
+    STATE.unlocked.push(v.id); localStorage.setItem('ml_unlocked',JSON.stringify(STATE.unlocked));
+    STATE.unlockHistory.unshift({id:v.id,title:v.title||'ভিডিও',thumb:v.thumbnail||'',ts:Date.now()});
+    STATE.unlockHistory = STATE.unlockHistory.slice(0,50);
+    localStorage.setItem('ml_unlock_history',JSON.stringify(STATE.unlockHistory));
+    fbAdd('notifications',{title:'🔓 ভিডিও আনলক!',body:`"${v.title||'ভিডিও'}" আনলক করা হয়েছে।`}).catch(()=>{});
+  }
+  // Recurring 3-minute unlock window — after this the video re-locks again (repeats every cycle)
+  STATE.unlockExpiry[v.id] = Date.now() + UNLOCK_WINDOW_MS;
+  localStorage.setItem('ml_unlock_expiry', JSON.stringify(STATE.unlockExpiry));
+  // এই ভিডিওর জন্য task-step কাউন্টার রিসেট করা হচ্ছে (পরের বার আবার re-lock
+  // হলে নতুন করে ০ থেকে ধাপগুলো শুরু করতে হবে)
+  setTaskStep(v.id, 0);
+
+  unlockSnd(); toast('🎉 ভিডিও আনলক হয়েছে! ৩ মিনিট পর আবার লক হয়ে যাবে।');
+  STATE.taskStep = 0; STATE.currentCardId = null;
+  // No separate page — the card on the home page itself now flips to the
+  // "Unlocked!" / countdown / Watch Now look, so we just stay right here.
+  renderVideos(STATE.filteredVideos); updateProfileStats(); renderHistoryLists();
+}
+
+/* ===================== IN-SITE PLAYER (used only by the tutorial video now) =====================
+   Home page "Watch Now" opens the admin-set link externally (see
+   openWatchNow above), so this in-site player + part switcher is no longer
+   used by video cards. It's kept here only for the Tutorial tab's how-to
+   video (see playTutorialVideo), which still plays inside the site. */
+function renderPartSelector(video, activeIdx){
+  const row = document.getElementById('part-selector-row');
+  const parts = videoParts(video);
+  if(parts.length<=1){
+    row.style.display='none'; row.innerHTML='';
+    STATE.currentParts = null; STATE.currentPartIdx = 0;
+    return;
+  }
+  STATE.currentParts = parts;
+  STATE.currentPartIdx = activeIdx||0;
+  row.style.display='flex';
+  row.innerHTML = parts.map((p,i)=>`<button class="part-btn ripple ${i===STATE.currentPartIdx?'active':''}" data-idx="${i}" onclick="switchPart(${i})"><span class="material-icons-round">play_circle</span>পার্ট ${i+1}</button>`).join('');
+}
+function switchPart(idx){
+  const parts = STATE.currentParts;
+  if(!parts || !parts[idx]) return;
+  STATE.currentPartIdx = idx;
+  const vid = document.getElementById('main-video');
+  vid.src = parts[idx].url;
+  vid.play().catch(()=>{});
+  document.querySelectorAll('.part-btn').forEach((b,i)=>b.classList.toggle('active', i===idx));
+  const baseTitle = (STATE.currentVideo && STATE.currentVideo.title) || 'ভিডিও';
+  document.getElementById('player-title-text').textContent = baseTitle + ' - পার্ট ' + (idx+1);
+}
+
+function playVideo(video, startIdx){
+  if(STATE.accountLocked){ showLockedModal(); return; }
+  STATE.currentVideo=video;
+  const idx = startIdx||0;
+  // Note: opening the video does NOT clear the unlock expiry — the 3-minute
+  // countdown keeps running and the video re-locks automatically when it ends,
+  // even if the user is mid-watch.
+  const parts = videoParts(video);
+  const baseTitle = video.title||'ভিডিও';
+  document.getElementById('player-title-text').textContent = parts.length>1 ? `${baseTitle} - পার্ট ${idx+1}` : baseTitle;
+  document.getElementById('pdp-title').textContent=video.title||'ভিডিও';
+  document.getElementById('pdp-desc').textContent=video.description||'কোনো বিবরণ দেওয়া হয়নি।';
+  document.getElementById('pdp-views').textContent=fmtNum(video.views||0)+' ভিউ';
+  document.getElementById('pdp-likes').textContent=fmtNum(video.likes||0);
+  document.getElementById('pdp-time').textContent=timeAgo(video.createdAt);
+  document.getElementById('pdp-cat').textContent='ALL';
+  document.getElementById('pdp-fav-btn').style.display='flex';
+  document.getElementById('pdp-like-item').style.display='flex';
+  updateFavBtn(); updateLikeBtn();
+  renderPartSelector(video, idx);
+  const mainVideoEl = document.getElementById('main-video');
+  mainVideoEl.src=(parts[idx] && parts[idx].url) || video.url || '';
+  mainVideoEl.onerror = ()=>{ toast('⚠️ ভিডিওটি লোড করা যায়নি — লিংক বা আপলোডেড ফাইলটি চেক করুন।'); };
+  document.getElementById('player-modal').classList.add('open');
+  try{ fbUpdate('videos',video.id,{views:(video.views||0)+1}); }catch(e){}
+  STATE.watched++; localStorage.setItem('ml_watched',STATE.watched); updateProfileStats();
+  STATE.watchHistory.unshift({id:video.id,title:video.title||'ভিডিও',thumb:video.thumbnail||'',ts:Date.now()});
+  STATE.watchHistory = STATE.watchHistory.slice(0,50);
+  localStorage.setItem('ml_history',JSON.stringify(STATE.watchHistory));
+  renderHistoryLists();
+  renderVideos(STATE.filteredVideos);
+}
+function updateFavBtn(){
+  const v=STATE.currentVideo; if(!v)return;
+  const faved=STATE.favorites.includes(v.id);
+  document.getElementById('pdp-fav-icon').textContent=faved?'favorite':'favorite_border';
+  document.getElementById('pdp-fav-label').textContent=faved?'পছন্দে আছে':'পছন্দ';
+  document.getElementById('pdp-fav-btn').classList.toggle('faved',faved);
+}
+function updateLikeBtn(){
+  const v=STATE.currentVideo; if(!v)return;
+  const liked=STATE.likes.includes(v.id);
+  document.getElementById('pdp-like-icon').textContent=liked?'thumb_up':'thumb_up_off_alt';
+  document.getElementById('pdp-like-item').classList.toggle('liked',liked);
+}
+function toggleLike(){
+  const v=STATE.currentVideo; if(!v)return;
+  const liked=STATE.likes.includes(v.id);
+  const newLikes=(v.likes||0)+(liked?-1:1);
+  v.likes=Math.max(0,newLikes);
+  if(liked) STATE.likes=STATE.likes.filter(id=>id!==v.id); else STATE.likes.push(v.id);
+  localStorage.setItem('ml_likes',JSON.stringify(STATE.likes));
+  document.getElementById('pdp-likes').textContent=fmtNum(v.likes);
+  updateLikeBtn();
+  try{ fbUpdate('videos',v.id,{likes:v.likes}); }catch(e){}
+}
+function closePlayer(){
+  document.getElementById('player-modal').classList.remove('open');
+  document.getElementById('main-video').pause();
+  document.getElementById('main-video').src='';
+  document.getElementById('part-selector-row').style.display='none';
+  document.getElementById('part-selector-row').innerHTML='';
+}
+function toggleFav(){
+  const v=STATE.currentVideo; if(!v)return;
+  if(STATE.favorites.includes(v.id)){ STATE.favorites=STATE.favorites.filter(f=>f!==v.id); toast('💔 পছন্দ থেকে সরানো হয়েছে'); }
+  else { STATE.favorites.push(v.id); toast('❤️ পছন্দে যুক্ত হয়েছে!'); successSnd(); }
+  localStorage.setItem('ml_favs',JSON.stringify(STATE.favorites));
+  updateFavBtn(); renderFavorites(); renderVideos(STATE.filteredVideos); updateProfileStats();
+}
+function shareCurrentVideo(){
+  const v=STATE.currentVideo; if(!v)return;
+  shareVideoById(v.id);
+}
+function renderFavorites(){
+  const list=document.getElementById('fav-list');
+  const empty=document.getElementById('fav-empty');
+  const countEl=document.getElementById('fav-pill-count');
+  const favVideos=STATE.allVideos.filter(v=>STATE.favorites.includes(v.id));
+  if(countEl) countEl.textContent = STATE.favorites.length;
+  if(!favVideos.length){ list.innerHTML=''; empty.style.display='flex'; return; }
+  empty.style.display='none';
+  list.innerHTML = favVideos.map(v=>{
+    const req = adsReq(v);
+    const unlocked = STATE.unlocked.includes(v.id);
+    const doneSteps = unlocked ? req : getTaskStep(v.id);
+    const subText = unlocked ? 'Unlocked' : `${doneSteps}/${req} steps`;
+    return `
+    <div class="fav-row ripple" onclick="openVideoById('${v.id}')">
+      <div class="fav-row-thumb">${v.thumbnail?`<img src="${escHtml(v.thumbnail)}" onerror="this.parentElement.textContent='🎬'"/>`:'🎬'}</div>
+      <div class="fav-row-info">
+        <div class="fav-row-title">${escHtml(v.title||'ভিডিও')}</div>
+        <div class="fav-row-sub">${fmtNum(v.views||0)} views · ${subText}</div>
+      </div>
+      <span class="material-icons-round" style="color:var(--purple2);" onclick="event.stopPropagation();shareVideoById('${v.id}')">send</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleCollapse(kind){
+  const head=document.querySelectorAll('.collapse-head')[kind==='watch'?0:1];
+  const body=document.getElementById(kind+'-hist-body');
+  if(!head||!body) return;
+  head.classList.toggle('open');
+  body.classList.toggle('open');
+}
+/* The simplified Profile page no longer shows the watch/unlock history
+   panels, so this just safely no-ops if that markup isn't present. */
+function renderHistoryLists(){
+  const wEl = document.getElementById('watch-hist-count');
+  if(!wEl) return;
+  wEl.textContent=STATE.watchHistory.length;
+  document.getElementById('unlock-hist-count').textContent=STATE.unlockHistory.length;
+  document.getElementById('watch-hist-body').innerHTML = histRowsHtml(STATE.watchHistory,'এখনো কিছু দেখা হয়নি');
+  document.getElementById('unlock-hist-body').innerHTML = histRowsHtml(STATE.unlockHistory,'এখনো কিছু আনলক করা হয়নি');
+}
+function histRowsHtml(list,emptyMsg){
+  if(!list.length) return `<div class="hist-empty">${emptyMsg}</div>`;
+  return list.map(h=>`
+    <div class="hist-row">
+      <div class="hist-thumb">${h.thumb?`<img src="${escHtml(h.thumb)}" onerror="this.parentElement.textContent='🎬'"/>`:'🎬'}</div>
+      <div class="hist-info">
+        <div class="hist-title">${escHtml(h.title)}</div>
+        <div class="hist-time">${timeAgo(h.ts)}</div>
+      </div>
+    </div>`).join('');
+}
+
+const defaultChannels=[
+  {name:'ভাইরাল ভিডিও L!NKS',desc:'মেইন চ্যানেলে জয়েন করুন',url:'https://t.me/',emoji:'📡'},
+  {name:'Movi Lover Official',desc:'অফিশিয়াল চ্যানেল',url:'https://t.me/',emoji:'🎬'},
+];
+async function loadChannels(){
+  const fromDb=await fbGet('channels');
+  STATE.channels=fromDb.length?fromDb:defaultChannels;
+  renderChannels();
+}
+function renderChannels(){
+  document.getElementById('channels-list').innerHTML=STATE.channels.map(ch=>`
+    <div class="channel-item ripple" onclick="openLink('${escHtml(ch.url||'#')}')">
+      <div class="channel-icon">${ch.emoji||'📢'}</div>
+      <div class="channel-info">
+        <div class="channel-name">${escHtml(ch.name||'')}</div>
+        <div class="channel-desc">${escHtml(ch.desc||'')}</div>
+      </div>
+      <span class="material-icons-round" style="color:var(--text-muted);">chevron_right</span>
+    </div>`).join('');
+}
+
+async function loadNotifications(){
+  STATE.notifications=await fbGet('notifications');
+  STATE.notifications.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(STATE.notifications.length) document.getElementById('notif-badge').classList.add('show');
+}
+function openNotif(){
+  const list=document.getElementById('notif-list');
+  list.innerHTML=!STATE.notifications.length
+    ?'<div style="text-align:center;padding:20px;color:var(--text-muted);">কোনো নোটিফিকেশন নেই</div>'
+    :STATE.notifications.map(n=>`
+      <div class="notif-item">
+        <div class="notif-dot-icon"></div>
+        <div>
+          <div class="notif-content"><strong>${escHtml(n.title||'')}</strong><br>${escHtml(n.body||'')}</div>
+          <div class="notif-time">${timeAgo(n.createdAt)}</div>
+        </div>
+      </div>`).join('');
+  document.getElementById('notif-modal').classList.add('open');
+  document.getElementById('notif-badge').classList.remove('show');
+}
+function closeNotif(){ document.getElementById('notif-modal').classList.remove('open'); }
+
+function openSearch(){ document.getElementById('search-modal').classList.add('open'); document.getElementById('search-input').focus(); }
+function closeSearch(){ document.getElementById('search-modal').classList.remove('open'); document.getElementById('search-input').value=''; }
+function doSearch(){
+  const q=document.getElementById('search-input').value.trim().toLowerCase();
+  const res=document.getElementById('search-results');
+  if(!q){res.innerHTML='';return;}
+  const found=STATE.allVideos.filter(v=>(v.title||'').toLowerCase().includes(q)||(v.description||'').toLowerCase().includes(q));
+  if(!found.length){res.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:20px;">কোনো ফলাফল পাওয়া যায়নি</div>';return;}
+  res.innerHTML=found.map(v=>`
+    <div class="search-video-card ripple" onclick="closeSearch();openVideoById('${v.id}')">
+      <div class="search-thumb">${v.thumbnail?`<img src="${escHtml(v.thumbnail)}" onerror="this.textContent='🎬'" loading="lazy"/>`:'🎬'}</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escHtml(v.title||'')}</div>
+        <div style="font-size:11px;color:var(--text-muted);">👁 ${fmtNum(v.views||0)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`page-${name}`)?.classList.add('active');
+  document.querySelector(`[data-page="${name}"]`)?.classList.add('active');
+  STATE.currentPage=name;
+  if(name==='favorites') renderFavorites();
+  if(name==='profile') renderHistoryLists();
+}
+
+function copyRefLink(){
+  buildReferralLink();
+  const link = STATE.refLink || `${location.href.split('?')[0]}?ref=${effectiveRefId()}`;
+  navigator.clipboard?.writeText(link).then(()=>toast('✅ রেফারেল লিংক কপি হয়েছে!')).catch(()=>toast('লিংক: '+link));
+}
+function shareApp(){
+  buildReferralLink();
+  const link = STATE.refLink || `${location.href.split('?')[0]}?ref=${effectiveRefId()}`;
+  if(navigator.share) navigator.share({title:'Movi Lover',text:'এই অ্যাপে সেরা সিনেমা ও নাটক দেখুন!',url:link});
+  else copyRefLink();
+}
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+function fmtNum(n){ if(n>=1e6)return(n/1e6).toFixed(1)+'M'; if(n>=1e3)return(n/1e3).toFixed(1)+'K'; return n; }
+function escHtml(s){ if(typeof s==='object') return JSON.stringify(s).replace(/"/g,'&quot;'); return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function openLink(url){ if(url&&url!=='#') window.open(url,'_blank'); }
+function timeAgo(ts){ if(!ts)return'এইমাত্র'; const d=Date.now()-ts; if(d<60e3)return'এইমাত্র'; if(d<3600e3)return Math.floor(d/60e3)+' মিনিট আগে'; if(d<86400e3)return Math.floor(d/3600e3)+' ঘণ্টা আগে'; return Math.floor(d/86400e3)+' দিন আগে'; }
+
+(function(){
+  const p=new URLSearchParams(location.search);
+  const ref=p.get('ref');
+  const vid=p.get('vid');
+  if(vid){ STATE.sharedVideoId = vid; }
+  if(ref && ref!==STATE.userId){
+    const stored=JSON.parse(localStorage.getItem('ml_ref_by')||'null');
+    if(!stored){
+      localStorage.setItem('ml_ref_by',JSON.stringify({ref,ts:Date.now()}));
+      if(window._db) setTimeout(()=>fbAdd('referrals',{ref,userId:STATE.userId}),2000);
+    }
+  }
+})();
+
+if(window.Telegram?.WebApp){
+  const tg=window.Telegram.WebApp;
+  tg.ready(); tg.expand();
+  tg.setHeaderColor('#f4f3fa');
+  tg.setBackgroundColor('#f4f3fa');
+}
+</script>
+</body>
+</html>
