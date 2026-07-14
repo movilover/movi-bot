@@ -747,7 +747,7 @@ const STATE = {
   adSkipStrikes: 0,
   accountLocked: false,
   adminContactUrl: 'https://t.me/',
-  adNetwork: { gigapubZoneId:'6814' },
+  adNetwork: { gigapubZoneId:'6268' },
   currentParts: null,
   currentPartIdx: 0,
   taskStepByVideo: JSON.parse(localStorage.getItem('ml_task_step')||'{}'),
@@ -876,7 +876,7 @@ async function loadAdNetworkConfig(){
   injectAdNetworkScript();
 }
 function injectAdNetworkScript(){
-  const zone = STATE.adNetwork.gigapubZoneId || '6814';
+  const zone = STATE.adNetwork.gigapubZoneId || '6268';
   const s = document.createElement('script');
   s.src = `https://ad.gigapub.tech/script?id=${zone}`;
   document.head.appendChild(s);
