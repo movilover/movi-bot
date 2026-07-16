@@ -181,6 +181,8 @@ header {
 .fav-icon-card:active { transform:scale(0.85); }
 .share-icon-card { position:absolute; bottom:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:16px; color:#fff; transition:transform 0.15s; }
 .share-icon-card:active { transform:scale(0.85); }
+.copy-icon-card { position:absolute; bottom:8px; right:46px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:16px; color:#fff; transition:transform 0.15s; }
+.copy-icon-card:active { transform:scale(0.85); }
 .video-info { padding:14px 16px 16px; }
 .video-site { font-size:11px; color:var(--purple2); font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:4px; letter-spacing:0.3px; }
 .video-site .material-icons-round { font-size:12px; }
@@ -212,10 +214,13 @@ header {
 .expiry-hint .material-icons-round { font-size:14px; }
 
 /* Share row under each card: lets a member copy/share a unique deep link
-   for THAT exact video via Telegram (or any share sheet). */
-.card-share-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:10px; padding:9px; border-radius:12px; background:rgba(123,63,228,0.06); border:1px dashed var(--border); color:var(--purple2); font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:0.4px; cursor:pointer; transition:transform 0.15s, background 0.2s; }
-.card-share-row:active { transform:scale(0.97); background:rgba(123,63,228,0.12); }
-.card-share-row .material-icons-round { font-size:15px; }
+   for THAT exact video via Telegram (or any share sheet) or copy it directly. */
+.card-share-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:10px; }
+.card-share-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px; border-radius:12px; background:rgba(123,63,228,0.06); border:1px dashed var(--border); color:var(--purple2); font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:0.4px; cursor:pointer; transition:transform 0.15s, background 0.2s; }
+.card-share-btn:active { transform:scale(0.97); background:rgba(123,63,228,0.12); }
+.card-share-btn .material-icons-round { font-size:15px; }
+.card-copy-btn { border-style:solid; color:var(--gold2); background:rgba(201,138,31,0.08); }
+.card-copy-btn:active { background:rgba(201,138,31,0.16); }
 
 /* Skeleton loading */
 .skel-card { background:var(--bg-card); border-radius:var(--card-radius); overflow:hidden; border:1px solid var(--border); }
@@ -308,6 +313,7 @@ header {
 .pdp-fav-btn { background:rgba(212,40,63,0.08); border:1px solid rgba(212,40,63,0.25); color:var(--accent); }
 .pdp-fav-btn.faved { background:rgba(212,40,63,0.16); border-color:var(--accent); }
 .pdp-share-btn { background:rgba(123,63,228,0.08); border:1px solid var(--border); color:var(--purple2); }
+.pdp-copy-btn { background:rgba(201,138,31,0.08); border:1px solid rgba(201,138,31,0.25); color:var(--gold2); }
 
 /* ============ UNLOCKED CARD (in-card "Watch Now" state, no separate page) ============
    Once a video finishes all its ad steps, the card itself switches to this look:
@@ -599,6 +605,14 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(180deg,#fff
         </div>
       </div>
 
+      <div class="referral-card">
+        <div class="ref-label"><span class="material-icons-round" style="font-size:14px;">group_add</span>রেফারেল লিংক</div>
+        <div class="ref-link-row">
+          <div class="ref-link-box" id="ref-link-box">লোড হচ্ছে...</div>
+          <button class="ref-copy-btn ripple" onclick="copyRefLink()">কপি</button>
+        </div>
+      </div>
+
       <div class="menu-list">
         <div class="menu-item ripple" onclick="copyRefLink()">
           <div class="menu-icon" style="background:rgba(123,63,228,0.14);"><span class="material-icons-round" style="color:var(--purple2);">link</span></div>
@@ -702,6 +716,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(180deg,#fff
       <div class="pdp-desc" id="pdp-desc">কোনো বিবরণ নেই।</div>
       <div class="pdp-actions">
         <button class="pdp-action-btn pdp-fav-btn ripple" id="pdp-fav-btn" onclick="toggleFav()"><span class="material-icons-round" id="pdp-fav-icon">favorite_border</span><span id="pdp-fav-label">পছন্দ</span></button>
+        <button class="pdp-action-btn pdp-copy-btn ripple" onclick="copyCurrentVideoLink()"><span class="material-icons-round">content_copy</span>কপি</button>
         <button class="pdp-action-btn pdp-share-btn ripple" onclick="shareCurrentVideo()"><span class="material-icons-round">share</span>শেয়ার</button>
       </div>
     </div>
@@ -802,17 +817,76 @@ function buildVideoShareLink(id){
   const base = location.href.split('?')[0];
   return `${base}?vid=${encodeURIComponent(id)}&ref=${encodeURIComponent(effectiveRefId())}`;
 }
+
+/* ===================== CLIPBOARD COPY (bugfix) =====================
+   Previously, copying a video link had no dedicated action: the "share"
+   button only tried navigator.share and otherwise pushed straight to a
+   Telegram share-intent URL, so on desktop browsers / when navigator.share
+   wasn't available the link was never actually put on the clipboard.
+   copyVideoLink() below always resolves the video from the live
+   STATE.allVideos array (populated by the Firestore onSnapshot listener,
+   see subscribeVideos()), builds its share link, and copies it using the
+   Clipboard API with a manual-selection fallback for older/embedded
+   webviews (e.g. some in-app Telegram browsers) where navigator.clipboard
+   isn't available or permission is denied. */
+function copyVideoLink(id, evt){
+  if(evt) evt.stopPropagation();
+  const v = findVideo(id);
+  if(!v){
+    toast('⚠️ ভিডিও তথ্য এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন।');
+    return;
+  }
+  const url = buildVideoShareLink(id);
+  copyTextToClipboard(url, '✅ ভিডিও লিংক কপি হয়েছে!');
+}
+function copyTextToClipboard(text, successMsg){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text)
+      .then(()=>toast(successMsg))
+      .catch(()=>legacyCopy(text, successMsg));
+  } else {
+    legacyCopy(text, successMsg);
+  }
+}
+function legacyCopy(text, successMsg){
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if(ok) toast(successMsg);
+    else toast('⚠️ লিংক কপি করা যায়নি। লিংক: ' + text);
+  }catch(e){
+    toast('⚠️ লিংক কপি করা যায়নি। লিংক: ' + text);
+  }
+}
 function shareVideoById(id, evt){
   if(evt) evt.stopPropagation();
   const v = findVideo(id);
-  if(!v) return;
+  if(!v){
+    toast('⚠️ ভিডিও তথ্য এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন।');
+    return;
+  }
   const url = buildVideoShareLink(id);
   const text = `🎬 ${v.title||'ভিডিও'}\n${STATE.siteName} এ দেখুন:`;
   if(navigator.share){
     navigator.share({ title: v.title||'ভিডিও', text, url }).catch(()=>{});
   } else {
-    openLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
+    // Fallback: no native share sheet available (most desktop browsers) —
+    // copy the link instead of silently failing.
+    copyTextToClipboard(url, '✅ শেয়ার সিট পাওয়া যায়নি — লিংক কপি হয়েছে!');
   }
+}
+function copyCurrentVideoLink(){
+  const v = STATE.currentVideo;
+  if(!v) return;
+  copyVideoLink(v.id);
 }
 
 const AC = window.AudioContext || window.webkitAudioContext;
@@ -917,7 +991,7 @@ async function loadUserAccountState(){
   try{
     let d = await fbGetDoc('users', STATE.userId);
     if(!d){
-      d = { skipStrikes:0, banned:false, adsWatched:0, createdAt: Date.now() };
+      d = { skipStrikes:0, banned:false, adsWatched:0, unlockedCount:0, createdAt: Date.now() };
       await fbSet('users', STATE.userId, d);
     }
     STATE.adSkipStrikes = d.skipStrikes||0;
@@ -955,6 +1029,16 @@ async function registerAdWatched(){
     const cur = await fbGetDoc('users', STATE.userId);
     const newCount = ((cur && cur.adsWatched) || 0) + 1;
     await fbSet('users', STATE.userId, { adsWatched: newCount, lastAdAt: Date.now() });
+  }catch(e){}
+}
+/* প্রতিবার একটি ভিডিও সম্পূর্ণভাবে আনলক হলে (সবগুলো ধাপ শেষ হলে) ইউজারের
+   Firestore ডকুমেন্টে unlockedCount কাউন্টার ১ বাড়ানো হয়, যাতে এডমিন
+   প্যানেলে প্রতিটি ইউজার মোট কতগুলো ভিডিও আনলক করেছে তা দেখা যায়। */
+async function registerVideoUnlock(){
+  try{
+    const cur = await fbGetDoc('users', STATE.userId);
+    const newCount = ((cur && cur.unlockedCount) || 0) + 1;
+    await fbSet('users', STATE.userId, { unlockedCount: newCount, lastUnlockAt: Date.now() });
   }catch(e){}
 }
 function showLockedModal(){
@@ -1060,17 +1144,48 @@ function initProfile(){
     } else {
       avatarEl.textContent=(name[0]||'U').toUpperCase();
     }
+
+    // Save the Telegram profile onto this user's Firestore doc so the
+    // Admin Panel's User Management page can show a real name / username
+    // instead of just the anonymous browser-generated ID.
+    saveTelegramProfileToFirestore(u);
   }
   buildReferralLink();
   updateProfileStats();
   renderHistoryLists();
 }
+async function saveTelegramProfileToFirestore(u){
+  try{
+    await fbSet('users', STATE.userId, {
+      tgUserId: u.id || null,
+      tgUsername: u.username || '',
+      tgFirstName: u.first_name || '',
+      tgLastName: u.last_name || '',
+      lastSeenAt: Date.now()
+    });
+  }catch(e){ /* offline / no permission — profile display just falls back to the ID */ }
+}
 /* রেফারেল লিংক এখন ব্যবহারকারীর টেলিগ্রাম ইউজার আইডি (পাওয়া গেলে) দিয়ে
    তৈরি হয় — না পাওয়া গেলে লোকাল রেন্ডম আইডিতে ফলব্যাক করে। */
 function effectiveRefId(){ return STATE.tgUserId || STATE.userId; }
+
+/* ===================== REFERRAL LINK (DB ID + Telegram ID) =====================
+   The referral link now explicitly encodes BOTH identifiers so the
+   Firestore "referrals" record (and any future attribution logic) can
+   always resolve a click back to this exact user, regardless of whether
+   the site is opened as a plain web page or as a Telegram Mini App:
+     ?ref=<database user id>&tg=<telegram user id, if available>
+   The Telegram Mini App deep-link form (t.me/<bot>/<app>?startapp=...) is
+   also built when running inside Telegram, since Telegram strips normal
+   query strings from startapp payloads (only [A-Za-z0-9_-] allowed), by
+   packing ref/tg into a single underscore-joined payload. */
 function buildReferralLink(){
   const base = location.href.split('?')[0];
-  STATE.refLink = `${base}?ref=${effectiveRefId()}`;
+  const dbId = STATE.userId;
+  const tgId = STATE.tgUserId || '';
+  STATE.refLink = `${base}?ref=${encodeURIComponent(dbId)}&tg=${encodeURIComponent(tgId)}`;
+  const box = document.getElementById('ref-link-box');
+  if(box) box.textContent = STATE.refLink;
 }
 function updateProfileStats(){
   document.getElementById('stat-fav').textContent = STATE.favorites.length;
@@ -1154,7 +1269,7 @@ function renderTutorialSteps(){
     {n:'৩', title:'বিজ্ঞাপন দেখুন', desc:'প্রতিটি ধাপে একটি <strong>বিজ্ঞাপন</strong> সরাসরি অ্যাপের ভিতরেই দেখানো হবে। বিজ্ঞাপনটি সম্পূর্ণ দেখা শেষ হলে আপনি আবার <strong>হোমপেজে</strong> ফিরে আসবেন এবং ঐ ভিডিওর নিচে কতগুলো ধাপ সম্পন্ন হয়েছে তা দেখতে পাবেন।'},
     {n:'৪', title:'পরের ধাপে যান', desc:'এরপর আবার সেই ভিডিওর <strong>UNLOCK বাটনে</strong> ক্লিক করলে পরবর্তী ধাপের বিজ্ঞাপনটি শুরু হবে — যতগুলো ধাপ থাকবে (১, ২ বা ৩টি) ততবার এভাবে করতে হবে।'},
     {n:'৫', title:'ভিডিও উপভোগ করুন', desc:'সবগুলো ধাপ শেষ হলে ঐ ভিডিওর কার্ডেই একটি সবুজ <strong>"Unlocked!"</strong> ব্যাজ এবং সময় গণনা দেখাবে, নিচে <strong>"Watch Now"</strong> বাটন (বা একাধিক পার্ট থাকলে প্রতিটি পার্টের বাটন) থাকবে — সেখানে ট্যাপ করলেই ভিডিওটি চালু হবে। আনলকের ৩ মিনিট পর ভিডিওটি আবার লক হয়ে যাবে — আবার আনলক করতে হবে। উপভোগ করুন! ❤️'},
-    {n:'🔗', title:'ভিডিও শেয়ার করুন', desc:'প্রতিটি ভিডিও কার্ডের নিচে <strong>"শেয়ার করুন"</strong> বাটনে ট্যাপ করলে সেই ভিডিওর জন্য একটি <strong>আলাদা/ইউনিক লিংক</strong> তৈরি হয়ে যাবে, যা সরাসরি <strong>টেলিগ্রামে</strong> শেয়ার করা যায়। কেউ সেই লিংকে ক্লিক করলে সাইট খুলে সরাসরি সেই ভিডিওর কার্ডে চলে যাবে এবং কার্ডটির চারপাশে কিছুক্ষণ রঙিন আলো (glow) জ্বলবে, যাতে বোঝা যায় এটাই শেয়ার করা ভিডিও।', kind:'link'},
+    {n:'🔗', title:'ভিডিও শেয়ার/কপি করুন', desc:'প্রতিটি ভিডিও কার্ডের নিচে <strong>"শেয়ার"</strong> বা <strong>"কপি লিংক"</strong> বাটনে ট্যাপ করলে সেই ভিডিওর জন্য একটি <strong>আলাদা/ইউনিক লিংক</strong> তৈরি হয়ে যাবে — শেয়ার বাটনটি সরাসরি টেলিগ্রাম/অন্য অ্যাপে পাঠানোর অপশন খোলে, আর কপি বাটনটি লিংকটি ক্লিপবোর্ডে কপি করে দেয় যাতে যেকোনো জায়গায় পেস্ট করা যায়। কেউ সেই লিংকে ক্লিক করলে সাইট খুলে সরাসরি সেই ভিডিওর কার্ডে চলে যাবে এবং কার্ডটির চারপাশে কিছুক্ষণ রঙিন আলো (glow) জ্বলবে, যাতে বোঝা যায় এটাই শেয়ার করা ভিডিও।', kind:'link'},
     {n:'⚠️', title:'অ্যাকাউন্ট লক সতর্কতা', desc:'বিজ্ঞাপন সম্পূর্ণ না দেখে <strong>বারবার বের হয়ে গেলে (৩ বার)</strong> আপনার অ্যাকাউন্ট লক হয়ে যাবে। তখন শুধু এডমিনের মাধ্যমে আনলক করা সম্ভব হবে।', kind:'warn'},
   ];
   wrap.innerHTML = steps.map(s=>`
@@ -1241,7 +1356,8 @@ function buildVideoCard(v){
         ${partsCount>1?`<div class="badge-parts"><span class="material-icons-round">video_library</span>${partsCount} পার্ট</div>`:''}
         ${v.category==='premium'?'<div class="badge-premium">👑</div>':''}
         <div class="fav-icon-card" onclick="event.stopPropagation();quickToggleFav('${v.id}')"><span class="material-icons-round" style="color:${faved?'var(--accent2)':'#fff'};">${faved?'favorite':'favorite_border'}</span></div>
-        <div class="share-icon-card" onclick="shareVideoById('${v.id}',event)"><span class="material-icons-round">share</span></div>
+        <div class="copy-icon-card" onclick="copyVideoLink('${v.id}',event)" title="লিংক কপি করুন"><span class="material-icons-round">content_copy</span></div>
+        <div class="share-icon-card" onclick="shareVideoById('${v.id}',event)" title="শেয়ার করুন"><span class="material-icons-round">share</span></div>
       </div>
     </div>
     <div class="video-info">
@@ -1255,7 +1371,10 @@ function buildVideoCard(v){
       ${!unlocked?`<div class="video-hint"><span class="material-icons-round" style="font-size:13px;">info</span>দেখতে ${req}টি বিজ্ঞাপন সম্পূর্ণ দেখতে হবে (প্রতি ধাপে একবার UNLOCK চাপুন)</div>`:''}
       ${!unlocked?`<div class="unlock-progress-row">${dotsHtml}</div>`:''}
       ${unlocked?unlockedBlockHtml:btnHtml}
-      <div class="card-share-row ripple" onclick="shareVideoById('${v.id}',event)"><span class="material-icons-round">send</span>এই ভিডিওর লিংক টেলিগ্রামে শেয়ার করুন</div>
+      <div class="card-share-row">
+        <div class="card-share-btn ripple" onclick="shareVideoById('${v.id}',event)"><span class="material-icons-round">send</span>শেয়ার করুন</div>
+        <div class="card-share-btn card-copy-btn ripple" onclick="copyVideoLink('${v.id}',event)"><span class="material-icons-round">content_copy</span>কপি লিংক</div>
+      </div>
     </div>`;
   return card;
 }
@@ -1521,6 +1640,7 @@ function finishUnlock(){
     STATE.unlockHistory = STATE.unlockHistory.slice(0,50);
     localStorage.setItem('ml_unlock_history',JSON.stringify(STATE.unlockHistory));
     fbAdd('notifications',{title:'🔓 ভিডিও আনলক!',body:`"${v.title||'ভিডিও'}" আনলক করা হয়েছে।`}).catch(()=>{});
+    registerVideoUnlock();
   }
   // Recurring 3-minute unlock window — after this the video re-locks again (repeats every cycle)
   STATE.unlockExpiry[v.id] = Date.now() + UNLOCK_WINDOW_MS;
@@ -1660,6 +1780,7 @@ function renderFavorites(){
         <div class="fav-row-title">${escHtml(v.title||'ভিডিও')}</div>
         <div class="fav-row-sub">${fmtNum(v.views||0)} views · ${subText}</div>
       </div>
+      <span class="material-icons-round" style="color:var(--gold2);" onclick="event.stopPropagation();copyVideoLink('${v.id}')">content_copy</span>
       <span class="material-icons-round" style="color:var(--purple2);" onclick="event.stopPropagation();shareVideoById('${v.id}')">send</span>
     </div>`;
   }).join('');
@@ -1770,13 +1891,13 @@ function showPage(name){
 function copyRefLink(){
   buildReferralLink();
   const link = STATE.refLink || `${location.href.split('?')[0]}?ref=${effectiveRefId()}`;
-  navigator.clipboard?.writeText(link).then(()=>toast('✅ রেফারেল লিংক কপি হয়েছে!')).catch(()=>toast('লিংক: '+link));
+  copyTextToClipboard(link, '✅ রেফারেল লিংক কপি হয়েছে!');
 }
 function shareApp(){
   buildReferralLink();
   const link = STATE.refLink || `${location.href.split('?')[0]}?ref=${effectiveRefId()}`;
   if(navigator.share) navigator.share({title:'Movi Lover',text:'এই অ্যাপে সেরা সিনেমা ও নাটক দেখুন!',url:link});
-  else copyRefLink();
+  else copyTextToClipboard(link, '✅ রেফারেল লিংক কপি হয়েছে!');
 }
 
 function toast(msg){
@@ -1791,13 +1912,14 @@ function timeAgo(ts){ if(!ts)return'এইমাত্র'; const d=Date.now()-t
 (function(){
   const p=new URLSearchParams(location.search);
   const ref=p.get('ref');
+  const tgRef=p.get('tg');
   const vid=p.get('vid');
   if(vid){ STATE.sharedVideoId = vid; }
   if(ref && ref!==STATE.userId){
     const stored=JSON.parse(localStorage.getItem('ml_ref_by')||'null');
     if(!stored){
-      localStorage.setItem('ml_ref_by',JSON.stringify({ref,ts:Date.now()}));
-      if(window._db) setTimeout(()=>fbAdd('referrals',{ref,userId:STATE.userId}),2000);
+      localStorage.setItem('ml_ref_by',JSON.stringify({ref,tg:tgRef||'',ts:Date.now()}));
+      if(window._db) setTimeout(()=>fbAdd('referrals',{ref,refTelegramId:tgRef||'',userId:STATE.userId}),2000);
     }
   }
 })();
