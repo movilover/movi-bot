@@ -378,13 +378,16 @@ header {
 .hist-time { font-size:10.5px; color:var(--text-muted); margin-top:2px; }
 .hist-empty { padding:16px; text-align:center; font-size:12px; color:var(--text-muted); }
 
-.channels-list { margin:0 14px; display:flex; flex-direction:column; gap:8px; }
-.channel-item { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.2s; }
-.channel-item:active { transform:scale(0.97); }
-.channel-icon { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,var(--purple),#4527a0); display:flex; align-items:center; justify-content:center; font-size:22px; }
-.channel-info { flex:1; }
-.channel-name { font-size:14px; font-weight:700; color:var(--text); }
-.channel-desc { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.channels-list { margin:0 14px; display:flex; flex-direction:column; gap:12px; }
+.channel-item { background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:13px; cursor:default; position:relative; overflow:hidden; box-shadow:0 8px 26px rgba(30,20,60,0.08); }
+.channel-item::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--purple),var(--pink),var(--gold)); }
+.channel-item-top { display:flex; align-items:center; gap:12px; }
+.channel-icon { width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg,var(--purple),#4527a0); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; box-shadow:0 6px 16px rgba(123,63,228,0.35); }
+.channel-info { flex:1; min-width:0; }
+.channel-name { font-size:15px; font-weight:700; color:var(--text); }
+.channel-desc { font-size:12px; color:var(--text-muted); margin-top:3px; line-height:1.55; }
+.channel-open-btn { width:100%; padding:11px; border-radius:12px; border:none; cursor:pointer; background:var(--grad-btn); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13.5px; letter-spacing:0.6px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 6px 18px rgba(123,63,228,0.3); transition:transform 0.15s; }
+.channel-open-btn:active { transform:scale(0.96); }
 
 .tutorial-video-card { margin:14px 14px 0; border-radius:16px; overflow:hidden; background:var(--bg-card); border:1px solid var(--border); position:relative; }
 .tutorial-video-thumb { width:100%; aspect-ratio:16/9; background:linear-gradient(135deg,#efedfa,#e4e1f4); display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; overflow:hidden; }
@@ -485,10 +488,17 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(180deg,#fff
 /* ============ PREMIUM TUTORIAL PAGE ============ */
 .tut-hero { position:relative; margin:14px; border-radius:24px; overflow:hidden; padding:30px 22px 26px; background:radial-gradient(120% 140% at 20% 0%, rgba(123,63,228,0.16), transparent 60%), radial-gradient(120% 140% at 100% 0%, rgba(212,40,63,0.12), transparent 55%), linear-gradient(180deg,#ffffff,#f7f5ff); border:1px solid var(--border); box-shadow:0 14px 40px rgba(30,20,60,0.10); }
 .tut-hero::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--purple),var(--gold)); }
+.tut-hero-icon-orb { position:absolute; top:20px; right:20px; width:54px; height:54px; border-radius:17px; background:linear-gradient(135deg,var(--purple),var(--pink)); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 26px rgba(123,63,228,0.4); animation:tutOrbFloat 3s ease-in-out infinite; }
+.tut-hero-icon-orb .material-icons-round { color:#fff; font-size:26px; }
+@keyframes tutOrbFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+.tut-hero-content { max-width:250px; }
 .tut-hero-eyebrow { display:inline-flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:11.5px; font-weight:700; letter-spacing:2px; color:var(--purple2); text-transform:uppercase; background:rgba(123,63,228,0.08); border:1px solid rgba(123,63,228,0.2); padding:5px 12px; border-radius:20px; margin-bottom:14px; }
 .tut-hero-title { font-family:'Rajdhani',sans-serif; font-size:26px; font-weight:700; line-height:1.25; color:var(--text); margin-bottom:8px; }
 .tut-hero-title span { color:var(--accent); }
 .tut-hero-sub { font-size:13px; color:var(--text-muted); line-height:1.6; max-width:340px; }
+.tut-hero-stats { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+.tut-hero-stat { display:flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; color:var(--text); background:rgba(255,255,255,0.7); border:1px solid var(--border); padding:6px 12px; border-radius:12px; }
+.tut-hero-stat .material-icons-round { font-size:15px; color:var(--purple2); }
 
 .tut-steps-wrap { margin:4px 14px 10px; position:relative; }
 .tut-step-card { display:flex; gap:14px; padding:16px; margin-bottom:12px; border-radius:18px; background:var(--bg-card); border:1px solid var(--border); box-shadow:0 6px 22px rgba(30,20,60,0.06); position:relative; overflow:hidden; }
@@ -557,9 +567,16 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(180deg,#fff
       <div id="tutorial-video-section"></div>
 
       <div class="tut-hero">
-        <div class="tut-hero-eyebrow"><span class="material-icons-round" style="font-size:14px;">auto_awesome</span>গাইড</div>
-        <div class="tut-hero-title">কিভাবে <span>ব্যবহার</span> করবেন</div>
-        <div class="tut-hero-sub">মাত্র কয়েকটি ধাপে ভিডিও আনলক ও উপভোগ করুন — নিচে পুরো প্রক্রিয়াটি সাজানো আছে।</div>
+        <div class="tut-hero-icon-orb"><span class="material-icons-round">movie_filter</span></div>
+        <div class="tut-hero-content">
+          <div class="tut-hero-eyebrow"><span class="material-icons-round" style="font-size:14px;">auto_awesome</span>গাইড</div>
+          <div class="tut-hero-title">কিভাবে <span>ব্যবহার</span> করবেন</div>
+          <div class="tut-hero-sub">মাত্র কয়েকটি ধাপে ভিডিও আনলক ও উপভোগ করুন — নিচে পুরো প্রক্রিয়াটি সাজানো আছে।</div>
+          <div class="tut-hero-stats">
+            <div class="tut-hero-stat"><span class="material-icons-round">checklist</span>৭টি ধাপ</div>
+            <div class="tut-hero-stat"><span class="material-icons-round">timer</span>মাত্র ২ মিনিট</div>
+          </div>
+        </div>
       </div>
 
       <div class="tut-steps-wrap" id="tutorial-steps"></div>
@@ -1688,13 +1705,15 @@ async function loadChannels(){
 }
 function renderChannels(){
   document.getElementById('channels-list').innerHTML=STATE.channels.map(ch=>`
-    <div class="channel-item ripple" onclick="openLink('${escHtml(ch.url||'#')}')">
-      <div class="channel-icon">${ch.emoji||'📢'}</div>
-      <div class="channel-info">
-        <div class="channel-name">${escHtml(ch.name||'')}</div>
-        <div class="channel-desc">${escHtml(ch.desc||'')}</div>
+    <div class="channel-item">
+      <div class="channel-item-top">
+        <div class="channel-icon">${ch.emoji||'📢'}</div>
+        <div class="channel-info">
+          <div class="channel-name">${escHtml(ch.name||'')}</div>
+          <div class="channel-desc">${escHtml(ch.desc||'')}</div>
+        </div>
       </div>
-      <span class="material-icons-round" style="color:var(--text-muted);">chevron_right</span>
+      <button class="channel-open-btn ripple" onclick="openLink('${escHtml(ch.url||'#')}')"><span class="material-icons-round" style="font-size:17px;">open_in_new</span>খুলুন</button>
     </div>`).join('');
 }
 
