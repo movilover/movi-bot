@@ -790,6 +790,17 @@ const STATE = {
 const UNLOCK_WINDOW_MS = 3*60*1000; // 3 minutes — after this the video re-locks and ads must be watched again
 const MAX_AD_SKIP_STRIKES = 3; // 3 incomplete ad views => account gets locked (admin unlock only)
 
+/* ===================== TELEGRAM BOT / MINI APP CONFIG =====================
+   Referral links and per-video share links are now built as Telegram
+   Mini App deep links in the form:
+     https://t.me/<BOT_USERNAME>/<WEBAPP_SHORT_NAME>?startapp=<payload>
+   Clicking this link opens Telegram, which launches the bot's Mini App
+   (this exact site) with the payload passed through as
+   Telegram.WebApp.initDataUnsafe.start_param. See parseStartParam() below
+   for how the payload is decoded back into a ref id / video id. */
+const TELEGRAM_BOT_USERNAME = 'movilovervairal_bot';
+const TELEGRAM_WEBAPP_SHORT_NAME = 'webapp';
+
 (function(){
   let uid = localStorage.getItem('ml_uid');
   if(!uid){ uid = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); localStorage.setItem('ml_uid',uid); }
@@ -807,15 +818,44 @@ const MAX_AD_SKIP_STRIKES = 3; // 3 incomplete ad views => account gets locked (
   if(acc) document.documentElement.style.setProperty('--accent', acc);
 })();
 
-/* ===================== PER-VIDEO SHARE LINK (Telegram-friendly deep link) =====================
-   Every video gets its own shareable URL: <site>?vid=<videoId>. Sharing this
-   link (via the Share button on a card, in the player, or via Telegram's
-   own forward/share) lets the recipient open the exact same video: the
-   link is parsed on load, the app jumps straight to that video's card and
-   plays the "found" highlight animation so it's obvious which post it is. */
+/* ===================== PER-VIDEO SHARE LINK (Telegram bot deep link) =====================
+   Every video gets its own shareable Telegram bot link:
+     https://t.me/<bot>/<webapp>?startapp=v-<videoId>-r-<refId>
+   Sharing this link (via the Share button on a card, in the player, or via
+   Telegram's own forward/share) opens the bot -> Mini App directly: the
+   payload is parsed on load (see parseStartParam), the app jumps straight
+   to that video's card and plays the "found" highlight animation so it's
+   obvious which post it is. The ref id is embedded too, so the person who
+   opened the video via a shared link is also attributed as referred. */
 function buildVideoShareLink(id){
-  const base = location.href.split('?')[0];
-  return `${base}?vid=${encodeURIComponent(id)}&ref=${encodeURIComponent(effectiveRefId())}`;
+  const vidPart = encodeStartParamPart(id);
+  const refPart = encodeStartParamPart(effectiveRefId());
+  return buildTelegramDeepLink(`v-${vidPart}-r-${refPart}`);
+}
+
+/* Keeps only characters Telegram allows inside a startapp payload
+   ([A-Za-z0-9_-]); our ids are plain alnum already, this is just a safety net. */
+function encodeStartParamPart(s){
+  return String(s||'').replace(/[^A-Za-z0-9_-]/g,'');
+}
+function buildTelegramDeepLink(startParam){
+  return `https://t.me/${TELEGRAM_BOT_USERNAME}/${TELEGRAM_WEBAPP_SHORT_NAME}?startapp=${startParam}`;
+}
+/* Decodes a startapp payload back into { vid, ref }.
+   Formats produced by this app:
+     r-<refId>              -> referral link
+     v-<videoId>-r-<refId>  -> per-video share link */
+function parseStartParam(sp){
+  const out = {};
+  if(!sp) return out;
+  const parts = String(sp).split('-');
+  if(parts[0]==='v'){
+    out.vid = parts[1]||'';
+    if(parts[2]==='r') out.ref = parts.slice(3).join('-')||'';
+  } else if(parts[0]==='r'){
+    out.ref = parts.slice(1).join('-')||'';
+  }
+  return out;
 }
 
 /* ===================== CLIPBOARD COPY (bugfix) =====================
@@ -1169,21 +1209,19 @@ async function saveTelegramProfileToFirestore(u){
    তৈরি হয় — না পাওয়া গেলে লোকাল রেন্ডম আইডিতে ফলব্যাক করে। */
 function effectiveRefId(){ return STATE.tgUserId || STATE.userId; }
 
-/* ===================== REFERRAL LINK (DB ID + Telegram ID) =====================
-   The referral link now explicitly encodes BOTH identifiers so the
-   Firestore "referrals" record (and any future attribution logic) can
-   always resolve a click back to this exact user, regardless of whether
-   the site is opened as a plain web page or as a Telegram Mini App:
-     ?ref=<database user id>&tg=<telegram user id, if available>
-   The Telegram Mini App deep-link form (t.me/<bot>/<app>?startapp=...) is
-   also built when running inside Telegram, since Telegram strips normal
-   query strings from startapp payloads (only [A-Za-z0-9_-] allowed), by
-   packing ref/tg into a single underscore-joined payload. */
+/* ===================== REFERRAL LINK (Telegram bot deep link) =====================
+   As soon as someone opens the site through the Telegram bot, their
+   Telegram UID (effectiveRefId(), which prefers STATE.tgUserId) is baked
+   straight into their personal referral link:
+     https://t.me/<bot>/<webapp>?startapp=r-<telegramUID>
+   Sharing that link means anyone who taps it is sent to the Telegram bot
+   first (t.me/...), which opens the Mini App and hands the referral id
+   back to this page via Telegram.WebApp.initDataUnsafe.start_param — see
+   parseStartParam() and the referral-recording IIFE near the bottom of
+   this script. */
 function buildReferralLink(){
-  const base = location.href.split('?')[0];
-  const dbId = STATE.userId;
-  const tgId = STATE.tgUserId || '';
-  STATE.refLink = `${base}?ref=${encodeURIComponent(dbId)}&tg=${encodeURIComponent(tgId)}`;
+  const refPart = encodeStartParamPart(effectiveRefId());
+  STATE.refLink = buildTelegramDeepLink(`r-${refPart}`);
   const box = document.getElementById('ref-link-box');
   if(box) box.textContent = STATE.refLink;
 }
@@ -1911,11 +1949,25 @@ function timeAgo(ts){ if(!ts)return'এইমাত্র'; const d=Date.now()-t
 
 (function(){
   const p=new URLSearchParams(location.search);
-  const ref=p.get('ref');
-  const tgRef=p.get('tg');
-  const vid=p.get('vid');
+  let ref=p.get('ref');
+  let tgRef=p.get('tg');
+  let vid=p.get('vid');
+
+  // ============ TELEGRAM startapp DEEP LINK ============
+  // When the site is opened via https://t.me/<bot>/<webapp>?startapp=...,
+  // Telegram does NOT pass it as a normal ?query param — it's delivered
+  // through Telegram.WebApp.initDataUnsafe.start_param instead. Decode it
+  // here (it always wins over any old-style ?ref=/?vid= query string).
+  const tg = window.Telegram?.WebApp;
+  const startParam = tg?.initDataUnsafe?.start_param || p.get('tgWebAppStartParam') || p.get('startapp');
+  if(startParam){
+    const parsed = parseStartParam(startParam);
+    if(parsed.vid) vid = parsed.vid;
+    if(parsed.ref) ref = parsed.ref;
+  }
+
   if(vid){ STATE.sharedVideoId = vid; }
-  if(ref && ref!==STATE.userId){
+  if(ref && ref!==STATE.userId && ref!==STATE.tgUserId){
     const stored=JSON.parse(localStorage.getItem('ml_ref_by')||'null');
     if(!stored){
       localStorage.setItem('ml_ref_by',JSON.stringify({ref,tg:tgRef||'',ts:Date.now()}));
