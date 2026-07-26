@@ -339,9 +339,30 @@ header {
 /* ============ PROFILE ============ */
 .profile-card { margin:14px; padding:24px 20px; border-radius:20px; background:var(--surface); border:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; overflow:hidden; box-shadow:0 8px 26px rgba(124,35,51,0.06); }
 .profile-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--wine),var(--gold)); }
+.avatar-frame-wrap { position:relative; width:80px; margin:0 auto; }
 .avatar-frame { width:80px; height:80px; border-radius:50%; padding:3px; background:conic-gradient(from 0deg, var(--gold), var(--wine-3), var(--gold)); flex-shrink:0; }
-.avatar-inner { width:100%; height:100%; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; color:var(--gold-3); overflow:hidden; font-family:'Cinzel Decorative',serif; }
+.avatar-inner { width:100%; height:100%; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:900; color:var(--gold-3); overflow:hidden; font-family:'Cinzel Decorative',serif; }
 .avatar-inner img { width:100%; height:100%; object-fit:cover; }
+.avatar-edit-badge { position:absolute; bottom:-2px; right:-2px; width:26px; height:26px; border-radius:50%; background:var(--grad-btn); border:2.5px solid var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 3px 10px rgba(124,35,51,0.3); }
+.avatar-edit-badge .material-icons-round { font-size:13px; color:#fff; }
+#avatar-modal { display:none; position:fixed; inset:0; z-index:480; background:rgba(20,12,14,0.55); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:24px; }
+#avatar-modal.open { display:flex; animation:fadeIn 0.2s; }
+.avatar-modal-box { width:100%; max-width:340px; background:var(--surface); border:1px solid var(--border-gold); border-radius:22px; padding:22px; max-height:82vh; overflow-y:auto; }
+.avatar-modal-title { font-family:'Rajdhani',sans-serif; font-size:15.5px; font-weight:700; color:var(--text); margin-bottom:4px; text-align:center; }
+.avatar-modal-sub { font-size:11.5px; color:var(--text-muted); text-align:center; margin-bottom:16px; }
+.avatar-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:6px; }
+.avatar-opt { aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; border:2px solid transparent; transition:transform 0.15s, border-color 0.2s; }
+.avatar-opt:active { transform:scale(0.9); }
+.avatar-opt.selected { border-color:var(--gold); }
+.avatar-opt-tg { grid-column:span 5; border-radius:14px; aspect-ratio:auto; padding:10px; display:flex; align-items:center; justify-content:center; gap:8px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px; color:var(--gold-3); background:var(--gold-soft); border:1px dashed var(--border-gold); margin-bottom:10px; }
+.avatar-opt-tg img { width:22px; height:22px; border-radius:50%; object-fit:cover; }
+.avatar-upload-row { display:flex; flex-direction:column; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+.avatar-upload-label { font-size:11px; font-weight:700; color:var(--gold-3); letter-spacing:0.5px; display:flex; align-items:center; gap:6px; }
+.avatar-upload-label .material-icons-round { font-size:15px; }
+.avatar-file-btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:11px; border-radius:12px; border:1px dashed var(--border-gold); background:var(--gold-soft); color:var(--gold-3); font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px; cursor:pointer; }
+.avatar-url-row { display:flex; gap:8px; }
+.avatar-url-input { flex:1; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12px; color:var(--text); outline:none; font-family:'Hind Siliguri',sans-serif; }
+.avatar-url-apply { padding:9px 14px; border-radius:10px; border:none; background:var(--grad-btn); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap; }
 .profile-name { font-size:18px; font-weight:700; color:var(--text); font-family:'Rajdhani',sans-serif; }
 .profile-handle { font-size:12px; color:var(--text-muted); }
 .profile-stats { display:flex; gap:0; width:100%; margin-top:10px; border-top:1px solid var(--border); }
@@ -388,6 +409,31 @@ header {
 .hist-title { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); }
 .hist-time { font-size:10.5px; color:var(--text-muted); margin-top:2px; }
 .hist-empty { padding:16px; text-align:center; font-size:12px; color:var(--text-muted); }
+
+/* ============ SPONSORED PROMO POST (poster-style card) ============ */
+.promo-post { margin:0 14px 18px; border-radius:20px; overflow:hidden; position:relative;
+  background: radial-gradient(140% 100% at 100% 0%, rgba(31,143,95,0.35), transparent 55%), linear-gradient(165deg, #0c1410, #060a08);
+  border:1px solid rgba(63,158,114,0.35); box-shadow:0 16px 40px rgba(0,0,0,0.3); padding:20px 18px 18px;
+}
+.promo-post::before { content:''; position:absolute; inset:0; background-image: radial-gradient(rgba(63,158,114,0.14) 1px, transparent 1px); background-size:16px 16px; opacity:0.5; pointer-events:none; }
+.promo-ribbon { position:relative; display:inline-flex; align-items:center; gap:6px; background:rgba(63,158,114,0.16); border:1px solid rgba(63,158,114,0.5); color:#7fe0ae; font-family:'Rajdhani',sans-serif; font-size:10.5px; font-weight:800; letter-spacing:1px; padding:4px 11px; border-radius:20px; margin-bottom:14px; }
+.promo-ribbon .material-icons-round { font-size:13px; }
+.promo-brand-row { position:relative; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.promo-brand-icon { width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,#2a2410,#1f8f5f); border:1px solid rgba(240,192,90,0.4); display:flex; align-items:center; justify-content:center; font-size:21px; flex-shrink:0; }
+.promo-brand-name { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:800; color:#fff; }
+.promo-brand-tag { font-size:10.5px; color:#8fbfa5; margin-top:1px; }
+.promo-headline { position:relative; font-family:'Rajdhani',sans-serif; font-size:19px; font-weight:800; line-height:1.35; color:#fff; margin-bottom:14px; }
+.promo-headline span { color:#5fe0a0; }
+.promo-features { position:relative; display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.promo-feature { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(63,158,114,0.22); border-radius:12px; padding:10px 12px; }
+.promo-feature .material-icons-round { font-size:17px; color:#5fe0a0; flex-shrink:0; }
+.promo-feature-text { font-size:12px; color:#d8e8de; line-height:1.4; }
+.promo-feature-text b { color:#fff; display:block; font-size:12.5px; margin-bottom:1px; }
+.promo-open-btn { position:relative; width:100%; padding:14px; border-radius:13px; border:none; cursor:pointer;
+  background:linear-gradient(135deg,#2fbf7a,#1f8f5f); color:#062012; font-family:'Rajdhani',sans-serif; font-weight:800; font-size:15.5px; letter-spacing:0.6px;
+  display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 10px 26px rgba(31,143,95,0.35); transition:transform 0.15s; }
+.promo-open-btn:active { transform:scale(0.97); }
+.promo-open-btn .material-icons-round { font-size:19px; }
 
 .channels-list { margin:0 14px; display:flex; flex-direction:column; gap:12px; }
 .channel-item { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:13px; cursor:default; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(124,35,51,0.06); }
@@ -480,18 +526,19 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 }
 
 /* ============ TUTORIAL PAGE ============ */
-.tut-hero { position:relative; margin:14px; border-radius:22px; overflow:hidden; padding:28px 22px 24px; background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--border); box-shadow:0 14px 36px rgba(124,35,51,0.06); }
+.tut-hero { position:relative; margin:14px; border-radius:22px; overflow:hidden; padding:22px; background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--border); box-shadow:0 14px 36px rgba(124,35,51,0.06); }
 .tut-hero::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--wine),var(--gold)); }
-.tut-hero-icon-orb { position:absolute; top:20px; right:20px; width:52px; height:52px; border-radius:16px; background:var(--grad-btn); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(124,35,51,0.28); animation:tutOrbFloat 3s ease-in-out infinite; }
-.tut-hero-icon-orb .material-icons-round { color:#fff; font-size:25px; }
+.tut-hero-top-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; }
+.tut-hero-icon-orb { width:46px; height:46px; border-radius:14px; flex-shrink:0; background:var(--grad-btn); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(124,35,51,0.28); animation:tutOrbFloat 3s ease-in-out infinite; }
+.tut-hero-icon-orb .material-icons-round { color:#fff; font-size:22px; }
 @keyframes tutOrbFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-.tut-hero-content { max-width:250px; }
-.tut-hero-eyebrow { display:inline-flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700; letter-spacing:2.5px; color:var(--gold-3); text-transform:uppercase; background:var(--gold-soft); border:1px solid var(--border-gold); padding:5px 12px; border-radius:20px; margin-bottom:14px; }
-.tut-hero-title { font-family:'Cinzel Decorative',serif; font-size:23px; font-weight:700; line-height:1.35; color:var(--text); margin-bottom:8px; }
+.tut-hero-content { max-width:100%; }
+.tut-hero-eyebrow { display:inline-flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:2px; color:var(--gold-3); text-transform:uppercase; background:var(--gold-soft); border:1px solid var(--border-gold); padding:5px 12px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+.tut-hero-title { font-family:'Cinzel Decorative',serif; font-size:20px; font-weight:700; line-height:1.5; color:var(--text); margin-bottom:8px; }
 .tut-hero-title span { color:var(--wine); }
-.tut-hero-sub { font-size:13px; color:var(--text-muted); line-height:1.6; max-width:340px; }
+.tut-hero-sub { font-size:12.5px; color:var(--text-muted); line-height:1.75; }
 .tut-hero-stats { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
-.tut-hero-stat { display:flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; color:var(--text); background:var(--surface); border:1px solid var(--border); padding:6px 12px; border-radius:12px; }
+.tut-hero-stat { display:flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:11.5px; font-weight:700; color:var(--text); background:var(--surface); border:1px solid var(--border); padding:6px 12px; border-radius:12px; white-space:nowrap; }
 .tut-hero-stat .material-icons-round { font-size:15px; color:var(--gold-3); }
 
 .tut-steps-wrap { margin:6px 14px 10px; position:relative; }
@@ -563,9 +610,11 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
       <div id="tutorial-video-section"></div>
 
       <div class="tut-hero">
-        <div class="tut-hero-icon-orb"><span class="material-icons-round">confirmation_number</span></div>
+        <div class="tut-hero-top-row">
+          <div class="tut-hero-eyebrow"><span class="material-icons-round" style="font-size:14px;">auto_awesome</span>গাইড</div>
+          <div class="tut-hero-icon-orb"><span class="material-icons-round">confirmation_number</span></div>
+        </div>
         <div class="tut-hero-content">
-          <div class="tut-hero-eyebrow"><span class="material-icons-round" style="font-size:14px;">auto_awesome</span গাইড</div>
           <div class="tut-hero-title">কিভাবে <span>ব্যবহার</span> করবেন</div>
           <div class="tut-hero-sub">সহজ, স্বচ্ছ কয়েকটি ধাপে ভিডিও আনলক ও উপভোগ করুন।</div>
           <div class="tut-hero-stats">
@@ -579,13 +628,18 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
     </div>
 
     <div class="page" id="page-channels">
-      <div class="section-title" style="padding-top:14px;">টেলিগ্রাম চ্যানেল</div>
+      <div class="section-title" style="padding-top:14px;">স্পন্সরড অফার</div>
+      <div id="promo-post-wrap"></div>
+      <div class="section-title">টেলিগ্রাম চ্যানেল</div>
       <div class="channels-list" id="channels-list"></div>
     </div>
 
     <div class="page" id="page-profile">
       <div class="profile-card">
-        <div class="avatar-frame"><div class="profile-avatar avatar-inner" id="profile-avatar">?</div></div>
+        <div class="avatar-frame-wrap">
+          <div class="avatar-frame"><div class="profile-avatar avatar-inner" id="profile-avatar">🎬</div></div>
+          <div class="avatar-edit-badge ripple" onclick="openAvatarPicker()" title="প্রোফাইল ছবি পরিবর্তন করুন"><span class="material-icons-round">edit</span></div>
+        </div>
         <div class="profile-name" id="profile-name">ব্যবহারকারী</div>
         <div class="profile-handle" id="profile-handle">@user</div>
         <div class="profile-stats">
@@ -635,7 +689,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
       <span class="nav-fav-badge" id="nav-fav-badge">0</span>
     </div>
     <div class="nav-item ripple" data-page="tutorial" onclick="showPage('tutorial')"><span class="material-icons-round">menu_book</span>টিউটোরিয়াল</div>
-    <div class="nav-item ripple" data-page="channels" onclick="showPage('channels')"><span class="material-icons-round">send</span>চ্যানেল</div>
+    <div class="nav-item ripple" data-page="channels" onclick="showPage('channels')"><span class="material-icons-round">send</span>অফার</div>
     <div class="nav-item ripple" data-page="profile" onclick="showPage('profile')"><span class="material-icons-round">person</span>প্রোফাইল</div>
   </nav>
 </div>
@@ -724,6 +778,24 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
   </div>
 </div>
 
+<div id="avatar-modal">
+  <div class="avatar-modal-box">
+    <div class="avatar-modal-title">প্রোফাইল ছবি বাছাই করুন</div>
+    <div class="avatar-modal-sub">যেকোনো একটি বেছে নিন — সাথে সাথে সেভ হয়ে যাবে</div>
+    <div id="avatar-tg-option"></div>
+    <div class="avatar-grid" id="avatar-grid"></div>
+    <div class="avatar-upload-row">
+      <div class="avatar-upload-label"><span class="material-icons-round">upload</span>নিজের ছবি ব্যবহার করুন</div>
+      <label class="avatar-file-btn ripple" for="avatar-file-input"><span class="material-icons-round">photo_camera</span>গ্যালারি থেকে ছবি বাছাই করুন</label>
+      <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)"/>
+      <div class="avatar-url-row">
+        <input type="text" class="avatar-url-input" id="avatar-url-input" placeholder="অথবা ছবির লিংক (URL) পেস্ট করুন"/>
+        <button class="avatar-url-apply ripple" onclick="applyAvatarUrl()">সেট করুন</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -758,6 +830,37 @@ const STATE = {
   sharedVideoId: null,
   sharedHighlightDone: false,
   adminContactUrl: '',
+  customAvatar: JSON.parse(localStorage.getItem('ml_avatar')||'null'),
+};
+
+const AVATAR_CHOICES = [
+  {emoji:'🎬', g:'linear-gradient(135deg,#7c2333,#b6862c)'},
+  {emoji:'🍿', g:'linear-gradient(135deg,#b6862c,#d9a53f)'},
+  {emoji:'🎭', g:'linear-gradient(135deg,#7c2333,#9c2d40)'},
+  {emoji:'⭐', g:'linear-gradient(135deg,#d9a53f,#8f6a1f)'},
+  {emoji:'🎞️', g:'linear-gradient(135deg,#9c2d40,#b6862c)'},
+  {emoji:'🦋', g:'linear-gradient(135deg,#1f8f5f,#0d7a53)'},
+  {emoji:'🌙', g:'linear-gradient(135deg,#241a1a,#7c2333)'},
+  {emoji:'🔥', g:'linear-gradient(135deg,#b53a4f,#d9a53f)'},
+  {emoji:'👑', g:'linear-gradient(135deg,#d9a53f,#8f6a1f)'},
+  {emoji:'🎥', g:'linear-gradient(135deg,#7c2333,#241a1a)'},
+];
+
+/* Promo post shown in the "অফার" (offers/channels) tab — sponsored card. */
+const PROMO_POST = {
+  ribbon: 'স্পন্সরড',
+  brandEmoji: '🐝',
+  brandName: 'WorkHive',
+  brandTag: 'ছোট কাজ, বড় ইনকাম',
+  headline: 'আমাদের নতুন অ্যাপস <span>আপডেট</span> হয়ে গেছে — আরও দ্রুত, আরও স্মার্ট, আরও ইনকাম!',
+  features: [
+    {icon:'rocket_launch', title:'দ্রুততম অ্যাপ', text:'আরও স্মুথ এক্সপেরিয়েন্স'},
+    {icon:'verified_user', title:'এডমিন ভেরিফাইড টাস্ক', text:'১০০% নিরাপদ'},
+    {icon:'groups', title:'রেফারেল ইনকাম', text:'৩ লেভেল পর্যন্ত ইনকাম'},
+    {icon:'account_balance_wallet', title:'সহজ উইথড্র', text:'bKash, Nagad ও USDT'},
+  ],
+  url: 'https://tinyurl.com/workapkk',
+  btnLabel: 'Open',
 };
 
 const UNLOCK_WINDOW_MS = 3*60*1000; // 3 minutes — after this the video re-locks and a new ad is required. Kept exactly as requested.
@@ -992,24 +1095,117 @@ async function loadVideosFallback(){
 }
 
 function initProfile(){
-  const tg=window.Telegram?.WebApp;
-  if(tg?.initDataUnsafe?.user){
-    const u=tg.initDataUnsafe.user;
-    STATE.tgUser=u;
-    STATE.tgUserId = u.id ? String(u.id) : null;
-    const name=((u.first_name||'')+' '+(u.last_name||'')).trim();
-    document.getElementById('profile-name').textContent=name||'ব্যবহারকারী';
-    document.getElementById('profile-handle').textContent='@'+(u.username||'user');
-    const avatarEl = document.getElementById('profile-avatar');
-    if(u.photo_url){
-      avatarEl.innerHTML = `<img src="${escHtml(u.photo_url)}" onerror="this.parentElement.textContent='${escHtml((name[0]||'U').toUpperCase())}'"/>`;
-    } else { avatarEl.textContent=(name[0]||'U').toUpperCase(); }
-    saveTelegramProfileToFirestore(u);
-  }
-  buildReferralLink();
-  updateProfileStats();
-  if(STATE.adminContactUrl){ document.getElementById('support-menu-item').style.display='flex'; }
+  try{
+    const tg=window.Telegram?.WebApp;
+    if(tg?.initDataUnsafe?.user){
+      const u=tg.initDataUnsafe.user;
+      STATE.tgUser=u;
+      STATE.tgUserId = u.id ? String(u.id) : null;
+      const name=((u.first_name||'')+' '+(u.last_name||'')).trim();
+      document.getElementById('profile-name').textContent=name||'ব্যবহারকারী';
+      document.getElementById('profile-handle').textContent='@'+(u.username||'user');
+      saveTelegramProfileToFirestore(u);
+    }
+    renderProfileAvatar();
+    buildReferralLink();
+    updateProfileStats();
+    if(STATE.adminContactUrl){ document.getElementById('support-menu-item').style.display='flex'; }
+  }catch(e){ console.error('initProfile error:', e); }
 }
+
+/* ===================== CUSTOMIZABLE PROFILE AVATAR =====================
+   Priority: a photo/emoji the person explicitly picked > their real
+   Telegram profile photo (if opened via Telegram) > a plain default icon.
+   Choice is stored locally and persists across visits. */
+function renderProfileAvatar(){
+  const avatarEl = document.getElementById('profile-avatar');
+  const frame = document.querySelector('.avatar-frame');
+  if(!avatarEl || !frame) return;
+  if(STATE.customAvatar && STATE.customAvatar.type==='image' && STATE.customAvatar.src){
+    frame.style.background = 'conic-gradient(from 0deg, var(--gold), var(--wine-3), var(--gold))';
+    avatarEl.style.background = 'var(--surface-2)';
+    avatarEl.innerHTML = `<img src="${escHtml(STATE.customAvatar.src)}" onerror="this.parentElement.textContent='🎬'"/>`;
+    return;
+  }
+  if(STATE.customAvatar && STATE.customAvatar.emoji){
+    frame.style.background = 'conic-gradient(from 0deg, var(--gold), var(--wine-3), var(--gold))';
+    avatarEl.style.background = STATE.customAvatar.g || 'var(--surface-2)';
+    avatarEl.textContent = STATE.customAvatar.emoji;
+    return;
+  }
+  const tg = window.Telegram?.WebApp;
+  const u = tg?.initDataUnsafe?.user;
+  if(u && u.photo_url){
+    frame.style.background = 'conic-gradient(from 0deg, var(--gold), var(--wine-3), var(--gold))';
+    avatarEl.style.background = 'var(--surface-2)';
+    const name=((u.first_name||'')+' '+(u.last_name||'')).trim();
+    avatarEl.innerHTML = `<img src="${escHtml(u.photo_url)}" onerror="this.parentElement.textContent='${escHtml((name[0]||'U').toUpperCase())}'"/>`;
+    return;
+  }
+  frame.style.background = 'conic-gradient(from 0deg, var(--gold), var(--wine-3), var(--gold))';
+  avatarEl.style.background = 'var(--surface-2)';
+  avatarEl.textContent = '🎬';
+}
+function openAvatarPicker(){
+  const tgOptWrap = document.getElementById('avatar-tg-option');
+  const tg = window.Telegram?.WebApp;
+  const u = tg?.initDataUnsafe?.user;
+  tgOptWrap.innerHTML = (u && u.photo_url) ? `
+    <div class="avatar-opt-tg ripple" onclick="pickAvatar(null)"><img src="${escHtml(u.photo_url)}"/>টেলিগ্রাম প্রোফাইল ছবি ব্যবহার করুন</div>
+  ` : '';
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = AVATAR_CHOICES.map((a,i)=>{
+    const sel = STATE.customAvatar && STATE.customAvatar.emoji===a.emoji && STATE.customAvatar.type!=='image' ? 'selected' : '';
+    return `<div class="avatar-opt ${sel} ripple" style="background:${a.g};" onclick="pickAvatar(${i})">${a.emoji}</div>`;
+  }).join('');
+  const urlInput = document.getElementById('avatar-url-input');
+  if(urlInput) urlInput.value = (STATE.customAvatar && STATE.customAvatar.type==='image') ? STATE.customAvatar.src : '';
+  document.getElementById('avatar-modal').classList.add('open');
+}
+function closeAvatarPicker(){ document.getElementById('avatar-modal').classList.remove('open'); }
+document.getElementById('avatar-modal').addEventListener('click', e=>{ if(e.target.id==='avatar-modal') closeAvatarPicker(); });
+function pickAvatar(idx){
+  if(idx===null){ STATE.customAvatar = null; localStorage.removeItem('ml_avatar'); }
+  else { STATE.customAvatar = AVATAR_CHOICES[idx]; localStorage.setItem('ml_avatar', JSON.stringify(STATE.customAvatar)); }
+  renderProfileAvatar();
+  closeAvatarPicker();
+  toast('✅ প্রোফাইল ছবি পরিবর্তন হয়েছে!');
+}
+/* Custom photo via file upload — read as a data URL and store locally (no backend upload needed). */
+function handleAvatarFile(evt){
+  const file = evt.target.files && evt.target.files[0];
+  if(!file) return;
+  if(file.size > 1.5*1024*1024){ toast('⚠️ ছবির সাইজ অনেক বড় — ১.৫MB এর কম ছবি ব্যবহার করুন।'); return; }
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    STATE.customAvatar = { type:'image', src: reader.result };
+    localStorage.setItem('ml_avatar', JSON.stringify(STATE.customAvatar));
+    renderProfileAvatar();
+    closeAvatarPicker();
+    toast('✅ প্রোফাইল ছবি আপলোড হয়েছে!');
+  };
+  reader.onerror = ()=>toast('⚠️ ছবি লোড করা যায়নি, আবার চেষ্টা করুন।');
+  reader.readAsDataURL(file);
+}
+/* Custom photo via pasted image URL */
+function applyAvatarUrl(){
+  const input = document.getElementById('avatar-url-input');
+  const url = (input && input.value || '').trim();
+  if(!url){ toast('⚠️ একটি ছবির লিংক লিখুন।'); return; }
+  STATE.customAvatar = { type:'image', src: url };
+  localStorage.setItem('ml_avatar', JSON.stringify(STATE.customAvatar));
+  renderProfileAvatar();
+  closeAvatarPicker();
+  toast('✅ প্রোফাইল ছবি সেট হয়েছে!');
+}
+
+// Render avatar + referral link immediately — these only need local data,
+// so they shouldn't wait on Firebase/network to appear. Wrapped defensively
+// so one failure here can never block the rest of the app's script from running.
+try{ renderProfileAvatar(); }catch(e){ console.error(e); }
+try{ buildReferralLink(); }catch(e){ console.error(e); }
+try{ updateProfileStats(); }catch(e){ console.error(e); }
+
 async function saveTelegramProfileToFirestore(u){
   try{
     await fbSet('users', STATE.userId, {
@@ -1026,9 +1222,10 @@ function buildReferralLink(){
   if(box) box.textContent = STATE.refLink;
 }
 function updateProfileStats(){
-  document.getElementById('stat-fav').textContent = STATE.favorites.length;
-  document.getElementById('stat-unlocked').textContent = STATE.unlocked.length;
-  document.getElementById('stat-watched').textContent = STATE.watched;
+  const fEl=document.getElementById('stat-fav'), uEl=document.getElementById('stat-unlocked'), wEl=document.getElementById('stat-watched');
+  if(fEl) fEl.textContent = STATE.favorites.length;
+  if(uEl) uEl.textContent = STATE.unlocked.length;
+  if(wEl) wEl.textContent = STATE.watched;
   updateFavNavBadge();
 }
 function updateFavNavBadge(){
@@ -1441,11 +1638,39 @@ function renderFavorites(){
   }).join('');
 }
 
+/* ===================== SPONSORED PROMO POST (Offers tab) ===================== */
+function renderPromoPost(){
+  const wrap = document.getElementById('promo-post-wrap');
+  if(!wrap) return;
+  const p = PROMO_POST;
+  wrap.innerHTML = `
+    <div class="promo-post">
+      <div class="promo-ribbon"><span class="material-icons-round">campaign</span>${escHtml(p.ribbon)}</div>
+      <div class="promo-brand-row">
+        <div class="promo-brand-icon">${p.brandEmoji}</div>
+        <div>
+          <div class="promo-brand-name">${escHtml(p.brandName)}</div>
+          <div class="promo-brand-tag">${escHtml(p.brandTag)}</div>
+        </div>
+      </div>
+      <div class="promo-headline">${p.headline}</div>
+      <div class="promo-features">
+        ${p.features.map(f=>`
+          <div class="promo-feature">
+            <span class="material-icons-round">${f.icon}</span>
+            <div class="promo-feature-text"><b>${escHtml(f.title)}</b>${escHtml(f.text)}</div>
+          </div>`).join('')}
+      </div>
+      <button class="promo-open-btn ripple" onclick="openLink('${escHtml(p.url)}')"><span class="material-icons-round">open_in_new</span>${escHtml(p.btnLabel)}</button>
+    </div>`;
+}
+
 const defaultChannels=[
   {name:'ভাইরাল ভিডিও L!NKS',desc:'মেইন চ্যানেলে জয়েন করুন',url:'https://t.me/',emoji:'📡'},
   {name:'Movi Lover Official',desc:'অফিশিয়াল চ্যানেল',url:'https://t.me/',emoji:'🎬'},
 ];
 async function loadChannels(){
+  renderPromoPost();
   const fromDb=await fbGet('channels');
   STATE.channels=fromDb.length?fromDb:defaultChannels;
   renderChannels();
@@ -1511,6 +1736,7 @@ function showPage(name){
   document.querySelector(`[data-page="${name}"]`)?.classList.add('active');
   STATE.currentPage=name;
   if(name==='favorites') renderFavorites();
+  if(name==='profile'){ try{ renderProfileAvatar(); buildReferralLink(); updateProfileStats(); }catch(e){ console.error(e); } }
 }
 
 function copyRefLink(){
