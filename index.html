@@ -373,11 +373,14 @@ header {
 
 .profile-section-label { font-size:11px; font-weight:700; color:var(--gold-3); letter-spacing:1.5px; text-transform:uppercase; padding:16px 18px 8px; font-family:'Rajdhani',sans-serif; }
 
+/* ---- Referral card: link box + copy button, cleanly aligned to matching
+   rounded corners on all four sides (fixed height row, vertically centered
+   text, no clipping/ellipsis mismatch). ---- */
 .referral-card { margin:0 14px 14px; padding:16px; border-radius:16px; background:linear-gradient(160deg, rgba(182,134,44,0.08), rgba(124,35,51,0.04)); border:1px solid var(--border-gold); position:relative; overflow:hidden; }
 .ref-label { font-size:10.5px; color:var(--gold-3); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
-.ref-link-row { display:flex; gap:8px; align-items:center; }
-.ref-link-box { flex:1; background:rgba(124,35,51,0.04); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:10.5px; color:var(--text-muted); font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ref-copy-btn { padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background:var(--grad-gold); color:#2a1c05; font-size:12px; font-weight:700; font-family:'Rajdhani',sans-serif; white-space:nowrap; transition:all 0.2s; }
+.ref-link-row { display:flex; gap:8px; align-items:stretch; }
+.ref-link-box { flex:1; min-width:0; height:40px; display:flex; align-items:center; background:rgba(124,35,51,0.04); border:1px solid var(--border); border-radius:10px; padding:0 12px; font-size:10.5px; line-height:1; color:var(--text-muted); font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-sizing:border-box; }
+.ref-copy-btn { height:40px; padding:0 16px; border-radius:10px; border:none; cursor:pointer; background:var(--grad-gold); color:#2a1c05; font-size:12px; font-weight:700; font-family:'Rajdhani',sans-serif; white-space:nowrap; transition:all 0.2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-sizing:border-box; }
 .ref-copy-btn:active { transform:scale(0.95); }
 .ref-stats { display:flex; gap:16px; margin-top:10px; }
 .ref-stat { font-size:11px; color:var(--text-muted); }
@@ -541,16 +544,27 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .tut-hero-stat { display:flex; align-items:center; gap:6px; font-family:'Rajdhani',sans-serif; font-size:11.5px; font-weight:700; color:var(--text); background:var(--surface); border:1px solid var(--border); padding:6px 12px; border-radius:12px; white-space:nowrap; }
 .tut-hero-stat .material-icons-round { font-size:15px; color:var(--gold-3); }
 
-.tut-steps-wrap { margin:6px 14px 10px; position:relative; }
-.tut-step-card { display:flex; gap:14px; padding:16px; margin-bottom:12px; border-radius:18px; background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 20px rgba(124,35,51,0.05); position:relative; overflow:hidden; }
+/* ---- Guideline / steps section, restyled as a clean grouped card list ---- */
+.tut-group-label { font-size:11px; font-weight:700; color:var(--gold-3); letter-spacing:1.8px; text-transform:uppercase; padding:6px 18px 10px; font-family:'Rajdhani',sans-serif; display:flex; align-items:center; gap:8px; }
+.tut-group-label .material-icons-round { font-size:14px; }
+.tut-group-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.tut-steps-wrap { margin:6px 14px 4px; position:relative; }
+.tut-step-card { display:flex; gap:14px; padding:16px; margin-bottom:12px; border-radius:18px; background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 20px rgba(124,35,51,0.05); position:relative; overflow:hidden; transition:transform 0.15s ease, box-shadow 0.2s ease; }
+.tut-step-card:active { transform:scale(0.99); }
 .tut-step-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--wine),var(--wine-3)); }
+.tut-step-card.warn { background:linear-gradient(160deg, rgba(31,143,95,0.05), var(--surface)); border-color:rgba(31,143,95,0.25); }
 .tut-step-card.warn::before { background:linear-gradient(180deg,var(--green),#0d7a53); }
+.tut-step-card.link { background:linear-gradient(160deg, rgba(182,134,44,0.06), var(--surface)); border-color:var(--border-gold); }
 .tut-step-card.link::before { background:linear-gradient(180deg,var(--gold),var(--gold-3)); }
 .tut-step-num { width:38px; height:38px; border-radius:12px; flex-shrink:0; background:var(--grad-btn); display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:800; color:#fff; box-shadow:0 6px 14px rgba(124,35,51,0.24); }
 .tut-step-card.warn .tut-step-num { background:linear-gradient(135deg,var(--green),#0d7a53); box-shadow:0 6px 14px rgba(31,143,95,0.25); }
 .tut-step-card.link .tut-step-num { background:var(--grad-gold); color:#2a1c05; box-shadow:0 6px 14px rgba(182,134,44,0.25); }
-.tut-step-body { flex:1; padding-top:2px; }
-.tut-step-title { font-family:'Rajdhani',sans-serif; font-size:14.5px; font-weight:700; color:var(--text); margin-bottom:4px; letter-spacing:0.2px; }
+.tut-step-body { flex:1; padding-top:2px; min-width:0; }
+.tut-step-title-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.tut-step-title { font-family:'Rajdhani',sans-serif; font-size:14.5px; font-weight:700; color:var(--text); letter-spacing:0.2px; }
+.tut-step-chip { font-size:9px; font-weight:800; letter-spacing:0.6px; padding:3px 9px; border-radius:20px; background:var(--gold-soft); color:var(--gold-3); border:1px solid var(--border-gold); white-space:nowrap; flex-shrink:0; text-transform:uppercase; }
+.tut-step-card.warn .tut-step-chip { background:rgba(31,143,95,0.1); color:var(--green); border-color:rgba(31,143,95,0.3); }
+.tut-step-card.link .tut-step-chip { background:rgba(182,134,44,0.14); color:var(--gold-3); }
 .tut-step-desc { font-size:12.5px; line-height:1.65; color:var(--text-muted); }
 .tut-step-desc strong { color:var(--text); font-weight:700; }
 </style>
@@ -624,7 +638,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
         </div>
       </div>
 
-      <div class="tut-steps-wrap" id="tutorial-steps"></div>
+      <div id="tutorial-steps-groups"></div>
     </div>
 
     <div class="page" id="page-channels">
@@ -671,6 +685,16 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
         <div class="menu-item ripple" onclick="shareApp()">
           <div class="menu-icon" style="background:rgba(31,143,95,0.12);"><span class="material-icons-round" style="color:#0f9d64;">share</span></div>
           <div class="menu-text"><div class="menu-text-title">Share App</div></div>
+          <span class="material-icons-round menu-arrow">chevron_right</span>
+        </div>
+        <div class="menu-item ripple" id="official-channel-menu-item" style="display:none;" onclick="openLink(STATE.officialChannelUrl)">
+          <div class="menu-icon" style="background:rgba(38,143,217,0.12);"><span class="material-icons-round" style="color:#268fd9;">send</span></div>
+          <div class="menu-text"><div class="menu-text-title">অফিশিয়াল চ্যানেল</div></div>
+          <span class="material-icons-round menu-arrow">chevron_right</span>
+        </div>
+        <div class="menu-item ripple" id="shorts-menu-item" style="display:none;" onclick="openLink(STATE.shortsUrl)">
+          <div class="menu-icon" style="background:rgba(213,44,110,0.12);"><span class="material-icons-round" style="color:#d52c6e;">smart_display</span></div>
+          <div class="menu-text"><div class="menu-text-title">শর্ট ভিডিও</div></div>
           <span class="material-icons-round menu-arrow">chevron_right</span>
         </div>
         <div class="menu-item ripple" id="support-menu-item" style="display:none;" onclick="openLink(STATE.adminContactUrl)">
@@ -830,6 +854,8 @@ const STATE = {
   sharedVideoId: null,
   sharedHighlightDone: false,
   adminContactUrl: '',
+  officialChannelUrl: '',
+  shortsUrl: '',
   customAvatar: JSON.parse(localStorage.getItem('ml_avatar')||'null'),
 };
 
@@ -1110,6 +1136,8 @@ function initProfile(){
     buildReferralLink();
     updateProfileStats();
     if(STATE.adminContactUrl){ document.getElementById('support-menu-item').style.display='flex'; }
+    if(STATE.officialChannelUrl){ document.getElementById('official-channel-menu-item').style.display='flex'; }
+    if(STATE.shortsUrl){ document.getElementById('shorts-menu-item').style.display='flex'; }
   }catch(e){ console.error('initProfile error:', e); }
 }
 
@@ -1246,6 +1274,8 @@ async function loadSettings(){
   const s=await fbGetDoc('settings','site');
   if(s && s.name){ STATE.siteName = s.name; document.getElementById('pdp-site').innerHTML = `<span class="material-icons-round">verified</span>${escHtml(s.name)}`; }
   if(s && s.adminContactUrl){ STATE.adminContactUrl = s.adminContactUrl; }
+  if(s && s.officialChannelUrl){ STATE.officialChannelUrl = s.officialChannelUrl; }
+  if(s && s.shortsUrl){ STATE.shortsUrl = s.shortsUrl; }
 }
 
 function showBannerAd(){
@@ -1288,25 +1318,40 @@ function playTutorialVideo(url){
   document.getElementById('player-modal').classList.add('open');
 }
 
-/* ===================== TUTORIAL STEPS (honest copy) ===================== */
+/* ===================== TUTORIAL STEPS (honest copy, grouped card layout) =====================
+   Steps are grouped into three clear sections so the guideline area reads
+   like a short, well-organized card list instead of one long chain. */
 function renderTutorialSteps(){
-  const wrap = document.getElementById('tutorial-steps');
+  const wrap = document.getElementById('tutorial-steps-groups');
   if(!wrap) return;
-  const steps = [
-    {n:'১', title:'পছন্দের ভিডিও বেছে নিন', desc:'<strong>হোম পেজে</strong> যান এবং যেকোনো ভিডিওতে ট্যাপ করুন।'},
-    {n:'২', title:'একটি বিজ্ঞাপন দেখুন', desc:'ভিডিও কার্ডের নিচে <strong>"বিজ্ঞাপন দেখে আনলক করুন"</strong> বাটনে ট্যাপ করুন। একটি বিজ্ঞাপন সরাসরি অ্যাপের ভিতরেই দেখানো হবে।'},
-    {n:'৩', title:'সাথে সাথে আনলক', desc:'বিজ্ঞাপন শেষ হলেই ভিডিওটি আনলক হয়ে যাবে — কোনো লুকানো বা বাড়তি ধাপ নেই।', kind:'link'},
-    {n:'৪', title:'৩ মিনিট সময় পাবেন', desc:'আনলকের পর ভিডিওটি <strong>৩ মিনিটের জন্য</strong> খোলা থাকবে, ততক্ষণ যতবার ইচ্ছা দেখতে পারবেন। সময় শেষ হলে আবার একটি বিজ্ঞাপন দেখে আনলক করতে হবে।'},
-    {n:'🔗', title:'ভিডিও শেয়ার/কপি করুন', desc:'প্রতিটি ভিডিওর জন্য একটি <strong>আলাদা লিংক</strong> আছে — কার্ডের নিচে <strong>"শেয়ার"</strong> বা <strong>"কপি লিংক"</strong> বাটনে ট্যাপ করুন। সেই লিংকে কেউ ক্লিক করলে সরাসরি ঐ ভিডিওর কার্ডে চলে যাবে এবং কার্ডটি কিছুক্ষণ আলো জ্বলবে, যাতে বোঝা যায় এটাই শেয়ার করা ভিডিও।'},
-    {n:'✓', title:'বিজ্ঞাপন মাঝপথে বন্ধ করলে', desc:'কোনো সমস্যা নেই — ভিডিওটি শুধু আনলক হবে না, কোনো পেনাল্টি বা অ্যাকাউন্ট লক নেই। আবার চেষ্টা করলেই হবে।', kind:'warn'},
+  const groups = [
+    { label:'শুরু করুন', icon:'play_circle', steps:[
+        {n:'১', chip:'ধাপ ১', title:'পছন্দের ভিডিও বেছে নিন', desc:'<strong>হোম পেজে</strong> যান এবং যেকোনো ভিডিওতে ট্যাপ করুন।'},
+        {n:'২', chip:'ধাপ ২', title:'একটি বিজ্ঞাপন দেখুন', desc:'ভিডিও কার্ডের নিচে <strong>"বিজ্ঞাপন দেখে আনলক করুন"</strong> বাটনে ট্যাপ করুন। একটি বিজ্ঞাপন সরাসরি অ্যাপের ভিতরেই দেখানো হবে।'},
+      ]},
+    { label:'আনলক ও উপভোগ', icon:'lock_open', steps:[
+        {n:'৩', chip:'তাৎক্ষণিক', title:'সাথে সাথে আনলক', desc:'বিজ্ঞাপন শেষ হলেই ভিডিওটি আনলক হয়ে যাবে — কোনো লুকানো বা বাড়তি ধাপ নেই।', kind:'link'},
+        {n:'৪', chip:'৩ মিনিট', title:'৩ মিনিট সময় পাবেন', desc:'আনলকের পর ভিডিওটি <strong>৩ মিনিটের জন্য</strong> খোলা থাকবে, ততক্ষণ যতবার ইচ্ছা দেখতে পারবেন। সময় শেষ হলে আবার একটি বিজ্ঞাপন দেখে আনলক করতে হবে।'},
+      ]},
+    { label:'শেয়ার ও নিরাপত্তা', icon:'shield', steps:[
+        {n:'🔗', chip:'শেয়ার', title:'ভিডিও শেয়ার/কপি করুন', desc:'প্রতিটি ভিডিওর জন্য একটি <strong>আলাদা লিংক</strong> আছে — কার্ডের নিচে <strong>"শেয়ার"</strong> বা <strong>"কপি লিংক"</strong> বাটনে ট্যাপ করুন। সেই লিংকে কেউ ক্লিক করলে সরাসরি ঐ ভিডিওর কার্ডে চলে যাবে এবং কার্ডটি কিছুক্ষণ আলো জ্বলবে, যাতে বোঝা যায় এটাই শেয়ার করা ভিডিও।'},
+        {n:'✓', chip:'নিরাপদ', title:'বিজ্ঞাপন মাঝপথে বন্ধ করলে', desc:'কোনো সমস্যা নেই — ভিডিওটি শুধু আনলক হবে না, কোনো পেনাল্টি বা অ্যাকাউন্ট লক নেই। আবার চেষ্টা করলেই হবে।', kind:'warn'},
+      ]},
   ];
-  wrap.innerHTML = steps.map(s=>`
-    <div class="tut-step-card ${s.kind?s.kind:''}">
-      <div class="tut-step-num">${s.n}</div>
-      <div class="tut-step-body">
-        <div class="tut-step-title">${escHtml(s.title)}</div>
-        <div class="tut-step-desc">${s.desc}</div>
-      </div>
+  wrap.innerHTML = groups.map(g=>`
+    <div class="tut-group-label"><span class="material-icons-round">${g.icon}</span>${escHtml(g.label)}</div>
+    <div class="tut-steps-wrap">
+      ${g.steps.map(s=>`
+        <div class="tut-step-card ${s.kind?s.kind:''}">
+          <div class="tut-step-num">${s.n}</div>
+          <div class="tut-step-body">
+            <div class="tut-step-title-row">
+              <div class="tut-step-title">${escHtml(s.title)}</div>
+              <div class="tut-step-chip">${escHtml(s.chip)}</div>
+            </div>
+            <div class="tut-step-desc">${s.desc}</div>
+          </div>
+        </div>`).join('')}
     </div>`).join('');
 }
 
@@ -1532,7 +1577,10 @@ function finishUnlock(){
     STATE.unlockHistory.unshift({id:v.id,title:v.title||'ভিডিও',thumb:v.thumbnail||'',ts:Date.now()});
     STATE.unlockHistory = STATE.unlockHistory.slice(0,50);
     localStorage.setItem('ml_unlock_history',JSON.stringify(STATE.unlockHistory));
-    fbAdd('notifications',{title:'🎟️ ভিডিও আনলক!',body:`"${v.title||'ভিডিও'}" আনলক করা হয়েছে।`}).catch(()=>{});
+    // NOTE: We intentionally do NOT push a "video unlocked" notification here.
+    // Notifications now only come from the admin panel when a new video is
+    // posted — per-user unlock events are personal and shouldn't broadcast
+    // to everyone's notification feed.
     registerVideoUnlock();
   }
   // Recurring 3-minute unlock window — after this the video re-locks again.
