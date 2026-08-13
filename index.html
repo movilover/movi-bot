@@ -46,7 +46,7 @@
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Ad network: GigaPub only. Zone ID is loaded from Admin Panel → Settings → বিজ্ঞাপন নেটওয়ার্ক. -->
+<!-- Ad network: GigaPub or Monetag, chosen from Admin Panel → Settings → বিজ্ঞাপন নেটওয়ার্ক. -->
 
 <style>
 /* =========================================================
@@ -264,6 +264,11 @@ header {
 #verify-modal.open { display:flex; animation:fadeIn 0.2s; }
 .verify-box { width:100%; max-width:340px; background:var(--surface); border-radius:24px; padding:32px 26px 26px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); border:1px solid var(--border-gold); }
 .verify-box::before { content:''; position:absolute; top:0; left:20px; right:20px; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+.verify-close-btn { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:rgba(124,35,51,0.08); display:none; align-items:center; justify-content:center; cursor:pointer; color:var(--wine); transition:transform 0.15s; z-index:2; }
+.verify-close-btn.show { display:flex; animation:popIn 0.3s cubic-bezier(.22,.68,0,1.6); }
+.verify-close-btn:active { transform:scale(0.88); }
+.verify-close-btn .material-icons-round { font-size:18px; }
+.verify-timer-text { font-size:11px; color:var(--gold-3); font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; margin-top:2px; margin-bottom:14px; }
 .verify-dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; }
 .verify-step-dot { width:9px; height:9px; border-radius:50%; background:var(--border); transition:background 0.3s; }
 .verify-step-dot.on { background:var(--gold); }
@@ -722,6 +727,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 <!-- HONEST AD MODAL: exactly one real ad per step, no fake countdown theater, no strikes -->
 <div id="verify-modal">
   <div class="verify-box">
+    <div class="verify-close-btn ripple" id="verify-close-btn" onclick="closeMonetagAd()"><span class="material-icons-round">close</span></div>
     <div class="verify-dots" id="verify-dots"></div>
     <div class="verify-ring-box">
       <svg width="88" height="88" viewBox="0 0 88 88">
@@ -732,6 +738,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
     </div>
     <div class="verify-title" id="verify-title">বিজ্ঞাপন চলছে</div>
     <div class="verify-sub" id="verify-sub">দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে</div>
+    <div class="verify-timer-text" id="verify-timer-text"></div>
     <div class="verify-slot">এখানে আপনার অ্যাড নেটওয়ার্কের বিজ্ঞাপন দেখানো হবে</div>
     <div class="verify-hint"><span class="material-icons-round">info</span>বিজ্ঞাপনটি মাঝপথে বন্ধ করলে শুধু এই ধাপটি অসম্পূর্ণ থাকবে — কোনো পেনাল্টি নেই, আবার চেষ্টা করতে পারবেন।</div>
   </div>
@@ -847,7 +854,8 @@ const STATE = {
   userId: null,
   tgUserId: null,
   tutorialVideo: null,
-  adNetwork: { gigapubZoneId:'6814' },
+  adNetwork: { activeNetwork:'gigapub', gigapubZoneId:'6814', monetagZoneId:'' },
+  monetagPending: null,
   currentParts: null,
   currentPartIdx: 0,
   taskStepByVideo: JSON.parse(localStorage.getItem('ml_task_step')||'{}'),
@@ -1011,24 +1019,89 @@ function hideSplash(){
   document.getElementById('app').classList.add('visible');
 }
 
-/* ===================== AD NETWORK (GigaPub) ===================== */
+/* ===================== AD NETWORK (GigaPub or Monetag — controlled from Admin Panel) ===================== */
 async function loadAdNetworkConfig(){
   try{
     const cfg = await fbGetDoc('settings','adnetwork');
-    if(cfg && cfg.gigapubZoneId){ STATE.adNetwork.gigapubZoneId = cfg.gigapubZoneId; }
+    if(cfg){
+      if(cfg.gigapubZoneId){ STATE.adNetwork.gigapubZoneId = cfg.gigapubZoneId; }
+      if(cfg.monetagZoneId){ STATE.adNetwork.monetagZoneId = cfg.monetagZoneId; }
+      if(cfg.activeNetwork){ STATE.adNetwork.activeNetwork = cfg.activeNetwork; }
+    }
   }catch(e){}
   injectAdNetworkScript();
 }
 function injectAdNetworkScript(){
-  const zone = STATE.adNetwork.gigapubZoneId || '6814';
-  const s = document.createElement('script');
-  s.src = `https://ad.gigapub.tech/script?id=${zone}`;
-  document.head.appendChild(s);
+  // Only ONE network's script is ever injected, based on the admin's switch.
+  // Turning the switch to Monetag means the GigaPub script never loads (so
+  // GigaPub ads stop showing site-wide), and vice versa.
+  if(STATE.adNetwork.activeNetwork === 'monetag'){
+    const zone = STATE.adNetwork.monetagZoneId;
+    if(!zone) return;
+    const s = document.createElement('script');
+    s.src = 'https://libtl.com/sdk.js';
+    s.setAttribute('data-zone', zone);
+    s.setAttribute('data-sdk', 'show_' + zone);
+    document.head.appendChild(s);
+  } else {
+    const zone = STATE.adNetwork.gigapubZoneId || '6814';
+    const s = document.createElement('script');
+    s.src = `https://ad.gigapub.tech/script?id=${zone}`;
+    document.head.appendChild(s);
+  }
 }
-function isAdNetworkReady(){ return typeof window.showGiga === 'function'; }
+function isAdNetworkReady(){
+  if(STATE.adNetwork.activeNetwork === 'monetag'){
+    const zone = STATE.adNetwork.monetagZoneId;
+    return !!zone && typeof window['show_' + zone] === 'function';
+  }
+  return typeof window.showGiga === 'function';
+}
 function showRewardedAd(){
+  if(STATE.adNetwork.activeNetwork === 'monetag'){
+    return showMonetagAd();
+  }
   if(typeof window.showGiga === 'function') return window.showGiga();
   return Promise.reject(new Error('GigaPub ad SDK not ready'));
+}
+
+/* Monetag ad flow: the real Monetag ad is triggered via its SDK function,
+   and — as requested — the ad is shown for a minimum of 15 seconds, after
+   which a cross (✕) icon appears on our own modal so the user can close it. */
+function showMonetagAd(){
+  return new Promise((resolve, reject)=>{
+    const zone = STATE.adNetwork.monetagZoneId;
+    const fn = zone ? window['show_' + zone] : null;
+    if(typeof fn === 'function'){
+      try{ fn().catch(()=>{}); }catch(e){}
+    }
+    const crossBtn = document.getElementById('verify-close-btn');
+    const timerText = document.getElementById('verify-timer-text');
+    let remain = 15;
+    if(crossBtn) crossBtn.classList.remove('show');
+    if(timerText) timerText.textContent = remain + ' সেকেন্ড অপেক্ষা করুন...';
+    const pending = { resolve, reject, interval:null };
+    STATE.monetagPending = pending;
+    pending.interval = setInterval(()=>{
+      remain--;
+      if(timerText){ timerText.textContent = remain>0 ? (remain + ' সেকেন্ড অপেক্ষা করুন...') : 'এখন বন্ধ করতে পারবেন'; }
+      if(remain<=0){
+        clearInterval(pending.interval);
+        if(crossBtn) crossBtn.classList.add('show');
+      }
+    },1000);
+  });
+}
+function closeMonetagAd(){
+  const pending = STATE.monetagPending;
+  if(!pending) return;
+  STATE.monetagPending = null;
+  if(pending.interval) clearInterval(pending.interval);
+  const crossBtn = document.getElementById('verify-close-btn');
+  if(crossBtn) crossBtn.classList.remove('show');
+  const timerText = document.getElementById('verify-timer-text');
+  if(timerText) timerText.textContent = '';
+  pending.resolve();
 }
 
 /* ===================== USER DOC (stats only — no strikes/ban) ===================== */
@@ -1533,6 +1606,10 @@ function openAdModal(){
   for(let i=1;i<=total;i++){ dotsEl.innerHTML += `<div class="verify-step-dot ${i<=step?'on':''}"></div>`; }
   document.getElementById('verify-title').textContent = total>1 ? `বিজ্ঞাপন চলছে (${step}/${total})` : 'বিজ্ঞাপন চলছে';
   document.getElementById('verify-sub').textContent = 'দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে';
+  const crossBtn = document.getElementById('verify-close-btn');
+  if(crossBtn) crossBtn.classList.remove('show');
+  const timerText = document.getElementById('verify-timer-text');
+  if(timerText) timerText.textContent = '';
 
   if (!isAdNetworkReady()) {
     STATE.verifyModalOpen = false;
@@ -1563,6 +1640,12 @@ function handleEarlyExit(){
     STATE.verifyActive = false;
     STATE.verifyModalOpen = false;
     document.getElementById('verify-modal').classList.remove('open');
+  }
+  if(STATE.monetagPending){
+    const pending = STATE.monetagPending;
+    STATE.monetagPending = null;
+    if(pending.interval) clearInterval(pending.interval);
+    pending.reject(new Error('early exit'));
   }
 }
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) handleEarlyExit(); });
