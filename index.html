@@ -273,35 +273,20 @@ header {
 .verify-step-dot { width:9px; height:9px; border-radius:50%; background:var(--border); transition:background 0.3s; }
 .verify-step-dot.on { background:var(--gold); }
 .verify-ring-box { position:relative; width:88px; height:88px; margin:0 auto 20px; }
-.verify-ring-box svg { transform:rotate(-90deg); animation: spin 2.6s linear infinite; }
+.verify-ring-box svg { transform:rotate(-90deg); transition:transform 0.2s; }
+.verify-ring-box.spinning svg { animation: spin 2.6s linear infinite; }
 .ring-bg { fill:none; stroke:var(--border); stroke-width:4; }
-.ring-fg { fill:none; stroke:var(--gold); stroke-width:4; stroke-linecap:round; stroke-dasharray:60 200; }
+.ring-fg { fill:none; stroke:var(--gold); stroke-width:4; stroke-linecap:round; stroke-dasharray:60 200; transition:stroke-dasharray 0.4s ease, stroke 0.4s ease; }
+.ring-fg.done { stroke:var(--green); stroke-dasharray:238 238; }
 .verify-ring-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-.verify-ring-icon .material-icons-round { font-size:30px; color:var(--wine); }
+.verify-ring-icon .material-icons-round { font-size:30px; color:var(--wine); transition:color 0.2s, transform 0.2s; }
+.verify-ring-icon .material-icons-round.done { color:var(--green); transform:scale(1.08); animation:popIn 0.35s cubic-bezier(.22,.68,0,1.6); }
 .verify-title { font-size:18px; font-weight:800; color:var(--text); margin-bottom:6px; font-family:'Rajdhani',sans-serif; }
 .verify-sub { font-size:12.5px; color:var(--text-muted); margin-bottom:18px; line-height:1.6; }
 .verify-slot { border:1px dashed var(--border); border-radius:12px; padding:14px; font-size:11px; color:var(--text-muted); margin-bottom:14px; background:var(--surface-2); }
 .verify-hint { display:flex; align-items:center; gap:8px; background:var(--gold-soft); border:1px solid var(--border-gold); border-radius:12px; padding:10px 12px; font-size:11.5px; color:var(--gold-3); text-align:left; line-height:1.5; }
 .verify-hint .material-icons-round { font-size:16px; color:var(--gold); flex-shrink:0; }
 .verify-step-dot.pulse { background:var(--gold-2); animation:pulse 1s ease-in-out infinite; }
-
-/* ============ PREMIUM STEP CARD (shown between ad steps) ============ */
-#step-card-modal { display:none; position:fixed; inset:0; z-index:640; background:rgba(20,12,14,0.55); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px; }
-#step-card-modal.open { display:flex; animation:fadeIn 0.2s; }
-.step-card-box { width:100%; max-width:320px; background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--border-gold); border-radius:26px; padding:36px 26px 28px; text-align:center; position:relative; box-shadow:0 24px 60px rgba(0,0,0,0.28); overflow:hidden; animation:scaleIn 0.3s cubic-bezier(.22,.68,0,1.4); }
-.step-card-box::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--wine),var(--gold),var(--wine)); }
-.step-card-box::after { content:''; position:absolute; top:16px; left:16px; right:16px; height:1px; background:repeating-linear-gradient(90deg, transparent 0 6px, var(--border-gold) 6px 7px); opacity:0.5; }
-.step-card-plus { position:absolute; top:14px; right:14px; width:42px; height:42px; border-radius:50%; background:var(--grad-btn); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 8px 20px rgba(124,35,51,0.38); z-index:2; }
-.step-card-plus.show { display:flex; animation:popIn 0.35s cubic-bezier(.22,.68,0,1.6); }
-.step-card-plus:active { transform:scale(0.88); }
-.step-card-plus .material-icons-round { font-size:23px; }
-.step-card-dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; margin-top:6px; }
-.step-card-ring { position:relative; width:92px; height:92px; margin:0 auto 22px; }
-.step-card-ring svg { transform:rotate(-90deg); animation: spin 2.2s linear infinite; }
-.step-card-ring-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-.step-card-ring-icon .material-icons-round { font-size:34px; color:var(--wine); }
-.step-card-title { font-family:'Rajdhani',sans-serif; font-size:19px; font-weight:800; color:var(--text); margin-bottom:6px; }
-.step-card-sub { font-size:12.5px; color:var(--text-muted); line-height:1.6; }
 
 /* Final unlock celebration (genuine, one-time) */
 #task-complete-popup { display:none; position:fixed; inset:0; z-index:700; background:rgba(20,12,14,0.45); backdrop-filter:blur(6px); align-items:center; justify-content:center; }
@@ -746,42 +731,27 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 
 <div id="found-toast" class="found-toast">পোস্টটি খুঁজে পাওয়া গেছে!</div>
 
-<!-- HONEST AD MODAL: exactly one real ad per step, no fake countdown theater, no strikes -->
+<!-- HONEST AD MODAL: single modal for the whole flow. Ring spins while the
+     ad plays, then exactly 2 seconds after it finishes the ring turns into
+     a green checkmark and the close (✕) icon appears at the same moment.
+     Tapping close finishes that step and returns straight to the home
+     page — no second card, no extra loading screen. -->
 <div id="verify-modal">
   <div class="verify-box">
-    <div class="verify-close-btn ripple" id="verify-close-btn" onclick="closeMonetagAd()"><span class="material-icons-round">close</span></div>
+    <div class="verify-close-btn ripple" id="verify-close-btn" onclick="closeVerifyModal()"><span class="material-icons-round">close</span></div>
     <div class="verify-dots" id="verify-dots"></div>
-    <div class="verify-ring-box" id="verify-ring-box-wrap">
+    <div class="verify-ring-box spinning" id="verify-ring-box-wrap">
       <svg width="88" height="88" viewBox="0 0 88 88">
         <circle class="ring-bg" cx="44" cy="44" r="38"/>
         <circle class="ring-fg" id="ring-fg" cx="44" cy="44" r="38"/>
       </svg>
-      <div class="verify-ring-icon"><span class="material-icons-round">local_movies</span></div>
+      <div class="verify-ring-icon"><span class="material-icons-round" id="verify-ring-icon">local_movies</span></div>
     </div>
     <div class="verify-title" id="verify-title">বিজ্ঞাপন চলছে</div>
     <div class="verify-sub" id="verify-sub">দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে</div>
     <div class="verify-timer-text" id="verify-timer-text"></div>
     <div class="verify-slot">এখানে আপনার অ্যাড নেটওয়ার্কের বিজ্ঞাপন দেখানো হবে</div>
     <div class="verify-hint"><span class="material-icons-round">info</span>বিজ্ঞাপনটি মাঝপথে বন্ধ করলে শুধু এই ধাপটি অসম্পূর্ণ থাকবে — কোনো পেনাল্টি নেই, আবার চেষ্টা করতে পারবেন।</div>
-  </div>
-</div>
-
-<!-- PREMIUM STEP CARD: appears right after an ad step finishes. Spins for
-     3 seconds while the step is submitted, then reveals a "+" button in
-     the top corner that takes the person back to the home page. -->
-<div id="step-card-modal">
-  <div class="step-card-box">
-    <div class="step-card-plus ripple" id="step-card-plus" onclick="onStepCardPlusTap()"><span class="material-icons-round">add</span></div>
-    <div class="step-card-dots" id="step-card-dots"></div>
-    <div class="step-card-ring">
-      <svg width="92" height="92" viewBox="0 0 92 92">
-        <circle class="ring-bg" cx="46" cy="46" r="39"/>
-        <circle class="ring-fg" cx="46" cy="46" r="39"/>
-      </svg>
-      <div class="step-card-ring-icon"><span class="material-icons-round" id="step-card-icon">check_circle</span></div>
-    </div>
-    <div class="step-card-title" id="step-card-title">ধাপ যাচাই হচ্ছে...</div>
-    <div class="step-card-sub" id="step-card-sub">একটু অপেক্ষা করুন...</div>
   </div>
 </div>
 
@@ -896,9 +866,7 @@ const STATE = {
   tgUserId: null,
   tutorialVideo: null,
   adNetwork: { activeNetwork:'gigapub', gigapubZoneId:'6814', monetagZoneId:'' },
-  monetagPending: null,
-  stepCardTimer: null,
-  stepCardIsLast: false,
+  verifyPending: null,
   currentParts: null,
   currentPartIdx: 0,
   taskStepByVideo: JSON.parse(localStorage.getItem('ml_task_step')||'{}'),
@@ -1104,41 +1072,67 @@ function showRewardedAd(){
   if(STATE.adNetwork.activeNetwork === 'monetag'){
     return showMonetagAd();
   }
-  if(typeof window.showGiga === 'function') return window.showGiga();
+  if(typeof window.showGiga === 'function') return window.showGiga().then(()=>runVerifySequence());
   return Promise.reject(new Error('GigaPub ad SDK not ready'));
 }
 
 /* Monetag ad flow: the real Monetag ad is triggered via its SDK function,
-   and — as requested — the ad is shown for a minimum of 15 seconds, after
-   which a cross (✕) icon appears on our own modal so the user can close it. */
+   then our own single verify card (see runVerifySequence) spins for a
+   short moment and shows a checkmark + close icon. */
 function showMonetagAd(){
+  const zone = STATE.adNetwork.monetagZoneId;
+  const fn = zone ? window['show_' + zone] : null;
+  if(typeof fn === 'function'){
+    try{ fn().catch(()=>{}); }catch(e){}
+  }
+  return runVerifySequence();
+}
+
+/* Unified 2-second "verifying" sequence shown inside the verify-modal right
+   after an ad has actually played (for either ad network). The ring spins
+   for exactly 2 seconds, then turns into a green checkmark and the close
+   (✕) icon appears at the same moment — no separate second card, no extra
+   loading screen. Tapping close finishes this step and returns straight to
+   the home page. */
+function runVerifySequence(){
   return new Promise((resolve, reject)=>{
-    const zone = STATE.adNetwork.monetagZoneId;
-    const fn = zone ? window['show_' + zone] : null;
-    if(typeof fn === 'function'){
-      try{ fn().catch(()=>{}); }catch(e){}
-    }
+    const ringBox = document.getElementById('verify-ring-box-wrap');
+    const ringFg = document.getElementById('ring-fg');
+    const ringIcon = document.getElementById('verify-ring-icon');
     const crossBtn = document.getElementById('verify-close-btn');
     const timerText = document.getElementById('verify-timer-text');
-    let remain = 15;
+    const subText = document.getElementById('verify-sub');
+
+    if(ringBox) ringBox.classList.add('spinning');
+    if(ringFg) ringFg.classList.remove('done');
+    if(ringIcon){ ringIcon.classList.remove('done'); ringIcon.textContent = 'local_movies'; }
     if(crossBtn) crossBtn.classList.remove('show');
+    if(subText) subText.textContent = 'দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে';
+
+    let remain = 2; // exactly 2 seconds, as requested
     if(timerText) timerText.textContent = remain + ' সেকেন্ড অপেক্ষা করুন...';
-    const pending = { resolve, reject, interval:null };
-    STATE.monetagPending = pending;
-    pending.interval = setInterval(()=>{
+    const interval = setInterval(()=>{
       remain--;
-      if(timerText){ timerText.textContent = remain>0 ? (remain + ' সেকেন্ড অপেক্ষা করুন...') : 'এখন বন্ধ করতে পারবেন'; }
-      if(remain<=0){
-        clearInterval(pending.interval);
+      if(remain>0){
+        if(timerText) timerText.textContent = remain + ' সেকেন্ড অপেক্ষা করুন...';
+      } else {
+        clearInterval(interval);
+        if(ringBox) ringBox.classList.remove('spinning');
+        if(ringFg) ringFg.classList.add('done');
+        if(ringIcon){ ringIcon.textContent = 'check'; ringIcon.classList.add('done'); }
+        if(subText) subText.textContent = 'ধাপটি সম্পন্ন হয়েছে';
+        if(timerText) timerText.textContent = 'এখন বন্ধ করতে পারবেন';
         if(crossBtn) crossBtn.classList.add('show');
       }
     },1000);
+
+    STATE.verifyPending = { resolve, reject, interval };
   });
 }
-function closeMonetagAd(){
-  const pending = STATE.monetagPending;
+function closeVerifyModal(){
+  const pending = STATE.verifyPending;
   if(!pending) return;
-  STATE.monetagPending = null;
+  STATE.verifyPending = null;
   if(pending.interval) clearInterval(pending.interval);
   const crossBtn = document.getElementById('verify-close-btn');
   if(crossBtn) crossBtn.classList.remove('show');
@@ -1628,9 +1622,11 @@ function openWatchNow(id){
 function findVideo(id){ return STATE.allVideos.find(x=>x.id===id); }
 
 /* ===================== HONEST UNLOCK FLOW =====================
-   One real ad per tap of the unlock button. No fake "starting/verifying"
-   countdown theater. No strikes, no lockout — closing the ad early just
-   means that step doesn't complete; the user can simply try again. */
+   One real ad per tap of the unlock button, followed by the single
+   verify card (spin 2s → checkmark + close icon). Tapping close finishes
+   that step and returns straight to the home page. No strikes, no
+   lockout — closing the ad early just means that step doesn't complete;
+   the user can simply try again. */
 function startUnlockFromCard(id){
   const v = findVideo(id);
   if(!v) return;
@@ -1658,8 +1654,12 @@ function resetAdModalToPlayingState(){
   if(crossBtn) crossBtn.classList.remove('show');
   const timerText = document.getElementById('verify-timer-text');
   if(timerText) timerText.textContent = '';
-  const ringWrap = document.getElementById('verify-ring-box-wrap');
-  if(ringWrap) ringWrap.style.display = '';
+  const ringBox = document.getElementById('verify-ring-box-wrap');
+  if(ringBox){ ringBox.style.display=''; ringBox.classList.add('spinning'); }
+  const ringFg = document.getElementById('ring-fg');
+  if(ringFg) ringFg.classList.remove('done');
+  const ringIcon = document.getElementById('verify-ring-icon');
+  if(ringIcon){ ringIcon.classList.remove('done'); ringIcon.textContent = 'local_movies'; }
 }
 
 function runAdStep(){
@@ -1690,30 +1690,21 @@ function handleEarlyExit(){
     STATE.verifyModalOpen = false;
     document.getElementById('verify-modal').classList.remove('open');
   }
-  if(STATE.monetagPending){
-    const pending = STATE.monetagPending;
-    STATE.monetagPending = null;
+  if(STATE.verifyPending){
+    const pending = STATE.verifyPending;
+    STATE.verifyPending = null;
     if(pending.interval) clearInterval(pending.interval);
     pending.reject(new Error('early exit'));
   }
-  if(STATE.stepCardTimer){
-    clearTimeout(STATE.stepCardTimer);
-    STATE.stepCardTimer = null;
-  }
-  const stepCardModal = document.getElementById('step-card-modal');
-  if(stepCardModal) stepCardModal.classList.remove('open');
 }
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) handleEarlyExit(); });
 window.addEventListener('pagehide', handleEarlyExit);
 
-/* One ad step just finished (the ad-network promise resolved, e.g. the
-   person tapped the cross icon after watching). The ad-playing modal
-   closes and a small premium "card" appears in its place: a ring spins
-   for 3 seconds while the step is being submitted, then a "+" button
-   appears at the top corner of the card. Tapping "+" closes the card and
-   returns to the home page — from there the person taps the video again,
-   tap by tap, to watch the next ad (or, on the final ad, the video
-   unlocks). */
+/* One ad step just finished: the verify sequence already ran inside the
+   verify-modal (2s spin → checkmark → close icon tapped). This closes the
+   modal, marks the step complete, and returns straight to the home page —
+   no extra card, no loading screen. If that was the last required ad, the
+   video unlocks immediately. */
 function onSingleAdWatched(){
   registerAdWatched();
   const v = STATE.currentVideo;
@@ -1723,50 +1714,13 @@ function onSingleAdWatched(){
   STATE.verifyModalOpen = false;
   document.getElementById('verify-modal').classList.remove('open');
   renderVideos(STATE.filteredVideos);
-  showStepCard();
-}
-
-function renderStepCardDots(currentDone){
-  const total = STATE.taskAdsRequired;
-  const dotsEl = document.getElementById('step-card-dots');
-  let html = '';
-  for(let i=1;i<=total;i++){
-    if(i < STATE.taskStep) html += `<div class="verify-step-dot on"></div>`;
-    else if(i === STATE.taskStep) html += `<div class="verify-step-dot ${currentDone?'on':'pulse'}"></div>`;
-    else html += `<div class="verify-step-dot"></div>`;
+  if(STATE.taskStep >= STATE.taskAdsRequired){
+    finishUnlock();
+  } else {
+    toast(`ধাপ ${STATE.taskStep}/${STATE.taskAdsRequired} সম্পন্ন — পরের বিজ্ঞাপনের জন্য আবার ট্যাপ করুন`);
   }
-  dotsEl.innerHTML = html;
 }
 
-function showStepCard(){
-  const total = STATE.taskAdsRequired;
-  const isLast = STATE.taskStep >= total;
-  STATE.stepCardIsLast = isLast;
-  renderStepCardDots(false);
-  document.getElementById('step-card-icon').textContent = 'check_circle';
-  document.getElementById('step-card-title').textContent = isLast ? 'সবগুলো বিজ্ঞাপন সম্পন্ন হচ্ছে...' : `ধাপ যাচাই হচ্ছে (${STATE.taskStep}/${total})`;
-  document.getElementById('step-card-sub').textContent = 'একটু অপেক্ষা করুন...';
-  const plusBtn = document.getElementById('step-card-plus');
-  if(plusBtn) plusBtn.classList.remove('show');
-  document.getElementById('step-card-modal').classList.add('open');
-  if(STATE.stepCardTimer) clearTimeout(STATE.stepCardTimer);
-  STATE.stepCardTimer = setTimeout(()=>{
-    STATE.stepCardTimer = null;
-    renderStepCardDots(true);
-    document.getElementById('step-card-title').textContent = isLast ? 'সবগুলো বিজ্ঞাপন সম্পন্ন!' : `ধাপ সম্পন্ন (${STATE.taskStep}/${total})`;
-    document.getElementById('step-card-sub').textContent = isLast ? 'ভিডিওটি আনলক করতে + বাটনে ট্যাপ করুন' : 'পরের বিজ্ঞাপন দেখতে + বাটনে ট্যাপ করুন';
-    if(plusBtn) plusBtn.classList.add('show');
-  }, 3000);
-}
-
-function onStepCardPlusTap(){
-  const plusBtn = document.getElementById('step-card-plus');
-  if(plusBtn) plusBtn.classList.remove('show');
-  document.getElementById('step-card-modal').classList.remove('open');
-  const isLast = STATE.stepCardIsLast;
-  if(isLast){ finishUnlock(); }
-  showPage('home');
-}
 function finishUnlock(){
   const v = STATE.currentVideo;
   if(!v) return;
