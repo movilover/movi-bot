@@ -269,6 +269,10 @@ header {
 .verify-close-btn:active { transform:scale(0.88); }
 .verify-close-btn .material-icons-round { font-size:18px; }
 .verify-timer-text { font-size:11px; color:var(--gold-3); font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; margin-top:2px; margin-bottom:14px; }
+.verify-next-btn { display:none; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%; margin:0 auto 20px; background:var(--grad-btn); color:#fff; cursor:pointer; box-shadow:0 10px 24px rgba(124,35,51,0.3); transition:transform 0.15s; }
+.verify-next-btn.show { display:flex; animation:popIn 0.3s cubic-bezier(.22,.68,0,1.6); }
+.verify-next-btn:active { transform:scale(0.9); }
+.verify-next-btn .material-icons-round { font-size:32px; }
 .verify-dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; }
 .verify-step-dot { width:9px; height:9px; border-radius:50%; background:var(--border); transition:background 0.3s; }
 .verify-step-dot.on { background:var(--gold); }
@@ -384,10 +388,11 @@ header {
 .referral-card { margin:0 14px 14px; padding:18px; border-radius:18px; background:linear-gradient(160deg, rgba(182,134,44,0.10), rgba(124,35,51,0.05)); border:1px solid var(--border-gold); position:relative; overflow:hidden; box-shadow:0 8px 22px rgba(124,35,51,0.06); }
 .referral-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--gold),var(--wine)); }
 .ref-label { font-size:10.5px; color:var(--gold-3); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
-.ref-link-box { width:100%; box-sizing:border-box; background:var(--surface); border:1px solid var(--border-gold); border-radius:12px; padding:12px 14px; font-size:11.5px; line-height:1.55; color:var(--text); font-family:monospace; word-break:break-all; overflow-wrap:break-word; margin-bottom:10px; box-shadow:inset 0 1px 3px rgba(124,35,51,0.04); }
-.ref-copy-btn { width:100%; height:44px; border-radius:12px; border:none; cursor:pointer; background:var(--grad-gold); color:#2a1c05; font-size:13.5px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.6px; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 6px 16px rgba(182,134,44,0.25); box-sizing:border-box; }
-.ref-copy-btn .material-icons-round { font-size:16px; }
-.ref-copy-btn:active { transform:scale(0.97); }
+.ref-row { display:flex; align-items:stretch; gap:10px; }
+.ref-link-box { flex:1; min-width:0; box-sizing:border-box; background:var(--surface); border:1px solid var(--border-gold); border-radius:14px; padding:12px 14px; font-size:11.5px; line-height:1.55; color:var(--text); font-family:monospace; word-break:break-all; overflow-wrap:break-word; box-shadow:inset 0 1px 3px rgba(124,35,51,0.04); display:flex; align-items:center; }
+.ref-copy-btn { width:66px; flex-shrink:0; border-radius:14px; border:none; cursor:pointer; background:var(--grad-btn); color:#fff; font-size:11px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.4px; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; box-shadow:0 6px 16px rgba(124,35,51,0.24); box-sizing:border-box; }
+.ref-copy-btn .material-icons-round { font-size:18px; }
+.ref-copy-btn:active { transform:scale(0.94); }
 .ref-stats { display:flex; gap:16px; margin-top:10px; }
 .ref-stat { font-size:11px; color:var(--text-muted); }
 .ref-stat span { color:var(--gold-3); font-weight:700; }
@@ -671,8 +676,10 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 
       <div class="referral-card">
         <div class="ref-label"><span class="material-icons-round" style="font-size:14px;">group_add</span>রেফারেল লিংক</div>
-        <div class="ref-link-box" id="ref-link-box">লোড হচ্ছে...</div>
-        <button class="ref-copy-btn ripple" onclick="copyRefLink()"><span class="material-icons-round">content_copy</span>লিংক কপি করুন</button>
+        <div class="ref-row">
+          <div class="ref-link-box" id="ref-link-box">লোড হচ্ছে...</div>
+          <button class="ref-copy-btn ripple" onclick="copyRefLink()"><span class="material-icons-round">content_copy</span>কপি</button>
+        </div>
       </div>
 
       <div class="menu-list">
@@ -729,13 +736,14 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
   <div class="verify-box">
     <div class="verify-close-btn ripple" id="verify-close-btn" onclick="closeMonetagAd()"><span class="material-icons-round">close</span></div>
     <div class="verify-dots" id="verify-dots"></div>
-    <div class="verify-ring-box">
+    <div class="verify-ring-box" id="verify-ring-box-wrap">
       <svg width="88" height="88" viewBox="0 0 88 88">
         <circle class="ring-bg" cx="44" cy="44" r="38"/>
         <circle class="ring-fg" id="ring-fg" cx="44" cy="44" r="38"/>
       </svg>
       <div class="verify-ring-icon"><span class="material-icons-round">local_movies</span></div>
     </div>
+    <div class="verify-next-btn ripple" id="verify-next-btn" onclick="continueNextAd()"><span class="material-icons-round">add</span></div>
     <div class="verify-title" id="verify-title">বিজ্ঞাপন চলছে</div>
     <div class="verify-sub" id="verify-sub">দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে</div>
     <div class="verify-timer-text" id="verify-timer-text"></div>
@@ -856,6 +864,7 @@ const STATE = {
   tutorialVideo: null,
   adNetwork: { activeNetwork:'gigapub', gigapubZoneId:'6814', monetagZoneId:'' },
   monetagPending: null,
+  stepCompleteInterval: null,
   currentParts: null,
   currentPartIdx: 0,
   taskStepByVideo: JSON.parse(localStorage.getItem('ml_task_step')||'{}'),
@@ -1595,22 +1604,34 @@ function startUnlockFromCard(id){
   const req = adsReq(v);
   STATE.taskAdsRequired = req;
   STATE.taskStep = getTaskStep(id);
-  openAdModal();
-}
-function openAdModal(){
-  const step = STATE.taskStep+1, total = STATE.taskAdsRequired;
   STATE.verifyModalOpen = true;
   document.getElementById('verify-modal').classList.add('open');
+  resetAdModalToPlayingState();
+  runAdStep();
+}
+
+/* Resets the ad modal back to its "ad is playing" visual state — used both
+   for the very first ad and for every following ad within a multi-ad
+   unlock sequence, so the SAME modal is reused instead of closing and
+   reopening between steps (which used to make the flow feel stuck). */
+function resetAdModalToPlayingState(){
+  const step = STATE.taskStep+1, total = STATE.taskAdsRequired;
   const dotsEl = document.getElementById('verify-dots');
   dotsEl.innerHTML='';
-  for(let i=1;i<=total;i++){ dotsEl.innerHTML += `<div class="verify-step-dot ${i<=step?'on':''}"></div>`; }
+  for(let i=1;i<=total;i++){ dotsEl.innerHTML += `<div class="verify-step-dot ${i<=STATE.taskStep?'on':''}"></div>`; }
   document.getElementById('verify-title').textContent = total>1 ? `বিজ্ঞাপন চলছে (${step}/${total})` : 'বিজ্ঞাপন চলছে';
   document.getElementById('verify-sub').textContent = 'দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে';
   const crossBtn = document.getElementById('verify-close-btn');
   if(crossBtn) crossBtn.classList.remove('show');
   const timerText = document.getElementById('verify-timer-text');
   if(timerText) timerText.textContent = '';
+  const nextBtn = document.getElementById('verify-next-btn');
+  if(nextBtn) nextBtn.classList.remove('show');
+  const ringWrap = document.getElementById('verify-ring-box-wrap');
+  if(ringWrap) ringWrap.style.display = '';
+}
 
+function runAdStep(){
   if (!isAdNetworkReady()) {
     STATE.verifyModalOpen = false;
     document.getElementById('verify-modal').classList.remove('open');
@@ -1621,10 +1642,7 @@ function openAdModal(){
   showRewardedAd()
     .then(()=>{
       STATE.verifyActive = false;
-      STATE.verifyModalOpen = false;
-      document.getElementById('verify-modal').classList.remove('open');
-      registerAdWatched();
-      onAdStepComplete();
+      onSingleAdWatched();
     })
     .catch((e)=>{
       STATE.verifyActive = false;
@@ -1647,23 +1665,73 @@ function handleEarlyExit(){
     if(pending.interval) clearInterval(pending.interval);
     pending.reject(new Error('early exit'));
   }
+  if(STATE.stepCompleteInterval){
+    clearInterval(STATE.stepCompleteInterval);
+    STATE.stepCompleteInterval = null;
+  }
 }
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) handleEarlyExit(); });
 window.addEventListener('pagehide', handleEarlyExit);
 
-function onAdStepComplete(){
+/* One ad step just finished (the ad-network promise resolved). If more
+   ad-steps remain for this video, we stay in the SAME modal and show a
+   short "step complete" state: a 2 second countdown, then a "+" button —
+   only when the person taps it does the next ad start. If this was the
+   last required ad, the video unlocks immediately. */
+function onSingleAdWatched(){
+  registerAdWatched();
   const v = STATE.currentVideo;
   STATE.taskStep++;
   if(v) setTaskStep(v.id, STATE.taskStep);
+  stepDoneSnd();
   const isLast = STATE.taskStep >= STATE.taskAdsRequired;
   if(isLast){
-    stepDoneSnd();
+    STATE.verifyModalOpen = false;
+    document.getElementById('verify-modal').classList.remove('open');
     finishUnlock();
   } else {
-    stepDoneSnd();
-    toast(`✅ ${STATE.taskStep}/${STATE.taskAdsRequired} সম্পন্ন — আবার বিজ্ঞাপন দেখুন পরের ধাপের জন্য।`);
     renderVideos(STATE.filteredVideos);
+    showStepCompleteState();
   }
+}
+
+function showStepCompleteState(){
+  const total = STATE.taskAdsRequired;
+  const dotsEl = document.getElementById('verify-dots');
+  dotsEl.innerHTML='';
+  for(let i=1;i<=total;i++){ dotsEl.innerHTML += `<div class="verify-step-dot ${i<=STATE.taskStep?'on':''}"></div>`; }
+  document.getElementById('verify-title').textContent = `✅ ধাপ সম্পন্ন (${STATE.taskStep}/${total})`;
+  document.getElementById('verify-sub').textContent = 'পরের বিজ্ঞাপনের অপশন আসছে...';
+  const crossBtn = document.getElementById('verify-close-btn');
+  if(crossBtn) crossBtn.classList.remove('show');
+  const nextBtn = document.getElementById('verify-next-btn');
+  if(nextBtn) nextBtn.classList.remove('show');
+  const ringWrap = document.getElementById('verify-ring-box-wrap');
+  if(ringWrap) ringWrap.style.display = '';
+  const timerText = document.getElementById('verify-timer-text');
+  let remain = 2;
+  if(timerText) timerText.textContent = remain + ' সেকেন্ড...';
+  if(STATE.stepCompleteInterval) clearInterval(STATE.stepCompleteInterval);
+  STATE.stepCompleteInterval = setInterval(()=>{
+    remain--;
+    if(remain>0){
+      if(timerText) timerText.textContent = remain + ' সেকেন্ড...';
+    } else {
+      clearInterval(STATE.stepCompleteInterval);
+      STATE.stepCompleteInterval = null;
+      if(timerText) timerText.textContent = '';
+      if(ringWrap) ringWrap.style.display = 'none';
+      if(nextBtn) nextBtn.classList.add('show');
+      document.getElementById('verify-sub').textContent = 'পরের বিজ্ঞাপন দেখতে + বাটনে ট্যাপ করুন';
+    }
+  },1000);
+}
+
+function continueNextAd(){
+  const nextBtn = document.getElementById('verify-next-btn');
+  if(nextBtn) nextBtn.classList.remove('show');
+  resetAdModalToPlayingState();
+  runAdStep();
 }
 function finishUnlock(){
   const v = STATE.currentVideo;
