@@ -269,10 +269,6 @@ header {
 .verify-close-btn:active { transform:scale(0.88); }
 .verify-close-btn .material-icons-round { font-size:18px; }
 .verify-timer-text { font-size:11px; color:var(--gold-3); font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; margin-top:2px; margin-bottom:14px; }
-.verify-next-btn { display:none; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%; margin:0 auto 20px; background:var(--grad-btn); color:#fff; cursor:pointer; box-shadow:0 10px 24px rgba(124,35,51,0.3); transition:transform 0.15s; }
-.verify-next-btn.show { display:flex; animation:popIn 0.3s cubic-bezier(.22,.68,0,1.6); }
-.verify-next-btn:active { transform:scale(0.9); }
-.verify-next-btn .material-icons-round { font-size:32px; }
 .verify-dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; }
 .verify-step-dot { width:9px; height:9px; border-radius:50%; background:var(--border); transition:background 0.3s; }
 .verify-step-dot.on { background:var(--gold); }
@@ -287,6 +283,25 @@ header {
 .verify-slot { border:1px dashed var(--border); border-radius:12px; padding:14px; font-size:11px; color:var(--text-muted); margin-bottom:14px; background:var(--surface-2); }
 .verify-hint { display:flex; align-items:center; gap:8px; background:var(--gold-soft); border:1px solid var(--border-gold); border-radius:12px; padding:10px 12px; font-size:11.5px; color:var(--gold-3); text-align:left; line-height:1.5; }
 .verify-hint .material-icons-round { font-size:16px; color:var(--gold); flex-shrink:0; }
+.verify-step-dot.pulse { background:var(--gold-2); animation:pulse 1s ease-in-out infinite; }
+
+/* ============ PREMIUM STEP CARD (shown between ad steps) ============ */
+#step-card-modal { display:none; position:fixed; inset:0; z-index:640; background:rgba(20,12,14,0.55); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px; }
+#step-card-modal.open { display:flex; animation:fadeIn 0.2s; }
+.step-card-box { width:100%; max-width:320px; background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--border-gold); border-radius:26px; padding:36px 26px 28px; text-align:center; position:relative; box-shadow:0 24px 60px rgba(0,0,0,0.28); overflow:hidden; animation:scaleIn 0.3s cubic-bezier(.22,.68,0,1.4); }
+.step-card-box::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--wine),var(--gold),var(--wine)); }
+.step-card-box::after { content:''; position:absolute; top:16px; left:16px; right:16px; height:1px; background:repeating-linear-gradient(90deg, transparent 0 6px, var(--border-gold) 6px 7px); opacity:0.5; }
+.step-card-plus { position:absolute; top:14px; right:14px; width:42px; height:42px; border-radius:50%; background:var(--grad-btn); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 8px 20px rgba(124,35,51,0.38); z-index:2; }
+.step-card-plus.show { display:flex; animation:popIn 0.35s cubic-bezier(.22,.68,0,1.6); }
+.step-card-plus:active { transform:scale(0.88); }
+.step-card-plus .material-icons-round { font-size:23px; }
+.step-card-dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; margin-top:6px; }
+.step-card-ring { position:relative; width:92px; height:92px; margin:0 auto 22px; }
+.step-card-ring svg { transform:rotate(-90deg); animation: spin 2.2s linear infinite; }
+.step-card-ring-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.step-card-ring-icon .material-icons-round { font-size:34px; color:var(--wine); }
+.step-card-title { font-family:'Rajdhani',sans-serif; font-size:19px; font-weight:800; color:var(--text); margin-bottom:6px; }
+.step-card-sub { font-size:12.5px; color:var(--text-muted); line-height:1.6; }
 
 /* Final unlock celebration (genuine, one-time) */
 #task-complete-popup { display:none; position:fixed; inset:0; z-index:700; background:rgba(20,12,14,0.45); backdrop-filter:blur(6px); align-items:center; justify-content:center; }
@@ -743,12 +758,30 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
       </svg>
       <div class="verify-ring-icon"><span class="material-icons-round">local_movies</span></div>
     </div>
-    <div class="verify-next-btn ripple" id="verify-next-btn" onclick="continueNextAd()"><span class="material-icons-round">add</span></div>
     <div class="verify-title" id="verify-title">বিজ্ঞাপন চলছে</div>
     <div class="verify-sub" id="verify-sub">দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে</div>
     <div class="verify-timer-text" id="verify-timer-text"></div>
     <div class="verify-slot">এখানে আপনার অ্যাড নেটওয়ার্কের বিজ্ঞাপন দেখানো হবে</div>
     <div class="verify-hint"><span class="material-icons-round">info</span>বিজ্ঞাপনটি মাঝপথে বন্ধ করলে শুধু এই ধাপটি অসম্পূর্ণ থাকবে — কোনো পেনাল্টি নেই, আবার চেষ্টা করতে পারবেন।</div>
+  </div>
+</div>
+
+<!-- PREMIUM STEP CARD: appears right after an ad step finishes. Spins for
+     3 seconds while the step is submitted, then reveals a "+" button in
+     the top corner that takes the person back to the home page. -->
+<div id="step-card-modal">
+  <div class="step-card-box">
+    <div class="step-card-plus ripple" id="step-card-plus" onclick="onStepCardPlusTap()"><span class="material-icons-round">add</span></div>
+    <div class="step-card-dots" id="step-card-dots"></div>
+    <div class="step-card-ring">
+      <svg width="92" height="92" viewBox="0 0 92 92">
+        <circle class="ring-bg" cx="46" cy="46" r="39"/>
+        <circle class="ring-fg" cx="46" cy="46" r="39"/>
+      </svg>
+      <div class="step-card-ring-icon"><span class="material-icons-round" id="step-card-icon">check_circle</span></div>
+    </div>
+    <div class="step-card-title" id="step-card-title">ধাপ যাচাই হচ্ছে...</div>
+    <div class="step-card-sub" id="step-card-sub">একটু অপেক্ষা করুন...</div>
   </div>
 </div>
 
@@ -864,7 +897,8 @@ const STATE = {
   tutorialVideo: null,
   adNetwork: { activeNetwork:'gigapub', gigapubZoneId:'6814', monetagZoneId:'' },
   monetagPending: null,
-  stepCompleteInterval: null,
+  stepCardTimer: null,
+  stepCardIsLast: false,
   currentParts: null,
   currentPartIdx: 0,
   taskStepByVideo: JSON.parse(localStorage.getItem('ml_task_step')||'{}'),
@@ -1610,10 +1644,9 @@ function startUnlockFromCard(id){
   runAdStep();
 }
 
-/* Resets the ad modal back to its "ad is playing" visual state — used both
-   for the very first ad and for every following ad within a multi-ad
-   unlock sequence, so the SAME modal is reused instead of closing and
-   reopening between steps (which used to make the flow feel stuck). */
+/* Resets the ad modal back to its "ad is playing" visual state — used
+   every time a fresh ad step starts (first ad, or any later ad the person
+   manually re-taps from the home page). */
 function resetAdModalToPlayingState(){
   const step = STATE.taskStep+1, total = STATE.taskAdsRequired;
   const dotsEl = document.getElementById('verify-dots');
@@ -1625,8 +1658,6 @@ function resetAdModalToPlayingState(){
   if(crossBtn) crossBtn.classList.remove('show');
   const timerText = document.getElementById('verify-timer-text');
   if(timerText) timerText.textContent = '';
-  const nextBtn = document.getElementById('verify-next-btn');
-  if(nextBtn) nextBtn.classList.remove('show');
   const ringWrap = document.getElementById('verify-ring-box-wrap');
   if(ringWrap) ringWrap.style.display = '';
 }
@@ -1652,7 +1683,7 @@ function runAdStep(){
       console.error('Rewarded ad error:', e);
     });
 }
-// If the tab/app is hidden while an ad is in progress, just close the modal quietly — no strike, no penalty.
+// If the tab/app is hidden while an ad is in progress, just close everything quietly — no strike, no penalty.
 function handleEarlyExit(){
   if(STATE.verifyModalOpen){
     STATE.verifyActive = false;
@@ -1665,73 +1696,76 @@ function handleEarlyExit(){
     if(pending.interval) clearInterval(pending.interval);
     pending.reject(new Error('early exit'));
   }
-  if(STATE.stepCompleteInterval){
-    clearInterval(STATE.stepCompleteInterval);
-    STATE.stepCompleteInterval = null;
+  if(STATE.stepCardTimer){
+    clearTimeout(STATE.stepCardTimer);
+    STATE.stepCardTimer = null;
   }
+  const stepCardModal = document.getElementById('step-card-modal');
+  if(stepCardModal) stepCardModal.classList.remove('open');
 }
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) handleEarlyExit(); });
 window.addEventListener('pagehide', handleEarlyExit);
 
-/* One ad step just finished (the ad-network promise resolved). If more
-   ad-steps remain for this video, we stay in the SAME modal and show a
-   short "step complete" state: a 2 second countdown, then a "+" button —
-   only when the person taps it does the next ad start. If this was the
-   last required ad, the video unlocks immediately. */
+/* One ad step just finished (the ad-network promise resolved, e.g. the
+   person tapped the cross icon after watching). The ad-playing modal
+   closes and a small premium "card" appears in its place: a ring spins
+   for 3 seconds while the step is being submitted, then a "+" button
+   appears at the top corner of the card. Tapping "+" closes the card and
+   returns to the home page — from there the person taps the video again,
+   tap by tap, to watch the next ad (or, on the final ad, the video
+   unlocks). */
 function onSingleAdWatched(){
   registerAdWatched();
   const v = STATE.currentVideo;
   STATE.taskStep++;
   if(v) setTaskStep(v.id, STATE.taskStep);
   stepDoneSnd();
-  const isLast = STATE.taskStep >= STATE.taskAdsRequired;
-  if(isLast){
-    STATE.verifyModalOpen = false;
-    document.getElementById('verify-modal').classList.remove('open');
-    finishUnlock();
-  } else {
-    renderVideos(STATE.filteredVideos);
-    showStepCompleteState();
-  }
+  STATE.verifyModalOpen = false;
+  document.getElementById('verify-modal').classList.remove('open');
+  renderVideos(STATE.filteredVideos);
+  showStepCard();
 }
 
-function showStepCompleteState(){
+function renderStepCardDots(currentDone){
   const total = STATE.taskAdsRequired;
-  const dotsEl = document.getElementById('verify-dots');
-  dotsEl.innerHTML='';
-  for(let i=1;i<=total;i++){ dotsEl.innerHTML += `<div class="verify-step-dot ${i<=STATE.taskStep?'on':''}"></div>`; }
-  document.getElementById('verify-title').textContent = `✅ ধাপ সম্পন্ন (${STATE.taskStep}/${total})`;
-  document.getElementById('verify-sub').textContent = 'পরের বিজ্ঞাপনের অপশন আসছে...';
-  const crossBtn = document.getElementById('verify-close-btn');
-  if(crossBtn) crossBtn.classList.remove('show');
-  const nextBtn = document.getElementById('verify-next-btn');
-  if(nextBtn) nextBtn.classList.remove('show');
-  const ringWrap = document.getElementById('verify-ring-box-wrap');
-  if(ringWrap) ringWrap.style.display = '';
-  const timerText = document.getElementById('verify-timer-text');
-  let remain = 2;
-  if(timerText) timerText.textContent = remain + ' সেকেন্ড...';
-  if(STATE.stepCompleteInterval) clearInterval(STATE.stepCompleteInterval);
-  STATE.stepCompleteInterval = setInterval(()=>{
-    remain--;
-    if(remain>0){
-      if(timerText) timerText.textContent = remain + ' সেকেন্ড...';
-    } else {
-      clearInterval(STATE.stepCompleteInterval);
-      STATE.stepCompleteInterval = null;
-      if(timerText) timerText.textContent = '';
-      if(ringWrap) ringWrap.style.display = 'none';
-      if(nextBtn) nextBtn.classList.add('show');
-      document.getElementById('verify-sub').textContent = 'পরের বিজ্ঞাপন দেখতে + বাটনে ট্যাপ করুন';
-    }
-  },1000);
+  const dotsEl = document.getElementById('step-card-dots');
+  let html = '';
+  for(let i=1;i<=total;i++){
+    if(i < STATE.taskStep) html += `<div class="verify-step-dot on"></div>`;
+    else if(i === STATE.taskStep) html += `<div class="verify-step-dot ${currentDone?'on':'pulse'}"></div>`;
+    else html += `<div class="verify-step-dot"></div>`;
+  }
+  dotsEl.innerHTML = html;
 }
 
-function continueNextAd(){
-  const nextBtn = document.getElementById('verify-next-btn');
-  if(nextBtn) nextBtn.classList.remove('show');
-  resetAdModalToPlayingState();
-  runAdStep();
+function showStepCard(){
+  const total = STATE.taskAdsRequired;
+  const isLast = STATE.taskStep >= total;
+  STATE.stepCardIsLast = isLast;
+  renderStepCardDots(false);
+  document.getElementById('step-card-icon').textContent = 'check_circle';
+  document.getElementById('step-card-title').textContent = isLast ? 'সবগুলো বিজ্ঞাপন সম্পন্ন হচ্ছে...' : `ধাপ যাচাই হচ্ছে (${STATE.taskStep}/${total})`;
+  document.getElementById('step-card-sub').textContent = 'একটু অপেক্ষা করুন...';
+  const plusBtn = document.getElementById('step-card-plus');
+  if(plusBtn) plusBtn.classList.remove('show');
+  document.getElementById('step-card-modal').classList.add('open');
+  if(STATE.stepCardTimer) clearTimeout(STATE.stepCardTimer);
+  STATE.stepCardTimer = setTimeout(()=>{
+    STATE.stepCardTimer = null;
+    renderStepCardDots(true);
+    document.getElementById('step-card-title').textContent = isLast ? 'সবগুলো বিজ্ঞাপন সম্পন্ন!' : `ধাপ সম্পন্ন (${STATE.taskStep}/${total})`;
+    document.getElementById('step-card-sub').textContent = isLast ? 'ভিডিওটি আনলক করতে + বাটনে ট্যাপ করুন' : 'পরের বিজ্ঞাপন দেখতে + বাটনে ট্যাপ করুন';
+    if(plusBtn) plusBtn.classList.add('show');
+  }, 3000);
+}
+
+function onStepCardPlusTap(){
+  const plusBtn = document.getElementById('step-card-plus');
+  if(plusBtn) plusBtn.classList.remove('show');
+  document.getElementById('step-card-modal').classList.remove('open');
+  const isLast = STATE.stepCardIsLast;
+  if(isLast){ finishUnlock(); }
+  showPage('home');
 }
 function finishUnlock(){
   const v = STATE.currentVideo;
