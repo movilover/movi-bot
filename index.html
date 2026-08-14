@@ -262,30 +262,30 @@ header {
 /* ============ HONEST AD MODAL (single real ad, no fake steps) ============ */
 #verify-modal { display:none; position:fixed; inset:0; z-index:600; background:rgba(20,12,14,0.55); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px; }
 #verify-modal.open { display:flex; animation:fadeIn 0.2s; }
-.verify-box { width:100%; max-width:340px; background:var(--surface); border-radius:24px; padding:32px 26px 26px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); border:1px solid var(--border-gold); }
-.verify-box::before { content:''; position:absolute; top:0; left:20px; right:20px; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
-.verify-close-btn { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:rgba(124,35,51,0.08); display:none; align-items:center; justify-content:center; cursor:pointer; color:var(--wine); transition:transform 0.15s; z-index:2; }
+.verify-box { width:100%; max-width:272px; background:var(--surface); border-radius:20px; padding:20px 18px 16px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 16px 44px rgba(0,0,0,0.22); border:1px solid var(--border-gold); }
+.verify-box::before { content:''; position:absolute; top:0; left:16px; right:16px; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+.verify-close-btn { position:absolute; top:9px; right:9px; width:26px; height:26px; border-radius:50%; background:rgba(124,35,51,0.08); display:none; align-items:center; justify-content:center; cursor:pointer; color:var(--wine); transition:transform 0.15s; z-index:2; }
 .verify-close-btn.show { display:flex; animation:popIn 0.3s cubic-bezier(.22,.68,0,1.6); }
 .verify-close-btn:active { transform:scale(0.88); }
-.verify-close-btn .material-icons-round { font-size:18px; }
-.verify-timer-text { font-size:11px; color:var(--gold-3); font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; margin-top:2px; margin-bottom:14px; }
-.verify-dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; }
-.verify-step-dot { width:9px; height:9px; border-radius:50%; background:var(--border); transition:background 0.3s; }
+.verify-close-btn .material-icons-round { font-size:15px; }
+.verify-timer-text { font-size:10px; color:var(--gold-3); font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; margin-top:1px; margin-bottom:9px; }
+.verify-dots { display:flex; gap:6px; justify-content:center; margin-bottom:12px; }
+.verify-step-dot { width:7px; height:7px; border-radius:50%; background:var(--border); transition:background 0.3s; }
 .verify-step-dot.on { background:var(--gold); }
-.verify-ring-box { position:relative; width:88px; height:88px; margin:0 auto 20px; }
+.verify-ring-box { position:relative; width:60px; height:60px; margin:0 auto 12px; }
 .verify-ring-box svg { transform:rotate(-90deg); transition:transform 0.2s; }
 .verify-ring-box.spinning svg { animation: spin 2.6s linear infinite; }
 .ring-bg { fill:none; stroke:var(--border); stroke-width:4; }
-.ring-fg { fill:none; stroke:var(--gold); stroke-width:4; stroke-linecap:round; stroke-dasharray:60 200; transition:stroke-dasharray 0.4s ease, stroke 0.4s ease; }
-.ring-fg.done { stroke:var(--green); stroke-dasharray:238 238; }
+.ring-fg { fill:none; stroke:var(--gold); stroke-width:4; stroke-linecap:round; stroke-dasharray:47 157; transition:stroke-dasharray 0.4s ease, stroke 0.4s ease; }
+.ring-fg.done { stroke:var(--green); stroke-dasharray:157 157; }
 .verify-ring-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-.verify-ring-icon .material-icons-round { font-size:30px; color:var(--wine); transition:color 0.2s, transform 0.2s; }
+.verify-ring-icon .material-icons-round { font-size:22px; color:var(--wine); transition:color 0.2s, transform 0.2s; }
 .verify-ring-icon .material-icons-round.done { color:var(--green); transform:scale(1.08); animation:popIn 0.35s cubic-bezier(.22,.68,0,1.6); }
-.verify-title { font-size:18px; font-weight:800; color:var(--text); margin-bottom:6px; font-family:'Rajdhani',sans-serif; }
-.verify-sub { font-size:12.5px; color:var(--text-muted); margin-bottom:18px; line-height:1.6; }
-.verify-slot { border:1px dashed var(--border); border-radius:12px; padding:14px; font-size:11px; color:var(--text-muted); margin-bottom:14px; background:var(--surface-2); }
-.verify-hint { display:flex; align-items:center; gap:8px; background:var(--gold-soft); border:1px solid var(--border-gold); border-radius:12px; padding:10px 12px; font-size:11.5px; color:var(--gold-3); text-align:left; line-height:1.5; }
-.verify-hint .material-icons-round { font-size:16px; color:var(--gold); flex-shrink:0; }
+.verify-title { font-size:14.5px; font-weight:800; color:var(--text); margin-bottom:4px; font-family:'Rajdhani',sans-serif; }
+.verify-sub { font-size:11px; color:var(--text-muted); margin-bottom:10px; line-height:1.5; }
+.verify-slot { border:1px dashed var(--border); border-radius:10px; padding:9px; font-size:10px; color:var(--text-muted); margin-bottom:9px; background:var(--surface-2); }
+.verify-hint { display:flex; align-items:center; gap:6px; background:var(--gold-soft); border:1px solid var(--border-gold); border-radius:10px; padding:8px 9px; font-size:10px; color:var(--gold-3); text-align:left; line-height:1.45; }
+.verify-hint .material-icons-round { font-size:14px; color:var(--gold); flex-shrink:0; }
 .verify-step-dot.pulse { background:var(--gold-2); animation:pulse 1s ease-in-out infinite; }
 
 /* Final unlock celebration (genuine, one-time) */
@@ -346,8 +346,8 @@ header {
 .pdp-copy-btn { background:var(--gold-soft); border:1px solid var(--border-gold); color:var(--gold-3); }
 
 /* ============ PROFILE ============ */
-.profile-card { margin:14px; padding:24px 20px; border-radius:20px; background:var(--surface); border:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; overflow:hidden; box-shadow:0 8px 26px rgba(124,35,51,0.06); }
-.profile-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--wine),var(--gold)); }
+.profile-card { margin:14px; padding:22px 20px 6px; border-radius:20px; background:var(--surface); border:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; overflow:visible; box-shadow:0 8px 26px rgba(124,35,51,0.06); }
+.profile-card::before { content:''; position:absolute; top:0; left:20px; right:20px; height:2px; border-radius:2px; background:linear-gradient(90deg,var(--wine),var(--gold)); }
 .avatar-frame-wrap { position:relative; width:80px; margin:0 auto; }
 .avatar-frame { width:80px; height:80px; border-radius:50%; padding:3px; background:conic-gradient(from 0deg, var(--gold), var(--wine-3), var(--gold)); flex-shrink:0; }
 .avatar-inner { width:100%; height:100%; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:900; color:var(--gold-3); overflow:hidden; font-family:'Cinzel Decorative',serif; }
@@ -372,40 +372,40 @@ header {
 .avatar-url-row { display:flex; gap:8px; }
 .avatar-url-input { flex:1; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12px; color:var(--text); outline:none; font-family:'Hind Siliguri',sans-serif; }
 .avatar-url-apply { padding:9px 14px; border-radius:10px; border:none; background:var(--grad-btn); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap; }
-.profile-name { font-size:18px; font-weight:700; color:var(--text); font-family:'Rajdhani',sans-serif; }
-.profile-handle { font-size:12px; color:var(--text-muted); }
-.profile-stats { display:flex; gap:0; width:100%; margin-top:10px; border-top:1px solid var(--border); }
-.pstat { flex:1; text-align:center; padding:12px 0; border-right:1px solid var(--border); }
+.profile-name { font-size:18px; font-weight:700; color:var(--text); font-family:'Rajdhani',sans-serif; line-height:1.4; padding:0 6px; }
+.profile-handle { font-size:12px; color:var(--text-muted); line-height:1.5; padding-bottom:2px; }
+.profile-stats { display:flex; gap:0; width:100%; margin-top:8px; border-top:1px solid var(--border); }
+.pstat { flex:1; text-align:center; padding:13px 4px; border-right:1px solid var(--border); }
 .pstat:last-child { border-right:none; }
-.pstat-val { font-size:19px; font-weight:700; color:var(--gold-3); font-family:'Rajdhani',sans-serif; }
-.pstat-lbl { font-size:10px; color:var(--text-muted); margin-top:2px; letter-spacing:0.4px; }
+.pstat-val { font-size:19px; font-weight:700; color:var(--gold-3); font-family:'Rajdhani',sans-serif; line-height:1.3; }
+.pstat-lbl { font-size:9.5px; color:var(--text-muted); margin-top:3px; letter-spacing:0.4px; }
 
 .profile-section-label { font-size:11px; font-weight:700; color:var(--gold-3); letter-spacing:1.5px; text-transform:uppercase; padding:16px 18px 8px; font-family:'Rajdhani',sans-serif; }
 
 /* ---- Referral card: link box shown as its own full-width, fully-rounded
    box on its own row, with a full-width copy button below. Nothing is
    truncated or cut off on any side. ---- */
-.referral-card { margin:0 14px 14px; padding:18px; border-radius:18px; background:linear-gradient(160deg, rgba(182,134,44,0.10), rgba(124,35,51,0.05)); border:1px solid var(--border-gold); position:relative; overflow:hidden; box-shadow:0 8px 22px rgba(124,35,51,0.06); }
-.referral-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--gold),var(--wine)); }
-.ref-label { font-size:10.5px; color:var(--gold-3); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
-.ref-row { display:flex; align-items:stretch; gap:10px; }
-.ref-link-box { flex:1; min-width:0; box-sizing:border-box; background:var(--surface); border:1px solid var(--border-gold); border-radius:14px; padding:12px 14px; font-size:11.5px; line-height:1.55; color:var(--text); font-family:monospace; word-break:break-all; overflow-wrap:break-word; box-shadow:inset 0 1px 3px rgba(124,35,51,0.04); display:flex; align-items:center; }
-.ref-copy-btn { width:66px; flex-shrink:0; border-radius:14px; border:none; cursor:pointer; background:var(--grad-btn); color:#fff; font-size:11px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.4px; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; box-shadow:0 6px 16px rgba(124,35,51,0.24); box-sizing:border-box; }
-.ref-copy-btn .material-icons-round { font-size:18px; }
+.referral-card { margin:0 14px 14px; padding:16px; border-radius:18px; background:linear-gradient(160deg, rgba(182,134,44,0.10), rgba(124,35,51,0.05)); border:1px solid var(--border-gold); position:relative; overflow:visible; box-shadow:0 8px 22px rgba(124,35,51,0.06); }
+.referral-card::before { content:''; position:absolute; top:0; left:16px; right:16px; height:2px; border-radius:2px; background:linear-gradient(90deg,var(--gold),var(--wine)); }
+.ref-label { font-size:10.5px; color:var(--gold-3); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.ref-row { display:flex; align-items:stretch; gap:8px; }
+.ref-link-box { flex:1; min-width:0; box-sizing:border-box; background:var(--surface); border:1px solid var(--border-gold); border-radius:13px; padding:10px 12px; font-size:10.5px; line-height:1.5; color:var(--text); font-family:monospace; word-break:break-all; overflow-wrap:break-word; box-shadow:inset 0 1px 3px rgba(124,35,51,0.04); display:flex; align-items:center; }
+.ref-copy-btn { width:58px; flex-shrink:0; min-height:52px; border-radius:13px; border:none; cursor:pointer; background:var(--grad-btn); color:#fff; font-size:10.5px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.4px; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; box-shadow:0 6px 16px rgba(124,35,51,0.24); box-sizing:border-box; }
+.ref-copy-btn .material-icons-round { font-size:17px; }
 .ref-copy-btn:active { transform:scale(0.94); }
 .ref-stats { display:flex; gap:16px; margin-top:10px; }
 .ref-stat { font-size:11px; color:var(--text-muted); }
 .ref-stat span { color:var(--gold-3); font-weight:700; }
 
-.menu-list { margin:0 14px 4px; display:flex; flex-direction:column; gap:8px; }
-.menu-item { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 14px rgba(124,35,51,0.04); }
+.menu-list { margin:0 14px 4px; display:flex; flex-direction:column; gap:9px; }
+.menu-item { background:var(--surface); border:1px solid var(--border); border-radius:15px; padding:13px 15px; display:flex; align-items:center; gap:13px; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 14px rgba(124,35,51,0.05); }
 .menu-item:active { transform:scale(0.97); background:var(--surface-2); }
-.menu-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.menu-icon { width:42px; height:42px; border-radius:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--border); }
 .menu-icon .material-icons-round { font-size:19px; }
-.menu-text { flex:1; }
+.menu-text { flex:1; min-width:0; }
 .menu-text-title { font-size:13.5px; font-weight:700; color:var(--text); }
-.menu-text-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
-.menu-arrow { color:var(--text-muted); font-size:19px; }
+.menu-text-sub { font-size:10.5px; color:var(--text-muted); margin-top:2px; line-height:1.4; }
+.menu-arrow { color:var(--text-muted); font-size:19px; flex-shrink:0; }
 
 .collapse-card { margin:0 14px 10px; border-radius:14px; background:var(--surface); border:1px solid var(--border); overflow:hidden; }
 .collapse-head { padding:14px 16px; display:flex; align-items:center; gap:10px; cursor:pointer; }
@@ -682,6 +682,26 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
         </div>
       </div>
 
+      <div class="profile-section-label" style="padding:2px 4px 8px;">আপনার কার্যকলাপ</div>
+      <div class="collapse-card">
+        <div class="collapse-head ripple" id="collapse-head-watch" onclick="toggleCollapse('watch')">
+          <span class="material-icons-round" style="color:var(--wine);">history</span>
+          <div class="collapse-title">দেখা ভিডিওর হিস্ট্রি</div>
+          <span class="collapse-count" id="watch-hist-count">0</span>
+          <span class="material-icons-round chev">expand_more</span>
+        </div>
+        <div class="collapse-body" id="collapse-body-watch"><div class="hist-empty">এখনো কোনো ভিডিও দেখা হয়নি</div></div>
+      </div>
+      <div class="collapse-card">
+        <div class="collapse-head ripple" id="collapse-head-ref" onclick="toggleCollapse('ref')">
+          <span class="material-icons-round" style="color:var(--green);">group_add</span>
+          <div class="collapse-title">রেফারেল হিস্ট্রি</div>
+          <span class="collapse-count" id="ref-hist-count">0</span>
+          <span class="material-icons-round chev">expand_more</span>
+        </div>
+        <div class="collapse-body" id="collapse-body-ref"><div class="hist-empty">লোড হচ্ছে...</div></div>
+      </div>
+
       <div class="menu-list">
         <div class="menu-item ripple" onclick="copyRefLink()">
           <div class="menu-icon" style="background:var(--gold-soft);"><span class="material-icons-round" style="color:var(--gold-3);">link</span></div>
@@ -741,9 +761,9 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
     <div class="verify-close-btn ripple" id="verify-close-btn" onclick="closeVerifyModal()"><span class="material-icons-round">close</span></div>
     <div class="verify-dots" id="verify-dots"></div>
     <div class="verify-ring-box spinning" id="verify-ring-box-wrap">
-      <svg width="88" height="88" viewBox="0 0 88 88">
-        <circle class="ring-bg" cx="44" cy="44" r="38"/>
-        <circle class="ring-fg" id="ring-fg" cx="44" cy="44" r="38"/>
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <circle class="ring-bg" cx="30" cy="30" r="25"/>
+        <circle class="ring-fg" id="ring-fg" cx="30" cy="30" r="25"/>
       </svg>
       <div class="verify-ring-icon"><span class="material-icons-round" id="verify-ring-icon">local_movies</span></div>
     </div>
@@ -1258,6 +1278,8 @@ function initProfile(){
     renderProfileAvatar();
     buildReferralLink();
     updateProfileStats();
+    renderWatchHistorySection();
+    loadReferralHistorySection();
     if(STATE.adminContactUrl){ document.getElementById('support-menu-item').style.display='flex'; }
     if(STATE.officialChannelUrl){ document.getElementById('official-channel-menu-item').style.display='flex'; }
     if(STATE.shortsUrl){ document.getElementById('shorts-menu-item').style.display='flex'; }
@@ -1957,7 +1979,58 @@ function showPage(name){
   document.querySelector(`[data-page="${name}"]`)?.classList.add('active');
   STATE.currentPage=name;
   if(name==='favorites') renderFavorites();
-  if(name==='profile'){ try{ renderProfileAvatar(); buildReferralLink(); updateProfileStats(); }catch(e){ console.error(e); } }
+  if(name==='profile'){ try{ renderProfileAvatar(); buildReferralLink(); updateProfileStats(); renderWatchHistorySection(); loadReferralHistorySection(); }catch(e){ console.error(e); } }
+}
+
+/* ===================== PROFILE ACTIVITY: watch history + referral history =====================
+   Two collapsible cards under the profile section. Watch history comes
+   from STATE.watchHistory (already tracked locally). Referral history is
+   read from the shared 'referrals' collection and filtered down to only
+   the entries this person referred, so it never shows anyone else's data. */
+function toggleCollapse(key){
+  const head = document.getElementById('collapse-head-'+key);
+  const body = document.getElementById('collapse-body-'+key);
+  if(!head || !body) return;
+  const willOpen = !body.classList.contains('open');
+  body.classList.toggle('open', willOpen);
+  head.classList.toggle('open', willOpen);
+}
+function renderWatchHistorySection(){
+  const body = document.getElementById('collapse-body-watch');
+  const countEl = document.getElementById('watch-hist-count');
+  if(!body) return;
+  if(countEl) countEl.textContent = STATE.watchHistory.length;
+  const items = STATE.watchHistory.slice(0,25);
+  body.innerHTML = items.length ? items.map(h=>`
+    <div class="hist-row ripple" onclick="openVideoById('${h.id}')">
+      <div class="hist-thumb">${h.thumb?`<img src="${escHtml(h.thumb)}" onerror="this.parentElement.textContent='🎬'"/>`:'🎬'}</div>
+      <div class="hist-info">
+        <div class="hist-title">${escHtml(h.title||'ভিডিও')}</div>
+        <div class="hist-time">${timeAgo(h.ts)}</div>
+      </div>
+    </div>`).join('') : `<div class="hist-empty">এখনো কোনো ভিডিও দেখা হয়নি</div>`;
+}
+async function loadReferralHistorySection(){
+  const body = document.getElementById('collapse-body-ref');
+  const countEl = document.getElementById('ref-hist-count');
+  if(!body) return;
+  try{
+    const all = await fbGet('referrals');
+    const myRef = effectiveRefId();
+    const mine = all.filter(r=>r.ref===myRef).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    if(countEl) countEl.textContent = mine.length;
+    body.innerHTML = mine.length ? mine.slice(0,30).map(r=>`
+      <div class="hist-row">
+        <div class="hist-thumb"><span class="material-icons-round" style="color:var(--gold-3);font-size:18px;">person</span></div>
+        <div class="hist-info">
+          <div class="hist-title">নতুন ইউজার আপনার লিংকে জয়েন করেছে</div>
+          <div class="hist-time">${timeAgo(r.createdAt)}</div>
+        </div>
+      </div>`).join('') : `<div class="hist-empty">এখনো কেউ আপনার রেফারেল লিংকে জয়েন করেনি</div>`;
+  }catch(e){
+    if(countEl) countEl.textContent = '0';
+    body.innerHTML = `<div class="hist-empty">লোড করা যায়নি — আবার চেষ্টা করুন</div>`;
+  }
 }
 
 function copyRefLink(){
