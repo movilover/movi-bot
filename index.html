@@ -213,7 +213,7 @@ header {
 .video-hint .material-icons-round { font-size:13px; color:var(--gold-3); margin-top:1px; flex-shrink:0; }
 
 /* Inline unlock progress row (ticket-punch style) */
-.unlock-progress-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:14px; }
+.unlock-progress-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
 .unlock-dot { width:40px; height:40px; border-radius:11px; border:1.5px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; flex-shrink:0; position:relative; transition:all 0.35s cubic-bezier(.22,.68,0,1.4); background:var(--surface-2); }
 .unlock-dot .num { font-size:13px; font-weight:700; font-family:'Hind Siliguri',sans-serif; color:var(--text-muted); }
 .unlock-dot .lbl { font-size:7px; color:var(--text-muted); font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.5px; }
@@ -770,7 +770,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
     <div class="verify-title" id="verify-title">বিজ্ঞাপন চলছে</div>
     <div class="verify-sub" id="verify-sub">দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে</div>
     <div class="verify-timer-text" id="verify-timer-text"></div>
-    <div class="verify-slot">এখানে আপনার অ্যাড নেটওয়ার্কের বিজ্ঞাপন দেখানো হবে</div>
+    <div class="verify-slot" id="verify-slot">এখানে আপনার অ্যাড নেটওয়ার্কের বিজ্ঞাপন দেখানো হবে</div>
     <div class="verify-hint"><span class="material-icons-round">info</span>বিজ্ঞাপনটি মাঝপথে বন্ধ করলে শুধু এই ধাপটি অসম্পূর্ণ থাকবে — কোনো পেনাল্টি নেই, আবার চেষ্টা করতে পারবেন।</div>
   </div>
 </div>
@@ -867,6 +867,7 @@ const STATE = {
   taskAdsRequired: 3,
   verifyActive: false,
   verifyModalOpen: false,
+  directLinkActive: false,
   siteName: 'Movi Lover',
   favorites: JSON.parse(localStorage.getItem('ml_favs')||'[]'),
   unlocked: JSON.parse(localStorage.getItem('ml_unlocked')||'[]'),
@@ -1159,6 +1160,99 @@ function closeVerifyModal(){
   const timerText = document.getElementById('verify-timer-text');
   if(timerText) timerText.textContent = '';
   pending.resolve();
+}
+
+/* ===================== DIRECT LINK AD STEP =====================
+   Admin can set a specific step of a video's unlock flow to be a "direct
+   link" instead of a network ad (see admin panel: per-video ad slots).
+   This re-uses the exact same verify-modal — only the copy/behaviour of
+   this one step changes. The user taps the unlock button (which opens the
+   link in a new tab within that same click), waits the required number of
+   seconds, then comes back and taps the close (✕) icon — same physical
+   action as finishing a network ad. */
+function runDirectLinkStep(url, waitSeconds){
+  waitSeconds = Math.max(1, parseInt(waitSeconds)||5);
+  const openedAt = Date.now();
+
+  const titleEl = document.getElementById('verify-title');
+  const subEl = document.getElementById('verify-sub');
+  const timerText = document.getElementById('verify-timer-text');
+  const crossBtn = document.getElementById('verify-close-btn');
+  const ringBox = document.getElementById('verify-ring-box-wrap');
+  const ringFg = document.getElementById('ring-fg');
+  const ringIcon = document.getElementById('verify-ring-icon');
+  const slotEl = document.getElementById('verify-slot');
+
+  if(titleEl) titleEl.textContent = 'লিংকে যান ও ফিরে আসুন';
+  if(subEl) subEl.textContent = `লিংকে ক্লিক করে ${waitSeconds} সেকেন্ড অপেক্ষা করুন, তারপর ব্যাক বাটন চেপে এই পেজে ফিরে আসুন`;
+  if(slotEl) slotEl.style.display = 'none';
+  if(crossBtn) crossBtn.classList.remove('show');
+  if(ringBox) ringBox.classList.add('spinning');
+  if(ringFg) ringFg.classList.remove('done');
+  if(ringIcon){ ringIcon.classList.remove('done'); ringIcon.textContent = 'open_in_new'; }
+  if(timerText) timerText.textContent = 'লিংকে ক্লিক করা হয়েছে...';
+
+  STATE.directLinkActive = true;
+
+  // opened synchronously inside the same tap/click that triggered this
+  // function, so this should not be blocked as a popup.
+  try{ window.open(url, '_blank'); }catch(e){}
+
+  let countdownInterval = null;
+
+  function cleanup(){
+    document.removeEventListener('visibilitychange', onVisible);
+    if(countdownInterval){ clearInterval(countdownInterval); countdownInterval = null; }
+    STATE.directLinkActive = false;
+    if(slotEl) slotEl.style.display = '';
+  }
+
+  function finishSuccess(){
+    if(ringBox) ringBox.classList.remove('spinning');
+    if(ringFg) ringFg.classList.add('done');
+    if(ringIcon){ ringIcon.textContent = 'check'; ringIcon.classList.add('done'); }
+    if(subEl) subEl.textContent = 'ধাপটি সম্পন্ন হয়েছে';
+    if(timerText) timerText.textContent = 'এখন বন্ধ করতে পারবেন';
+    if(crossBtn) crossBtn.classList.add('show');
+  }
+
+  function startCountdown(remainMs){
+    if(countdownInterval) clearInterval(countdownInterval);
+    let remain = Math.ceil(remainMs/1000);
+    if(timerText) timerText.textContent = remain + ' সেকেন্ড বাকি...';
+    countdownInterval = setInterval(()=>{
+      remain--;
+      if(remain<=0){
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        cleanup();
+        finishSuccess();
+      } else if(timerText){
+        timerText.textContent = remain + ' সেকেন্ড বাকি...';
+      }
+    },1000);
+  }
+
+  function onVisible(){
+    if(document.hidden) return;
+    const elapsed = Date.now() - openedAt;
+    const remainMs = Math.max(0, waitSeconds*1000 - elapsed);
+    if(remainMs<=0){
+      cleanup();
+      finishSuccess();
+    } else {
+      startCountdown(remainMs);
+    }
+  }
+
+  document.addEventListener('visibilitychange', onVisible);
+
+  STATE.verifyPending = {
+    resolve: function(){ cleanup(); onSingleAdWatched(); },
+    reject: function(){ cleanup(); },
+    interval: null,
+    cleanupDirectLink: cleanup
+  };
 }
 
 /* ===================== USER DOC (stats only — no strikes/ban) ===================== */
@@ -1512,7 +1606,7 @@ function renderVideos(videos){
   }
 }
 function cssEscape(s){ return String(s).replace(/["\\]/g,'\\$&'); }
-function adsReq(v){ return Math.max(1,Math.min(3,parseInt(v.adsRequired)||3)); }
+function adsReq(v){ return Math.max(1, parseInt(v.adsRequired)||3); }
 function videoParts(v){ return (v.parts && v.parts.length) ? v.parts : [{url:v.url}]; }
 function getTaskStep(id){ return STATE.taskStepByVideo[id]||0; }
 function setTaskStep(id, step){ STATE.taskStepByVideo[id]=step; localStorage.setItem('ml_task_step', JSON.stringify(STATE.taskStepByVideo)); }
@@ -1676,6 +1770,8 @@ function resetAdModalToPlayingState(){
   if(crossBtn) crossBtn.classList.remove('show');
   const timerText = document.getElementById('verify-timer-text');
   if(timerText) timerText.textContent = '';
+  const slotEl = document.getElementById('verify-slot');
+  if(slotEl) slotEl.style.display = '';
   const ringBox = document.getElementById('verify-ring-box-wrap');
   if(ringBox){ ringBox.style.display=''; ringBox.classList.add('spinning'); }
   const ringFg = document.getElementById('ring-fg');
@@ -1685,6 +1781,15 @@ function resetAdModalToPlayingState(){
 }
 
 function runAdStep(){
+  const v = STATE.currentVideo;
+  const stepNum = STATE.taskStep + 1;
+  const directUrl = v && v.directLinks && v.directLinks[String(stepNum)];
+
+  if(directUrl){
+    runDirectLinkStep(directUrl, (v.directLinkWaitSeconds||5));
+    return;
+  }
+
   if (!isAdNetworkReady()) {
     STATE.verifyModalOpen = false;
     document.getElementById('verify-modal').classList.remove('open');
@@ -1706,6 +1811,10 @@ function runAdStep(){
     });
 }
 // If the tab/app is hidden while an ad is in progress, just close everything quietly — no strike, no penalty.
+// NOTE: while a direct-link step is active (STATE.directLinkActive), the tab is
+// *expected* to go hidden (the user is on the direct-link tab), so we must not
+// treat that as an early exit — runDirectLinkStep()'s own visibilitychange
+// listener handles that case separately.
 function handleEarlyExit(){
   if(STATE.verifyModalOpen){
     STATE.verifyActive = false;
@@ -1716,10 +1825,12 @@ function handleEarlyExit(){
     const pending = STATE.verifyPending;
     STATE.verifyPending = null;
     if(pending.interval) clearInterval(pending.interval);
+    if(pending.cleanupDirectLink) pending.cleanupDirectLink();
     pending.reject(new Error('early exit'));
   }
+  STATE.directLinkActive = false;
 }
-document.addEventListener('visibilitychange', ()=>{ if(document.hidden) handleEarlyExit(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && !STATE.directLinkActive) handleEarlyExit(); });
 window.addEventListener('pagehide', handleEarlyExit);
 
 /* One ad step just finished: the verify sequence already ran inside the
