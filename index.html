@@ -10,8 +10,9 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDse8sC_hsrHrLx92zUobO7PezW0SUChHQ",
@@ -26,9 +27,13 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const storage = getStorage(app);
+  const auth = getAuth(app);
 
   window._db = db;
   window._storage = storage;
+  window._auth = auth;
+  window._signInAnon = signInAnonymously;
+  window._onAuthStateChanged = onAuthStateChanged;
   window._col = collection;
   window._addDoc = addDoc;
   window._getDocs = getDocs;
@@ -37,6 +42,7 @@
   window._deleteDoc = deleteDoc;
   window._query = query;
   window._orderBy = orderBy;
+  window._where = where;
   window._onSnapshot = onSnapshot;
   window._getDoc = getDoc;
   window._setDoc = setDoc;
@@ -597,6 +603,83 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .tut-step-card.link .tut-step-chip { background:rgba(169,122,43,0.14); color:var(--gold-3); }
 .tut-step-desc { font-size:12.5px; line-height:1.65; color:var(--text-muted); }
 .tut-step-desc strong { color:var(--text); font-weight:700; }
+
+/* ============ GLOWING TASK NAV ICON ============ */
+.nav-item-task { position:relative; }
+.nav-task-glow { position:absolute; top:2px; left:50%; width:34px; height:34px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(circle, rgba(227,180,88,0.55) 0%, transparent 70%); animation:navGlowPulse 1.8s ease-in-out infinite; pointer-events:none; }
+@keyframes navGlowPulse { 0%,100%{opacity:0.5;transform:translateX(-50%) scale(0.9);} 50%{opacity:1;transform:translateX(-50%) scale(1.25);} }
+.nav-item-task .material-icons-round { position:relative; z-index:1; color:var(--gold-3); }
+.nav-item-task.active .material-icons-round { color:var(--wine); }
+
+/* ============ TASK PAGE ============ */
+.task-hero { margin:14px; padding:18px; border-radius:20px; background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--border-gold); box-shadow:0 12px 30px rgba(92,20,32,0.08); position:relative; overflow:hidden; }
+.task-hero::before { content:''; position:absolute; top:0; left:18px; right:18px; height:2px; background:linear-gradient(90deg,var(--wine),var(--gold)); }
+.task-hero-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.task-hero-title { font-family:'Rajdhani',sans-serif; font-size:19px; font-weight:800; color:var(--text); }
+.task-hero-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.task-wallet-btn { display:flex; align-items:center; gap:8px; padding:9px 14px; border-radius:14px; background:var(--grad-gold); box-shadow:0 8px 20px rgba(169,122,43,0.3); cursor:pointer; flex-shrink:0; }
+.task-wallet-btn .material-icons-round { font-size:20px; color:#2a1c05; }
+.twb-lbl { font-size:9px; color:#4a3410; font-weight:700; letter-spacing:0.5px; }
+.twb-val { font-size:13.5px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; }
+
+.task-list { padding:6px 14px 14px; display:flex; flex-direction:column; gap:10px; }
+.task-card { display:flex; align-items:center; gap:12px; padding:13px; border-radius:16px; background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 18px rgba(92,20,32,0.05); position:relative; overflow:hidden; }
+.task-card::before { content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--gold-2),var(--gold)); }
+.task-icon-box { width:44px; height:44px; border-radius:13px; background:var(--gold-soft); border:1px solid var(--border-gold); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; }
+.task-icon-box img { width:100%; height:100%; object-fit:cover; }
+.task-info { flex:1; min-width:0; }
+.task-title-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.task-title { font-size:13.5px; font-weight:700; color:var(--text); }
+.task-badge { font-size:9px; font-weight:700; padding:2px 8px; border-radius:8px; background:var(--gold-soft); color:var(--gold-3); border:1px solid var(--border-gold); white-space:nowrap; }
+.task-reward { font-size:13px; font-weight:800; color:var(--green); font-family:'Rajdhani',sans-serif; margin-top:3px; }
+.task-start-btn { padding:10px 16px; border-radius:12px; border:none; background:var(--grad-btn); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.3px; cursor:pointer; flex-shrink:0; box-shadow:0 6px 16px rgba(92,20,32,0.24); }
+.task-start-btn:active { transform:scale(0.96); }
+.task-start-btn.done { background:rgba(28,130,89,0.12); color:var(--green); box-shadow:none; }
+
+/* ============ WALLET PAGE ============ */
+.wallet-balance-card { margin:14px; padding:22px; border-radius:20px; text-align:center; background:linear-gradient(135deg, var(--gold-2), var(--gold)); box-shadow:0 14px 32px rgba(169,122,43,0.32); }
+.wbc-lbl { font-size:12px; color:#4a3410; font-weight:700; letter-spacing:0.5px; }
+.wbc-val { font-size:32px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; margin-top:4px; }
+.wallet-cond-notice { margin:0 14px 14px; padding:11px 13px; border-radius:12px; border:1px solid var(--border-gold); background:var(--gold-soft); font-size:11.5px; color:var(--gold-3); line-height:1.6; display:flex; gap:8px; align-items:flex-start; }
+.wallet-cond-notice .material-icons-round { font-size:15px; flex-shrink:0; margin-top:1px; }
+.wallet-form-card { margin:0 14px; padding:16px; border-radius:18px; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 22px rgba(92,20,32,0.05); }
+.wallet-form-label { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px; }
+.wallet-methods { display:flex; gap:8px; flex-wrap:wrap; }
+.wallet-method-tile { flex:1; min-width:88px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 8px; border-radius:13px; border:1.5px solid var(--border); background:var(--surface-2); cursor:pointer; transition:all 0.15s; }
+.wallet-method-tile.selected { border-color:var(--gold); background:var(--gold-soft); }
+.wallet-method-tile img { width:28px; height:28px; object-fit:contain; border-radius:6px; }
+.wallet-method-tile .wm-emoji { font-size:22px; }
+.wallet-method-tile .wm-name { font-size:11px; font-weight:700; color:var(--text); }
+.wallet-amount-row { display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:2px 14px; }
+.wallet-amount-prefix { font-size:15px; font-weight:700; color:var(--gold-3); }
+.wallet-input { flex:1; border:none; background:transparent; padding:11px 0; font-size:14px; color:var(--text); outline:none; font-family:'Hind Siliguri',sans-serif; }
+.wallet-input-text { width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:11px 14px; }
+.wallet-hint { font-size:10.5px; color:var(--text-muted); margin-top:6px; }
+.wallet-submit-btn { width:100%; margin-top:16px; padding:14px; border-radius:13px; border:none; background:var(--grad-btn); color:#fff; font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; letter-spacing:0.8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 8px 20px rgba(92,20,32,0.28); }
+.wallet-submit-btn:active { transform:scale(0.97); }
+.wallet-history-list { margin:0 14px 14px; display:flex; flex-direction:column; gap:8px; }
+.wh-row { display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:13px; background:var(--surface); border:1px solid var(--border); }
+.wh-info { flex:1; min-width:0; }
+.wh-amount { font-size:13.5px; font-weight:700; color:var(--text); font-family:'Rajdhani',sans-serif; }
+.wh-meta { font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+.wh-status { font-size:10px; font-weight:700; padding:3px 10px; border-radius:10px; white-space:nowrap; }
+.wh-status.pending { background:rgba(169,122,43,0.14); color:var(--gold-3); }
+.wh-status.approved { background:rgba(28,130,89,0.14); color:var(--green); }
+.wh-status.rejected { background:rgba(179,37,60,0.12); color:var(--wine-3); }
+
+/* ============ TASK MODAL (link-visit timer) ============ */
+#task-modal { display:none; position:fixed; inset:0; z-index:620; background:rgba(20,12,14,0.55); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px; }
+#task-modal.open { display:flex; animation:fadeIn 0.2s; }
+.task-modal-box { width:100%; max-width:280px; background:var(--surface); border-radius:20px; padding:22px 20px 18px; text-align:center; position:relative; box-shadow:0 16px 44px rgba(0,0,0,0.22); border:1px solid var(--border-gold); }
+.task-modal-box::before { content:''; position:absolute; top:0; left:16px; right:16px; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+.task-modal-close { position:absolute; top:9px; right:9px; width:26px; height:26px; border-radius:50%; background:rgba(92,20,32,0.08); display:none; align-items:center; justify-content:center; cursor:pointer; color:var(--wine); z-index:2; }
+.task-modal-close.show { display:flex; animation:popIn 0.3s cubic-bezier(.22,.68,0,1.6); }
+.task-modal-close .material-icons-round { font-size:15px; }
+.task-modal-icon { font-size:30px; margin-bottom:6px; }
+.task-modal-title { font-size:14.5px; font-weight:800; color:var(--text); font-family:'Rajdhani',sans-serif; margin-bottom:2px; }
+.task-modal-reward { font-size:18px; font-weight:800; color:var(--green); font-family:'Rajdhani',sans-serif; margin-bottom:10px; }
+.task-modal-sub { font-size:11.5px; color:var(--text-muted); margin:10px 0 4px; line-height:1.5; }
+.task-modal-timer { font-size:10px; color:var(--gold-3); font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:0.5px; margin-bottom:10px; min-height:14px; }
 </style>
 </head>
 <body>
@@ -684,6 +767,61 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
       <div class="channels-list" id="channels-list"></div>
     </div>
 
+    <div class="page" id="page-task">
+      <div class="task-hero">
+        <div class="task-hero-top">
+          <div>
+            <div class="task-hero-title">মাইক্রো টাস্ক</div>
+            <div class="task-hero-sub">ছোট ছোট কাজ করে আয় করুন</div>
+          </div>
+          <div class="task-wallet-btn ripple" onclick="showPage('wallet')">
+            <span class="material-icons-round">account_balance_wallet</span>
+            <div>
+              <div class="twb-lbl">ব্যালেন্স</div>
+              <div class="twb-val" id="task-balance-chip">৳ 0.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="task-list" id="task-list"></div>
+      <div class="empty-state" id="task-empty" style="display:none;">
+        <div class="empty-icon">🗒️</div>
+        <div class="empty-text">এখনো কোনো টাস্ক যুক্ত করা হয়নি</div>
+      </div>
+    </div>
+
+    <div class="page" id="page-wallet">
+      <div class="wallet-balance-card">
+        <div class="wbc-lbl">উত্তোলনযোগ্য ব্যালেন্স</div>
+        <div class="wbc-val" id="wallet-balance-val">৳ 0.00</div>
+      </div>
+
+      <div class="wallet-cond-notice" id="wallet-cond-notice" style="display:none;">
+        <span class="material-icons-round">info</span>
+        <span id="wallet-cond-text"></span>
+      </div>
+
+      <div class="wallet-form-card">
+        <div class="wallet-form-label">মেথড সিলেক্ট করুন</div>
+        <div class="wallet-methods" id="wallet-methods"></div>
+
+        <div class="wallet-form-label" style="margin-top:16px;">পরিমাণ (Amount)</div>
+        <div class="wallet-amount-row">
+          <span class="wallet-amount-prefix">৳</span>
+          <input type="number" class="wallet-input" id="wd-amount" placeholder="0" />
+        </div>
+        <div class="wallet-hint" id="wd-min-hint">সর্বনিম্ন উত্তোলন: ৳ 100</div>
+
+        <div class="wallet-form-label" style="margin-top:14px;">নাম্বার দিন</div>
+        <input type="text" class="wallet-input wallet-input-text" id="wd-number" placeholder="01xxxxxxxxx" />
+
+        <button class="wallet-submit-btn ripple" onclick="submitWithdraw()"><span class="material-icons-round">send</span>রিকুয়েস্ট পাঠান</button>
+      </div>
+
+      <div class="profile-section-label" style="padding:16px 4px 8px;">উইথড্র হিস্ট্রি</div>
+      <div class="wallet-history-list" id="wallet-history-list"></div>
+    </div>
+
     <div class="page" id="page-profile">
       <div class="profile-card">
         <div class="avatar-frame-wrap">
@@ -768,6 +906,10 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
       <span class="material-icons-round">favorite</span>পছন্দ
       <span class="nav-fav-badge" id="nav-fav-badge">0</span>
     </div>
+    <div class="nav-item nav-item-task ripple" data-page="task" onclick="showPage('task')">
+      <span class="nav-task-glow"></span>
+      <span class="material-icons-round">payments</span>টাস্ক
+    </div>
     <div class="nav-item ripple" data-page="tutorial" onclick="showPage('tutorial')"><span class="material-icons-round">menu_book</span>টিউটোরিয়াল</div>
     <div class="nav-item ripple" data-page="channels" onclick="showPage('channels')"><span class="material-icons-round">send</span>অফার</div>
     <div class="nav-item ripple" data-page="profile" onclick="showPage('profile')"><span class="material-icons-round">person</span>প্রোফাইল</div>
@@ -775,6 +917,30 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 </div>
 
 <div id="found-toast" class="found-toast">পোস্টটি খুঁজে পাওয়া গেছে!</div>
+
+<!-- TASK MODAL: opens the task's direct link, then requires the tab to
+     actually go away and come back after the full wait time before the
+     reward is credited. Never completes just from opening — if the tab
+     never actually leaves (e.g. an app chooser was cancelled), the ring
+     just keeps spinning indefinitely, exactly like the honest ad flow. -->
+<div id="task-modal">
+  <div class="task-modal-box">
+    <div class="task-modal-close ripple" id="task-modal-close" onclick="closeTaskModal()"><span class="material-icons-round">close</span></div>
+    <div class="task-modal-icon" id="task-modal-icon">🗒️</div>
+    <div class="task-modal-title" id="task-modal-title">টাস্ক চলছে</div>
+    <div class="task-modal-reward" id="task-modal-reward">+৳ 0.00</div>
+    <div class="verify-ring-box spinning" id="task-ring-box">
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <circle class="ring-bg" cx="30" cy="30" r="25"/>
+        <circle class="ring-fg" id="task-ring-fg" cx="30" cy="30" r="25"/>
+      </svg>
+      <div class="verify-ring-icon"><span class="material-icons-round" id="task-ring-icon">open_in_new</span></div>
+    </div>
+    <div class="task-modal-sub" id="task-modal-sub">লিংকে ক্লিক করে পেজে যান, তারপর ব্যাক করে ফিরে আসুন</div>
+    <div class="task-modal-timer" id="task-modal-timer"></div>
+    <div class="verify-hint"><span class="material-icons-round">info</span>পেজে না গিয়ে ফিরে আসলে টাস্কটি সম্পন্ন হবে না — আবার চেষ্টা করতে পারবেন, কোনো পেনাল্টি নেই।</div>
+  </div>
+</div>
 
 <!-- HONEST AD MODAL: single modal for the whole flow. Ring spins while the
      ad plays, then exactly 2 seconds after it finishes the ring turns into
@@ -922,6 +1088,15 @@ const STATE = {
   officialChannelUrl: '',
   shortsUrl: '',
   customAvatar: JSON.parse(localStorage.getItem('ml_avatar')||'null'),
+  tasks: [],
+  taskDoneMap: {},
+  balance: 0,
+  myWithdrawals: [],
+  withdrawSettings: {},
+  currentTask: null,
+  taskLinkActive: false,
+  taskPending: null,
+  selectedWithdrawMethod: null,
 };
 
 const AVATAR_CHOICES = [
@@ -1055,8 +1230,23 @@ function renderSkeletons(){
   grid.innerHTML=html;
 }
 
+/* Every visitor is signed in anonymously so Firestore security rules can
+   verify `request.auth.uid == userId` on their own doc/referrals — no
+   password or personal info needed, this just gives each device a stable,
+   authenticated identity instead of a made-up localStorage string. */
+function ensureAuth(){
+  return new Promise(resolve=>{
+    if(!window._auth){ resolve(); return; }
+    window._onAuthStateChanged(window._auth, user=>{
+      if(user){ STATE.userId = user.uid; resolve(); }
+      else { window._signInAnon(window._auth).catch(()=>resolve()); }
+    });
+  });
+}
+
 window.addEventListener('firebaseReady', async()=>{
   checkExpiries();
+  await ensureAuth();
   await loadSettings();
   await loadAdNetworkConfig();
   await ensureUserDoc();
@@ -1064,6 +1254,7 @@ window.addEventListener('firebaseReady', async()=>{
   subscribeVideos();
   await loadChannels();
   await loadNotifications();
+  await loadTasksAndLedger();
   initProfile();
   hideSplash();
 });
@@ -1533,6 +1724,13 @@ async function fbAdd(col,data){ return await window._addDoc(window._col(window._
 async function fbGetDoc(col,id){ try{ const d=await window._getDoc(window._doc(window._db,col,id)); return d.exists()?{id:d.id,...d.data()}:null; }catch(e){return null;} }
 async function fbUpdate(col,id,data){ await window._updateDoc(window._doc(window._db,col,id),data); }
 async function fbSet(col,id,data){ await window._setDoc(window._doc(window._db,col,id),data,{merge:true}); }
+async function fbGetWhere(col,field,value){
+  try{
+    const q = window._query(window._col(window._db,col), window._where(field,'==',value));
+    const s = await window._getDocs(q);
+    return s.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){ return []; }
+}
 
 async function loadSettings(){
   const s=await fbGetDoc('settings','site');
@@ -2051,6 +2249,282 @@ function openNotif(){
 }
 function closeNotif(){ document.getElementById('notif-modal').classList.remove('open'); }
 
+/* ===================== TASKS & WALLET =====================
+   Money math is never trusted from localStorage or a single mutable
+   "balance" field the client could edit directly. Instead:
+   - Every completed task writes an immutable record to `task_completions`
+     with a deterministic document id (taskId_uid for one-time tasks,
+     taskId_uid_YYYYMMDD for daily tasks) so a duplicate claim is rejected
+     by Firestore itself (the doc already exists) rather than by app logic.
+   - The reward amount written is checked against the task's own Firestore
+     document server-side via security rules, so a tampered client can't
+     award itself a bigger reward than the task defines.
+   - The displayed balance is always computed fresh: sum of completions
+     minus sum of non-rejected withdrawals. There is no single field an
+     attacker could overwrite to fake a balance. */
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+}
+async function loadTasksAndLedger(){
+  try{
+    const all = await fbGet('tasks');
+    STATE.tasks = all.filter(t=>t.active!==false).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  }catch(e){ STATE.tasks = []; }
+  try{
+    const s = await fbGetDoc('settings','withdraw');
+    STATE.withdrawSettings = s || {};
+  }catch(e){ STATE.withdrawSettings = {}; }
+  await refreshLedger();
+  renderTasks();
+}
+async function refreshLedger(){
+  if(!STATE.userId) return;
+  const [completions, withdrawals] = await Promise.all([
+    fbGetWhere('task_completions','userId',STATE.userId),
+    fbGetWhere('withdrawals','userId',STATE.userId)
+  ]);
+  let bal = 0;
+  const doneMap = {};
+  completions.forEach(c=>{
+    bal += (c.reward||0);
+    doneMap[c.taskId + (c.dateKey?('_'+c.dateKey):'')] = true;
+  });
+  withdrawals.forEach(w=>{ if(w.status!=='rejected') bal -= (w.amount||0); });
+  STATE.balance = Math.max(0, bal);
+  STATE.taskDoneMap = doneMap;
+  STATE.myWithdrawals = withdrawals.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  updateBalanceUI();
+}
+function updateBalanceUI(){
+  const chip = document.getElementById('task-balance-chip');
+  const walletVal = document.getElementById('wallet-balance-val');
+  if(chip) chip.textContent = '৳ ' + STATE.balance.toFixed(2);
+  if(walletVal) walletVal.textContent = '৳ ' + STATE.balance.toFixed(2);
+}
+function isTaskDone(task){
+  return task.type==='daily' ? !!STATE.taskDoneMap[task.id+'_'+todayKey()] : !!STATE.taskDoneMap[task.id];
+}
+function renderTasks(){
+  const list = document.getElementById('task-list');
+  const empty = document.getElementById('task-empty');
+  if(!list) return;
+  if(!STATE.tasks.length){ list.innerHTML=''; if(empty) empty.style.display='flex'; return; }
+  if(empty) empty.style.display='none';
+  list.innerHTML = STATE.tasks.map(t=>{
+    const done = isTaskDone(t);
+    return `
+    <div class="task-card">
+      <div class="task-icon-box">${t.icon?`<img src="${escHtml(t.icon)}" onerror="this.parentElement.textContent='🗒️'"/>`:'🗒️'}</div>
+      <div class="task-info">
+        <div class="task-title-row">
+          <span class="task-title">${escHtml(t.title||'টাস্ক')}</span>
+          ${t.badge?`<span class="task-badge">${escHtml(t.badge)}</span>`:''}
+          ${t.type==='daily'?`<span class="task-badge">প্রতিদিনের কাজ</span>`:''}
+        </div>
+        <div class="task-reward">+৳ ${(t.reward||0).toFixed(2)}</div>
+      </div>
+      <button class="task-start-btn ripple ${done?'done':''}" ${done?'disabled':''} onclick="startTaskFlow('${t.id}')">${done?'✓ সম্পন্ন':'শুরু করুন'}</button>
+    </div>`;
+  }).join('');
+}
+
+function startTaskFlow(taskId){
+  const task = STATE.tasks.find(t=>t.id===taskId);
+  if(!task) return;
+  if(isTaskDone(task)){ toast('✅ এই টাস্কটি ইতিমধ্যে সম্পন্ন করেছেন।'); return; }
+  if(!task.link){ toast('⚠️ এই টাস্কের লিংক পাওয়া যায়নি।'); return; }
+  STATE.currentTask = task;
+  openTaskModal(task);
+  runTaskLinkWait(task);
+}
+
+function openTaskModal(task){
+  document.getElementById('task-modal-icon').textContent = task.icon ? '🗒️' : '🗒️';
+  document.getElementById('task-modal-title').textContent = task.title || 'টাস্ক';
+  document.getElementById('task-modal-reward').textContent = '+৳ ' + (task.reward||0).toFixed(2);
+  document.getElementById('task-modal-sub').textContent = 'লিংকে ক্লিক করে পেজে যান, তারপর ব্যাক করে ফিরে আসুন';
+  document.getElementById('task-modal-timer').textContent = '';
+  const closeBtn = document.getElementById('task-modal-close');
+  if(closeBtn) closeBtn.classList.remove('show');
+  const ringBox = document.getElementById('task-ring-box');
+  if(ringBox) ringBox.classList.add('spinning');
+  const ringFg = document.getElementById('task-ring-fg');
+  if(ringFg) ringFg.classList.remove('done');
+  const ringIcon = document.getElementById('task-ring-icon');
+  if(ringIcon){ ringIcon.classList.remove('done'); ringIcon.textContent = 'open_in_new'; }
+  document.getElementById('task-modal').classList.add('open');
+}
+function closeTaskModal(){
+  const pending = STATE.taskPending;
+  document.getElementById('task-modal').classList.remove('open');
+  STATE.taskLinkActive = false;
+  STATE.taskPending = null;
+  if(pending && pending.cleanup) pending.cleanup();
+}
+
+/* Same honest pattern as the ad-unlock direct-link flow: open the link,
+   then only start counting once the tab has actually gone away and come
+   back. If it never goes away (chooser cancelled, popup blocked, etc.)
+   the ring simply keeps spinning — nothing completes on its own. */
+function runTaskLinkWait(task){
+  const waitSeconds = Math.max(1, parseInt(task.waitSeconds)||15);
+  const openedAt = Date.now();
+  const timerText = document.getElementById('task-modal-timer');
+  const subEl = document.getElementById('task-modal-sub');
+  const closeBtn = document.getElementById('task-modal-close');
+  const ringBox = document.getElementById('task-ring-box');
+  const ringFg = document.getElementById('task-ring-fg');
+  const ringIcon = document.getElementById('task-ring-icon');
+
+  STATE.taskLinkActive = true;
+  try{ window.open(task.link, '_blank'); }catch(e){}
+
+  let countdownInterval = null;
+
+  function cleanup(){
+    document.removeEventListener('visibilitychange', onVisible);
+    if(countdownInterval){ clearInterval(countdownInterval); countdownInterval=null; }
+    STATE.taskLinkActive = false;
+  }
+  function finishSuccess(){
+    if(ringBox) ringBox.classList.remove('spinning');
+    if(ringFg) ringFg.classList.add('done');
+    if(ringIcon){ ringIcon.textContent='check'; ringIcon.classList.add('done'); }
+    if(subEl) subEl.textContent = 'টাস্কটি সম্পন্ন হয়েছে!';
+    if(timerText) timerText.textContent = 'এখন বন্ধ করতে পারবেন';
+    if(closeBtn) closeBtn.classList.add('show');
+    completeTaskReward(task);
+  }
+  function startCountdown(remainMs){
+    if(countdownInterval) clearInterval(countdownInterval);
+    let remain = Math.ceil(remainMs/1000);
+    if(timerText) timerText.textContent = remain + ' সেকেন্ড বাকি...';
+    if(subEl) subEl.textContent = 'পেজে থাকুন, সময় শেষ হলেই টাস্ক সম্পন্ন হবে';
+    countdownInterval = setInterval(()=>{
+      remain--;
+      if(remain<=0){ clearInterval(countdownInterval); countdownInterval=null; cleanup(); finishSuccess(); }
+      else if(timerText){ timerText.textContent = remain + ' সেকেন্ড বাকি...'; }
+    },1000);
+  }
+  function onVisible(){
+    if(document.hidden) return;
+    const elapsed = Date.now() - openedAt;
+    const remainMs = Math.max(0, waitSeconds*1000 - elapsed);
+    if(remainMs<=0){ cleanup(); finishSuccess(); }
+    else { startCountdown(remainMs); }
+  }
+  document.addEventListener('visibilitychange', onVisible);
+  STATE.taskPending = { cleanup };
+}
+
+async function completeTaskReward(task){
+  const uid = STATE.userId;
+  if(!uid) return;
+  const isDaily = task.type==='daily';
+  const docId = isDaily ? `${task.id}_${uid}_${todayKey()}` : `${task.id}_${uid}`;
+  try{
+    await window._setDoc(window._doc(window._db,'task_completions',docId), {
+      userId: uid, taskId: task.id, reward: task.reward||0, type: task.type||'once',
+      dateKey: isDaily ? todayKey() : null, createdAt: Date.now()
+    });
+    STATE.taskDoneMap[isDaily ? (task.id+'_'+todayKey()) : task.id] = true;
+    STATE.balance += (task.reward||0);
+    updateBalanceUI();
+    renderTasks();
+    successSnd();
+    document.getElementById('tcp-icon').textContent = '🎉';
+    document.getElementById('tcp-title').textContent = 'টাস্ক সম্পন্ন!';
+    document.getElementById('tcp-sub').textContent = '+৳ ' + (task.reward||0).toFixed(2) + ' আপনার ব্যালেন্সে যোগ হয়েছে।';
+    document.getElementById('task-complete-popup').classList.add('open');
+    setTimeout(()=>{ document.getElementById('task-complete-popup').classList.remove('open'); },1600);
+  }catch(e){
+    toast('⚠️ টাস্কটি এর আগেই সম্পন্ন হয়েছে অথবা সমস্যা হয়েছে।');
+  }
+}
+
+/* ===================== WALLET / WITHDRAW ===================== */
+const WITHDRAW_METHODS = [
+  { key:'bkash', name:'বিকাশ', emoji:'💗' },
+  { key:'nagad', name:'নগদ', emoji:'🧡' },
+  { key:'rocket', name:'রকেট', emoji:'💜' },
+];
+function renderWalletPage(){
+  updateBalanceUI();
+  const s = STATE.withdrawSettings || {};
+  const minWithdraw = s.minWithdraw || 100;
+  document.getElementById('wd-min-hint').textContent = 'সর্বনিম্ন উত্তোলন: ৳ ' + minWithdraw;
+
+  const condNotice = document.getElementById('wallet-cond-notice');
+  const condText = document.getElementById('wallet-cond-text');
+  if(s.minReferrals && s.minReferrals>0){
+    condNotice.style.display='flex';
+    condText.textContent = 'শর্ত: উত্তোলনের জন্য কমপক্ষে ' + s.minReferrals + ' জন রেফার সম্পন্ন করতে হবে।';
+  } else {
+    condNotice.style.display='none';
+  }
+
+  const methodsWrap = document.getElementById('wallet-methods');
+  methodsWrap.innerHTML = WITHDRAW_METHODS.map(m=>{
+    const logo = s[m.key+'Logo'];
+    const sel = STATE.selectedWithdrawMethod===m.key ? 'selected' : '';
+    return `<div class="wallet-method-tile ripple ${sel}" onclick="selectWithdrawMethod('${m.key}')">
+      ${logo?`<img src="${escHtml(logo)}" onerror="this.outerHTML='<span class=&quot;wm-emoji&quot;>${m.emoji}</span>'"/>`:`<span class="wm-emoji">${m.emoji}</span>`}
+      <span class="wm-name">${m.name}</span>
+    </div>`;
+  }).join('');
+
+  renderWalletHistory();
+}
+function selectWithdrawMethod(key){
+  STATE.selectedWithdrawMethod = key;
+  document.querySelectorAll('.wallet-method-tile').forEach((el,i)=>el.classList.toggle('selected', WITHDRAW_METHODS[i].key===key));
+}
+function renderWalletHistory(){
+  const wrap = document.getElementById('wallet-history-list');
+  if(!wrap) return;
+  if(!STATE.myWithdrawals.length){ wrap.innerHTML = `<div class="hist-empty">এখনো কোনো উইথড্র রিকুয়েস্ট নেই</div>`; return; }
+  const labels = { pending:'পেন্ডিং', approved:'অনুমোদিত', rejected:'বাতিল' };
+  wrap.innerHTML = STATE.myWithdrawals.map(w=>`
+    <div class="wh-row">
+      <div class="wh-info">
+        <div class="wh-amount">৳ ${(w.amount||0).toFixed(2)} — ${escHtml((WITHDRAW_METHODS.find(m=>m.key===w.method)||{}).name || w.method || '')}</div>
+        <div class="wh-meta">${escHtml(w.number||'')} · ${timeAgo(w.createdAt)}</div>
+      </div>
+      <span class="wh-status ${w.status||'pending'}">${labels[w.status]||'পেন্ডিং'}</span>
+    </div>`).join('');
+}
+async function submitWithdraw(){
+  const amount = parseFloat(document.getElementById('wd-amount').value);
+  const number = document.getElementById('wd-number').value.trim();
+  const method = STATE.selectedWithdrawMethod;
+  const s = STATE.withdrawSettings || {};
+  const minWithdraw = s.minWithdraw || 100;
+
+  if(!method){ toast('⚠️ একটি মেথড সিলেক্ট করুন।'); return; }
+  if(!amount || amount <= 0){ toast('⚠️ সঠিক পরিমাণ লিখুন।'); return; }
+  if(amount < minWithdraw){ toast('⚠️ সর্বনিম্ন উত্তোলন ৳ ' + minWithdraw); return; }
+  if(amount > STATE.balance){ toast('⚠️ আপনার ব্যালেন্সে এত টাকা নেই।'); return; }
+  if(!number || number.length < 6){ toast('⚠️ সঠিক নাম্বার দিন।'); return; }
+  if(s.minReferrals && s.minReferrals>0){
+    const myRefs = await fbGetWhere('referrals','ref',effectiveRefId());
+    if(myRefs.length < s.minReferrals){
+      toast('⚠️ উত্তোলনের জন্য কমপক্ষে ' + s.minReferrals + ' জন রেফার সম্পন্ন করুন। বর্তমান: ' + myRefs.length);
+      return;
+    }
+  }
+
+  try{
+    await fbAdd('withdrawals', { userId: STATE.userId, method, amount, number, status:'pending' });
+    toast('✅ উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+    document.getElementById('wd-amount').value='';
+    document.getElementById('wd-number').value='';
+    await refreshLedger();
+    renderWalletHistory();
+  }catch(e){ toast('⚠️ রিকুয়েস্ট পাঠাতে সমস্যা হয়েছে।'); }
+}
+
+
 function openSearch(){ document.getElementById('search-modal').classList.add('open'); document.getElementById('search-input').focus(); }
 function closeSearch(){ document.getElementById('search-modal').classList.remove('open'); document.getElementById('search-input').value=''; }
 function doSearch(){
@@ -2076,6 +2550,8 @@ function showPage(name){
   document.querySelector(`[data-page="${name}"]`)?.classList.add('active');
   STATE.currentPage=name;
   if(name==='favorites') renderFavorites();
+  if(name==='task'){ refreshLedger().then(renderTasks); }
+  if(name==='wallet'){ refreshLedger().then(renderWalletPage); }
   if(name==='profile'){ try{ renderProfileAvatar(); buildReferralLink(); updateProfileStats(); renderWatchHistorySection(); loadReferralHistorySection(); }catch(e){ console.error(e); } }
 }
 
