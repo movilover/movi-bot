@@ -637,18 +637,23 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .task-start-btn.done { background:rgba(28,130,89,0.12); color:var(--green); box-shadow:none; }
 
 /* ============ WALLET PAGE ============ */
-.wallet-balance-card { margin:14px; padding:22px; border-radius:20px; text-align:center; background:linear-gradient(135deg, var(--gold-2), var(--gold)); box-shadow:0 14px 32px rgba(169,122,43,0.32); }
-.wbc-lbl { font-size:12px; color:#4a3410; font-weight:700; letter-spacing:0.5px; }
-.wbc-val { font-size:32px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; margin-top:4px; }
-.wallet-cond-notice { margin:0 14px 14px; padding:11px 13px; border-radius:12px; border:1px solid var(--border-gold); background:var(--gold-soft); font-size:11.5px; color:var(--gold-3); line-height:1.6; display:flex; gap:8px; align-items:flex-start; }
-.wallet-cond-notice .material-icons-round { font-size:15px; flex-shrink:0; margin-top:1px; }
+.wallet-page-header { display:flex; align-items:center; gap:12px; padding:14px 14px 4px; }
+.wallet-back-btn { width:38px; height:38px; border-radius:50%; background:var(--surface); border:1px solid var(--border-gold); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--wine); box-shadow:0 4px 14px rgba(92,20,32,0.08); flex-shrink:0; }
+.wallet-back-btn:active { transform:scale(0.9); }
+.wallet-page-title { font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:800; color:var(--text); }
+.wallet-balance-card { margin:14px; padding:24px 22px; border-radius:22px; text-align:center; position:relative; overflow:hidden;
+  background:linear-gradient(150deg, var(--gold-2) 0%, var(--gold) 55%, var(--wine-3) 130%);
+  box-shadow:0 16px 36px rgba(169,122,43,0.34); }
+.wallet-balance-card::before { content:''; position:absolute; inset:0; backdrop-filter:blur(0.5px); background:radial-gradient(120% 90% at 15% 0%, rgba(255,255,255,0.28), transparent 55%); pointer-events:none; }
+.wbc-lbl { position:relative; font-size:12px; color:rgba(42,28,5,0.75); font-weight:700; letter-spacing:0.5px; }
+.wbc-val { position:relative; font-size:33px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; margin-top:4px; text-shadow:0 1px 0 rgba(255,255,255,0.25); }
 .wallet-form-card { margin:0 14px; padding:16px; border-radius:18px; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 22px rgba(92,20,32,0.05); }
 .wallet-form-label { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px; }
 .wallet-methods { display:flex; gap:8px; flex-wrap:wrap; }
-.wallet-method-tile { flex:1; min-width:88px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 8px; border-radius:13px; border:1.5px solid var(--border); background:var(--surface-2); cursor:pointer; transition:all 0.15s; }
-.wallet-method-tile.selected { border-color:var(--gold); background:var(--gold-soft); }
-.wallet-method-tile img { width:28px; height:28px; object-fit:contain; border-radius:6px; }
-.wallet-method-tile .wm-emoji { font-size:22px; }
+.wallet-method-tile { flex:1; min-width:88px; display:flex; flex-direction:column; align-items:center; gap:7px; padding:13px 8px; border-radius:14px; border:1.5px solid var(--border); background:var(--surface-2); cursor:pointer; transition:all 0.15s; }
+.wallet-method-tile.selected { border-color:var(--gold); background:var(--gold-soft); box-shadow:0 4px 14px rgba(169,122,43,0.18); }
+.wallet-method-tile img { width:30px; height:30px; object-fit:contain; border-radius:8px; }
+.wallet-method-tile .wm-logo { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; }
 .wallet-method-tile .wm-name { font-size:11px; font-weight:700; color:var(--text); }
 .wallet-amount-row { display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:2px 14px; }
 .wallet-amount-prefix { font-size:15px; font-weight:700; color:var(--gold-3); }
@@ -791,14 +796,13 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
     </div>
 
     <div class="page" id="page-wallet">
+      <div class="wallet-page-header">
+        <div class="wallet-back-btn ripple" onclick="showPage('task')"><span class="material-icons-round">arrow_back</span></div>
+        <div class="wallet-page-title">ওয়ালেট</div>
+      </div>
       <div class="wallet-balance-card">
         <div class="wbc-lbl">উত্তোলনযোগ্য ব্যালেন্স</div>
         <div class="wbc-val" id="wallet-balance-val">৳ 0.00</div>
-      </div>
-
-      <div class="wallet-cond-notice" id="wallet-cond-notice" style="display:none;">
-        <span class="material-icons-round">info</span>
-        <span id="wallet-cond-text"></span>
       </div>
 
       <div class="wallet-form-card">
@@ -2443,11 +2447,19 @@ async function completeTaskReward(task){
   }
 }
 
-/* ===================== WALLET / WITHDRAW ===================== */
+/* ===================== WALLET / WITHDRAW =====================
+   Method badges use each brand's real color identity + wordmark rendered
+   as clean inline SVG (not a copy of the copyrighted logo artwork), so
+   they're instantly recognizable and premium-looking without reproducing
+   trademarked graphics. Admin-uploaded logo images (if set) take priority
+   over these built-in badges. */
 const WITHDRAW_METHODS = [
-  { key:'bkash', name:'বিকাশ', emoji:'💗' },
-  { key:'nagad', name:'নগদ', emoji:'🧡' },
-  { key:'rocket', name:'রকেট', emoji:'💜' },
+  { key:'bkash', name:'বিকাশ', bg:'#E2136E',
+    svg:`<svg viewBox="0 0 34 34" width="22" height="22"><circle cx="17" cy="17" r="17" fill="#E2136E"/><path d="M10 12.5c0-.9.7-1.6 1.6-1.6s1.6.7 1.6 1.6v6.3c0 1.8 1.5 3.3 3.3 3.3h.6c1.8 0 3.3-1.5 3.3-3.3v-6.3c0-.9.7-1.6 1.6-1.6s1.6.7 1.6 1.6v6.3c0 3.6-2.9 6.5-6.5 6.5h-.6c-3.6 0-6.5-2.9-6.5-6.5v-6.3z" fill="#fff"/></svg>` },
+  { key:'nagad', name:'নগদ', bg:'linear-gradient(135deg,#F6821F,#E4032C)',
+    svg:`<svg viewBox="0 0 34 34" width="22" height="22"><circle cx="17" cy="17" r="17" fill="#E4032C"/><path d="M9 22V12l8 6 8-6v10" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { key:'rocket', name:'রকেট', bg:'#8C3494',
+    svg:`<svg viewBox="0 0 34 34" width="22" height="22"><circle cx="17" cy="17" r="17" fill="#8C3494"/><path d="M17 8c2.4 2 3.8 5 3.8 8.4 0 2-.5 3.8-1.3 5.3l-2.5-1.4-2.5 1.4c-.8-1.5-1.3-3.3-1.3-5.3C13.2 13 14.6 10 17 8z" fill="#fff"/><circle cx="17" cy="15.5" r="1.6" fill="#8C3494"/><path d="M13.2 20.5 11 24l3.4-1.2M20.8 20.5 23 24l-3.4-1.2" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>` },
 ];
 function renderWalletPage(){
   updateBalanceUI();
@@ -2455,21 +2467,13 @@ function renderWalletPage(){
   const minWithdraw = s.minWithdraw || 100;
   document.getElementById('wd-min-hint').textContent = 'সর্বনিম্ন উত্তোলন: ৳ ' + minWithdraw;
 
-  const condNotice = document.getElementById('wallet-cond-notice');
-  const condText = document.getElementById('wallet-cond-text');
-  if(s.minReferrals && s.minReferrals>0){
-    condNotice.style.display='flex';
-    condText.textContent = 'শর্ত: উত্তোলনের জন্য কমপক্ষে ' + s.minReferrals + ' জন রেফার সম্পন্ন করতে হবে।';
-  } else {
-    condNotice.style.display='none';
-  }
-
   const methodsWrap = document.getElementById('wallet-methods');
   methodsWrap.innerHTML = WITHDRAW_METHODS.map(m=>{
     const logo = s[m.key+'Logo'];
     const sel = STATE.selectedWithdrawMethod===m.key ? 'selected' : '';
+    const imgOverlay = logo ? `<img src="${escHtml(logo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:9px;" onerror="this.style.display='none'"/>` : '';
     return `<div class="wallet-method-tile ripple ${sel}" onclick="selectWithdrawMethod('${m.key}')">
-      ${logo?`<img src="${escHtml(logo)}" onerror="this.outerHTML='<span class=&quot;wm-emoji&quot;>${m.emoji}</span>'"/>`:`<span class="wm-emoji">${m.emoji}</span>`}
+      <span class="wm-logo" style="background:${m.bg};position:relative;">${m.svg}${imgOverlay}</span>
       <span class="wm-name">${m.name}</span>
     </div>`;
   }).join('');
@@ -2506,13 +2510,6 @@ async function submitWithdraw(){
   if(amount < minWithdraw){ toast('⚠️ সর্বনিম্ন উত্তোলন ৳ ' + minWithdraw); return; }
   if(amount > STATE.balance){ toast('⚠️ আপনার ব্যালেন্সে এত টাকা নেই।'); return; }
   if(!number || number.length < 6){ toast('⚠️ সঠিক নাম্বার দিন।'); return; }
-  if(s.minReferrals && s.minReferrals>0){
-    const myRefs = await fbGetWhere('referrals','ref',effectiveRefId());
-    if(myRefs.length < s.minReferrals){
-      toast('⚠️ উত্তোলনের জন্য কমপক্ষে ' + s.minReferrals + ' জন রেফার সম্পন্ন করুন। বর্তমান: ' + myRefs.length);
-      return;
-    }
-  }
 
   try{
     await fbAdd('withdrawals', { userId: STATE.userId, method, amount, number, status:'pending' });
