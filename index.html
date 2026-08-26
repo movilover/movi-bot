@@ -625,8 +625,8 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .task-list { padding:6px 14px 14px; display:flex; flex-direction:column; gap:10px; }
 .task-card { display:flex; align-items:center; gap:12px; padding:13px; border-radius:16px; background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 18px rgba(92,20,32,0.05); position:relative; overflow:hidden; }
 .task-card::before { content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--gold-2),var(--gold)); }
-.task-icon-box { width:44px; height:44px; border-radius:13px; background:var(--gold-soft); border:1px solid var(--border-gold); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; }
-.task-icon-box img { width:100%; height:100%; object-fit:cover; }
+.task-icon-box { width:46px; height:46px; border-radius:50%; background:var(--gold-soft); border:1.5px solid var(--border-gold); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; }
+.task-icon-box img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
 .task-info { flex:1; min-width:0; }
 .task-title-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .task-title { font-size:13.5px; font-weight:700; color:var(--text); }
@@ -2256,20 +2256,21 @@ function closeNotif(){ document.getElementById('notif-modal').classList.remove('
 /* ===================== TASKS & WALLET =====================
    Money math is never trusted from localStorage or a single mutable
    "balance" field the client could edit directly. Instead:
-   - Every completed task writes an immutable record to `task_completions`
-     with a deterministic document id (taskId_uid for one-time tasks,
-     taskId_uid_YYYYMMDD for daily tasks) so a duplicate claim is rejected
-     by Firestore itself (the doc already exists) rather than by app logic.
-   - The reward amount written is checked against the task's own Firestore
-     document server-side via security rules, so a tampered client can't
-     award itself a bigger reward than the task defines.
-   - The displayed balance is always computed fresh: sum of completions
-     minus sum of non-rejected withdrawals. There is no single field an
-     attacker could overwrite to fake a balance. */
-function todayKey(){
-  const d = new Date();
-  return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
-}
+   - Each (task, user) pair has exactly ONE document at
+     task_completions/{taskId}_{uid}, holding a running `totalEarned` and
+     the timestamp of the last claim (`completedAt`).
+   - A first claim is a Firestore "create" — allowed only if the written
+     totalEarned exactly equals the task's own reward field (read
+     server-side), so a tampered client can't award itself extra money.
+   - A repeat claim on a "daily" task is a Firestore "update" — allowed
+     only if the new totalEarned is exactly the old total plus the task's
+     reward, AND the server's own clock (request.time, never the client's)
+     shows at least 24 real hours have passed since completedAt. This is a
+     true rolling 24h cooldown from the moment of completion, not a
+     calendar-day reset, and it's enforced by Firebase itself.
+   - The displayed balance is always computed fresh: sum of every
+     completion doc's totalEarned minus sum of non-rejected withdrawals. */
+const DAY_MS = 24*60*60*1000;
 async function loadTasksAndLedger(){
   try{
     const all = await fbGet('tasks');
@@ -2291,8 +2292,8 @@ async function refreshLedger(){
   let bal = 0;
   const doneMap = {};
   completions.forEach(c=>{
-    bal += (c.reward||0);
-    doneMap[c.taskId + (c.dateKey?('_'+c.dateKey):'')] = true;
+    bal += (c.totalEarned||0);
+    doneMap[c.taskId] = c; // { type, completedAt, totalEarned }
   });
   withdrawals.forEach(w=>{ if(w.status!=='rejected') bal -= (w.amount||0); });
   STATE.balance = Math.max(0, bal);
@@ -2306,8 +2307,22 @@ function updateBalanceUI(){
   if(chip) chip.textContent = '৳ ' + STATE.balance.toFixed(2);
   if(walletVal) walletVal.textContent = '৳ ' + STATE.balance.toFixed(2);
 }
+function taskCooldownRemainingMs(task){
+  const c = STATE.taskDoneMap[task.id];
+  if(!c) return 0;
+  const remain = DAY_MS - (Date.now() - (c.completedAt||0));
+  return Math.max(0, remain);
+}
 function isTaskDone(task){
-  return task.type==='daily' ? !!STATE.taskDoneMap[task.id+'_'+todayKey()] : !!STATE.taskDoneMap[task.id];
+  const c = STATE.taskDoneMap[task.id];
+  if(!c) return false;
+  if(task.type==='daily') return taskCooldownRemainingMs(task) > 0;
+  return true; // once tasks are permanent
+}
+function fmtRemain(ms){
+  const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
+  if(h>0) return h+' ঘণ্টা '+m+' মিনিট';
+  return m+' মিনিট';
 }
 function renderTasks(){
   const list = document.getElementById('task-list');
@@ -2317,6 +2332,8 @@ function renderTasks(){
   if(empty) empty.style.display='none';
   list.innerHTML = STATE.tasks.map(t=>{
     const done = isTaskDone(t);
+    const remainMs = t.type==='daily' ? taskCooldownRemainingMs(t) : 0;
+    const btnLabel = done ? (t.type==='daily' ? ('⏳ '+fmtRemain(remainMs)+' পর') : '✓ সম্পন্ন') : 'শুরু করুন';
     return `
     <div class="task-card">
       <div class="task-icon-box">${t.icon?`<img src="${escHtml(t.icon)}" onerror="this.parentElement.textContent='🗒️'"/>`:'🗒️'}</div>
@@ -2324,11 +2341,11 @@ function renderTasks(){
         <div class="task-title-row">
           <span class="task-title">${escHtml(t.title||'টাস্ক')}</span>
           ${t.badge?`<span class="task-badge">${escHtml(t.badge)}</span>`:''}
-          ${t.type==='daily'?`<span class="task-badge">প্রতিদিনের কাজ</span>`:''}
+          ${t.type==='daily'?`<span class="task-badge">প্রতি ২৪ ঘণ্টায়</span>`:''}
         </div>
         <div class="task-reward">+৳ ${(t.reward||0).toFixed(2)}</div>
       </div>
-      <button class="task-start-btn ripple ${done?'done':''}" ${done?'disabled':''} onclick="startTaskFlow('${t.id}')">${done?'✓ সম্পন্ন':'শুরু করুন'}</button>
+      <button class="task-start-btn ripple ${done?'done':''}" ${done?'disabled':''} onclick="startTaskFlow('${t.id}')">${btnLabel}</button>
     </div>`;
   }).join('');
 }
@@ -2425,14 +2442,15 @@ function runTaskLinkWait(task){
 async function completeTaskReward(task){
   const uid = STATE.userId;
   if(!uid) return;
-  const isDaily = task.type==='daily';
-  const docId = isDaily ? `${task.id}_${uid}_${todayKey()}` : `${task.id}_${uid}`;
+  const docId = `${task.id}_${uid}`;
+  const existing = STATE.taskDoneMap[task.id];
+  const newTotal = (existing ? (existing.totalEarned||0) : 0) + (task.reward||0);
   try{
     await window._setDoc(window._doc(window._db,'task_completions',docId), {
-      userId: uid, taskId: task.id, reward: task.reward||0, type: task.type||'once',
-      dateKey: isDaily ? todayKey() : null, createdAt: Date.now()
+      userId: uid, taskId: task.id, type: task.type||'once',
+      totalEarned: newTotal, completedAt: Date.now()
     });
-    STATE.taskDoneMap[isDaily ? (task.id+'_'+todayKey()) : task.id] = true;
+    STATE.taskDoneMap[task.id] = { type: task.type||'once', totalEarned:newTotal, completedAt: Date.now() };
     STATE.balance += (task.reward||0);
     updateBalanceUI();
     renderTasks();
