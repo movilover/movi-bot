@@ -625,13 +625,14 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .task-list { padding:6px 14px 14px; display:flex; flex-direction:column; gap:10px; }
 .task-card { display:flex; align-items:center; gap:12px; padding:13px; border-radius:16px; background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 18px rgba(92,20,32,0.05); position:relative; overflow:hidden; }
 .task-card::before { content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--gold-2),var(--gold)); }
-.task-icon-box { width:46px; height:46px; border-radius:50%; background:var(--gold-soft); border:1.5px solid var(--border-gold); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; }
-.task-icon-box img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.task-icon-box { width:46px; height:46px; border-radius:14px; background:var(--gold-soft); border:1.5px solid var(--border-gold); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; }
+.task-icon-box img { width:100%; height:100%; object-fit:cover; border-radius:14px; }
 .task-info { flex:1; min-width:0; }
 .task-title-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .task-title { font-size:13.5px; font-weight:700; color:var(--text); }
 .task-badge { font-size:9px; font-weight:700; padding:2px 8px; border-radius:8px; background:var(--gold-soft); color:var(--gold-3); border:1px solid var(--border-gold); white-space:nowrap; }
 .task-reward { font-size:13px; font-weight:800; color:var(--green); font-family:'Rajdhani',sans-serif; margin-top:3px; }
+.task-desc { font-size:11px; color:var(--text-muted); line-height:1.5; margin-top:2px; }
 .task-start-btn { padding:10px 16px; border-radius:12px; border:none; background:var(--grad-btn); color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.3px; cursor:pointer; flex-shrink:0; box-shadow:0 6px 16px rgba(92,20,32,0.24); }
 .task-start-btn:active { transform:scale(0.96); }
 .task-start-btn.done { background:rgba(28,130,89,0.12); color:var(--green); box-shadow:none; }
@@ -983,7 +984,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
     <span class="material-icons-round player-back ripple" onclick="closePlayer()">arrow_back</span>
     <div class="player-title" id="player-title-text">ভিডিও</div>
   </div>
-  <div class="player-video"><video id="main-video" controls autoplay playsinline></video></div>
+  <div class="player-video" id="player-video-wrap"><video id="main-video" controls autoplay playsinline></video></div>
   <div class="player-info-wrap">
     <div class="part-selector-row" id="part-selector-row" style="display:none;"></div>
     <div class="player-ad-banner ripple" id="player-ad-banner" onclick="showBannerAd()">
@@ -1770,11 +1771,53 @@ function renderTutorialVideo(){
       <div class="tutorial-video-label">${escHtml(v.label||'টিউটোরিয়াল ভিডিও')}</div>
     </div>`;
 }
+/* ===================== SMART VIDEO EMBED =====================
+   The in-app player only understood raw <video src> links. A Blogger
+   *post* URL or a YouTube *watch* URL is a webpage, not a media file, so
+   the <video> tag silently failed on those. This detects the link type
+   and swaps in the right embed:
+   - YouTube (watch/youtu.be/shorts/embed) -> YouTube iframe player.
+   - Blogger's own video embed link (blogger.com/video.g?token=...) ->
+     used directly as an iframe (this is the one Blogger actually intends
+     for embedding elsewhere — see the admin panel's hint for how to grab it).
+   - Anything else (direct .mp4/.webm/Firebase Storage/etc.) -> normal
+     <video> tag, same as before. */
+function extractYouTubeId(url){
+  const m = String(url||'').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+function detectEmbedType(url){
+  const u = String(url||'');
+  if(/youtube\.com|youtu\.be/i.test(u) && extractYouTubeId(u)) return 'youtube';
+  if(/blogger\.com\/video\.g/i.test(u)) return 'blogger';
+  return 'direct';
+}
+function renderPlayerMedia(url){
+  const wrap = document.getElementById('player-video-wrap');
+  if(!wrap || !url) return;
+  const type = detectEmbedType(url);
+  if(type==='youtube'){
+    const id = extractYouTubeId(url);
+    wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:0;display:block;"></iframe>`;
+    return;
+  }
+  if(type==='blogger'){
+    wrap.innerHTML = `<iframe src="${escHtml(url)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:0;display:block;"></iframe>`;
+    return;
+  }
+  wrap.innerHTML = `<video id="main-video" controls autoplay playsinline style="width:100%;height:100%;"></video>`;
+  document.getElementById('main-video').src = url;
+}
+function stopPlayerMedia(){
+  const wrap = document.getElementById('player-video-wrap');
+  if(wrap) wrap.innerHTML = `<video id="main-video" controls autoplay playsinline></video>`;
+}
+
 function playTutorialVideo(url){
   document.getElementById('part-selector-row').style.display='none';
   document.getElementById('part-selector-row').innerHTML='';
   document.getElementById('player-title-text').textContent = 'টিউটোরিয়াল ভিডিও';
-  document.getElementById('main-video').src = url;
+  renderPlayerMedia(url);
   document.getElementById('pdp-title').textContent = 'টিউটোরিয়াল ভিডিও';
   document.getElementById('pdp-desc').textContent = 'অ্যাপটি কীভাবে ব্যবহার করবেন।';
   document.getElementById('pdp-views').textContent = 'টিউটোরিয়াল';
@@ -2102,9 +2145,7 @@ function switchPart(idx){
   const parts = STATE.currentParts;
   if(!parts || !parts[idx]) return;
   STATE.currentPartIdx = idx;
-  const vid = document.getElementById('main-video');
-  vid.src = parts[idx].url;
-  vid.play().catch(()=>{});
+  renderPlayerMedia(parts[idx].url);
   document.querySelectorAll('.part-btn').forEach((b,i)=>b.classList.toggle('active', i===idx));
   const baseTitle = (STATE.currentVideo && STATE.currentVideo.title) || 'ভিডিও';
   document.getElementById('player-title-text').textContent = baseTitle + ' - পার্ট ' + (idx+1);
@@ -2136,8 +2177,9 @@ function toggleLike(){
 }
 function closePlayer(){
   document.getElementById('player-modal').classList.remove('open');
-  document.getElementById('main-video').pause();
-  document.getElementById('main-video').src='';
+  const vid = document.getElementById('main-video');
+  if(vid){ try{ vid.pause(); }catch(e){} }
+  stopPlayerMedia();
   document.getElementById('part-selector-row').style.display='none';
   document.getElementById('part-selector-row').innerHTML='';
 }
@@ -2273,14 +2315,31 @@ function closeNotif(){ document.getElementById('notif-modal').classList.remove('
 const DAY_MS = 24*60*60*1000;
 async function loadTasksAndLedger(){
   try{
-    const all = await fbGet('tasks');
-    STATE.tasks = all.filter(t=>t.active!==false).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-  }catch(e){ STATE.tasks = []; }
-  try{
     const s = await fbGetDoc('settings','withdraw');
     STATE.withdrawSettings = s || {};
   }catch(e){ STATE.withdrawSettings = {}; }
   await refreshLedger();
+  subscribeTasks();
+}
+/* Real-time listener: as soon as the admin adds/edits/removes a task in
+   Firestore, every open user-site tab reflects it immediately — no manual
+   refresh needed. Falls back to a one-time fetch if listeners aren't
+   available for some reason. */
+function subscribeTasks(){
+  if(!window._onSnapshot || !window._col || !window._db){ loadTasksOnce(); return; }
+  try{
+    window._onSnapshot(window._col(window._db,'tasks'), snap=>{
+      const all = snap.docs.map(d=>({id:d.id,...d.data()}));
+      STATE.tasks = all.filter(t=>t.active!==false).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+      renderTasks();
+    }, ()=>loadTasksOnce());
+  }catch(e){ loadTasksOnce(); }
+}
+async function loadTasksOnce(){
+  try{
+    const all = await fbGet('tasks');
+    STATE.tasks = all.filter(t=>t.active!==false).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  }catch(e){ STATE.tasks = []; }
   renderTasks();
 }
 async function refreshLedger(){
@@ -2343,6 +2402,7 @@ function renderTasks(){
           ${t.badge?`<span class="task-badge">${escHtml(t.badge)}</span>`:''}
           ${t.type==='daily'?`<span class="task-badge">প্রতি ২৪ ঘণ্টায়</span>`:''}
         </div>
+        ${t.description?`<div class="task-desc">${escHtml(t.description)}</div>`:''}
         <div class="task-reward">+৳ ${(t.reward||0).toFixed(2)}</div>
       </div>
       <button class="task-start-btn ripple ${done?'done':''}" ${done?'disabled':''} onclick="startTaskFlow('${t.id}')">${btnLabel}</button>
@@ -2471,28 +2531,44 @@ async function completeTaskReward(task){
    they're instantly recognizable and premium-looking without reproducing
    trademarked graphics. Admin-uploaded logo images (if set) take priority
    over these built-in badges. */
-const WITHDRAW_METHODS = [
-  { key:'bkash', name:'বিকাশ', bg:'#E2136E',
+/* Built-in brand-colored fallback badges for well-known method keys — used
+   only when the admin hasn't uploaded a logo image for that method. Any
+   custom method the admin adds (e.g. "Bank Transfer") that doesn't match
+   one of these keys falls back to a neutral card-icon badge. */
+const KNOWN_METHOD_BADGES = {
+  bkash: { bg:'#E2136E',
     svg:`<svg viewBox="0 0 34 34" width="22" height="22"><circle cx="17" cy="17" r="17" fill="#E2136E"/><path d="M10 12.5c0-.9.7-1.6 1.6-1.6s1.6.7 1.6 1.6v6.3c0 1.8 1.5 3.3 3.3 3.3h.6c1.8 0 3.3-1.5 3.3-3.3v-6.3c0-.9.7-1.6 1.6-1.6s1.6.7 1.6 1.6v6.3c0 3.6-2.9 6.5-6.5 6.5h-.6c-3.6 0-6.5-2.9-6.5-6.5v-6.3z" fill="#fff"/></svg>` },
-  { key:'nagad', name:'নগদ', bg:'linear-gradient(135deg,#F6821F,#E4032C)',
+  nagad: { bg:'linear-gradient(135deg,#F6821F,#E4032C)',
     svg:`<svg viewBox="0 0 34 34" width="22" height="22"><circle cx="17" cy="17" r="17" fill="#E4032C"/><path d="M9 22V12l8 6 8-6v10" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
-  { key:'rocket', name:'রকেট', bg:'#8C3494',
+  rocket: { bg:'#8C3494',
     svg:`<svg viewBox="0 0 34 34" width="22" height="22"><circle cx="17" cy="17" r="17" fill="#8C3494"/><path d="M17 8c2.4 2 3.8 5 3.8 8.4 0 2-.5 3.8-1.3 5.3l-2.5-1.4-2.5 1.4c-.8-1.5-1.3-3.3-1.3-5.3C13.2 13 14.6 10 17 8z" fill="#fff"/><circle cx="17" cy="15.5" r="1.6" fill="#8C3494"/><path d="M13.2 20.5 11 24l3.4-1.2M20.8 20.5 23 24l-3.4-1.2" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>` },
+};
+const DEFAULT_METHODS_FALLBACK = [
+  { key:'bkash', name:'বিকাশ', logo:'' },
+  { key:'nagad', name:'নগদ', logo:'' },
+  { key:'rocket', name:'রকেট', logo:'' },
 ];
+function currentWithdrawMethods(){
+  const s = STATE.withdrawSettings || {};
+  return (Array.isArray(s.methods) && s.methods.length) ? s.methods : DEFAULT_METHODS_FALLBACK;
+}
 function renderWalletPage(){
   updateBalanceUI();
   const s = STATE.withdrawSettings || {};
   const minWithdraw = s.minWithdraw || 100;
   document.getElementById('wd-min-hint').textContent = 'সর্বনিম্ন উত্তোলন: ৳ ' + minWithdraw;
 
+  const methods = currentWithdrawMethods();
   const methodsWrap = document.getElementById('wallet-methods');
-  methodsWrap.innerHTML = WITHDRAW_METHODS.map(m=>{
-    const logo = s[m.key+'Logo'];
+  methodsWrap.innerHTML = methods.map(m=>{
+    const known = KNOWN_METHOD_BADGES[m.key];
+    const bg = known ? known.bg : 'linear-gradient(135deg,var(--wine),var(--wine-3))';
+    const svg = known ? known.svg : `<span class="material-icons-round" style="color:#fff;font-size:18px;">account_balance_wallet</span>`;
     const sel = STATE.selectedWithdrawMethod===m.key ? 'selected' : '';
-    const imgOverlay = logo ? `<img src="${escHtml(logo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:9px;" onerror="this.style.display='none'"/>` : '';
+    const imgOverlay = m.logo ? `<img src="${escHtml(m.logo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:9px;" onerror="this.style.display='none'"/>` : '';
     return `<div class="wallet-method-tile ripple ${sel}" onclick="selectWithdrawMethod('${m.key}')">
-      <span class="wm-logo" style="background:${m.bg};position:relative;">${m.svg}${imgOverlay}</span>
-      <span class="wm-name">${m.name}</span>
+      <span class="wm-logo" style="background:${bg};position:relative;">${svg}${imgOverlay}</span>
+      <span class="wm-name">${escHtml(m.name)}</span>
     </div>`;
   }).join('');
 
@@ -2500,17 +2576,19 @@ function renderWalletPage(){
 }
 function selectWithdrawMethod(key){
   STATE.selectedWithdrawMethod = key;
-  document.querySelectorAll('.wallet-method-tile').forEach((el,i)=>el.classList.toggle('selected', WITHDRAW_METHODS[i].key===key));
+  const methods = currentWithdrawMethods();
+  document.querySelectorAll('.wallet-method-tile').forEach((el,i)=>el.classList.toggle('selected', methods[i] && methods[i].key===key));
 }
 function renderWalletHistory(){
   const wrap = document.getElementById('wallet-history-list');
   if(!wrap) return;
   if(!STATE.myWithdrawals.length){ wrap.innerHTML = `<div class="hist-empty">এখনো কোনো উইথড্র রিকুয়েস্ট নেই</div>`; return; }
   const labels = { pending:'পেন্ডিং', approved:'অনুমোদিত', rejected:'বাতিল' };
+  const methods = currentWithdrawMethods();
   wrap.innerHTML = STATE.myWithdrawals.map(w=>`
     <div class="wh-row">
       <div class="wh-info">
-        <div class="wh-amount">৳ ${(w.amount||0).toFixed(2)} — ${escHtml((WITHDRAW_METHODS.find(m=>m.key===w.method)||{}).name || w.method || '')}</div>
+        <div class="wh-amount">৳ ${(w.amount||0).toFixed(2)} — ${escHtml((methods.find(m=>m.key===w.method)||{}).name || w.method || '')}</div>
         <div class="wh-meta">${escHtml(w.number||'')} · ${timeAgo(w.createdAt)}</div>
       </div>
       <span class="wh-status ${w.status||'pending'}">${labels[w.status]||'পেন্ডিং'}</span>
