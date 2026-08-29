@@ -540,7 +540,7 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .nav-fav-badge { position:absolute; top:2px; right:22%; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--wine); color:#fff; font-size:9px; font-weight:700; display:none; align-items:center; justify-content:center; line-height:16px; box-shadow:0 0 0 2px var(--bg); }
 .nav-fav-badge.show { display:flex; }
 
-#toast { position:fixed; bottom:calc(var(--nav-h) + 14px); left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); border:1px solid rgba(0,0,0,0.1); color:#fff; padding:10px 20px; border-radius:30px; font-size:13px; opacity:0; transition:all 0.3s; z-index:999; pointer-events:none; white-space:nowrap; max-width:90vw; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
+#toast { position:fixed; bottom:calc(var(--nav-h) + 14px); left:50%; transform:translateX(-50%) translateY(20px); background:#241d33; border:1px solid var(--border-gold); color:#fff; padding:10px 20px; border-radius:30px; font-size:13px; opacity:0; transition:all 0.3s; z-index:999; pointer-events:none; white-space:nowrap; max-width:90vw; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.45); }
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 .ripple { position:relative; overflow:hidden; }
@@ -610,15 +610,17 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .nav-item-task.active .material-icons-round { color:var(--wine); }
 
 /* ============ TASK PAGE ============ */
-.task-hero { margin:14px; padding:18px; border-radius:20px; background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--border-gold); box-shadow:0 12px 30px rgba(124,58,237,0.08); position:relative; overflow:hidden; }
+.task-hero { margin:14px; padding:18px; border-radius:20px; background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--border-gold); box-shadow:0 12px 30px rgba(124,58,237,0.08); position:relative; }
 .task-hero::before { content:''; position:absolute; top:0; left:18px; right:18px; height:2px; background:linear-gradient(90deg,var(--wine),var(--gold)); }
-.task-hero-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .task-hero-title { font-family:'Rajdhani',sans-serif; font-size:19px; font-weight:800; color:var(--text); }
 .task-hero-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
-.task-wallet-btn { display:flex; align-items:center; gap:8px; padding:9px 14px; border-radius:14px; background:var(--grad-gold); box-shadow:0 8px 20px rgba(240,180,41,0.3); cursor:pointer; flex-shrink:0; }
-.task-wallet-btn .material-icons-round { font-size:20px; color:#2a1c05; }
-.twb-lbl { font-size:9px; color:#4a3410; font-weight:700; letter-spacing:0.5px; }
-.twb-val { font-size:13.5px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; }
+.task-balance-bar { margin-top:14px; display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; background:var(--grad-gold); box-shadow:0 10px 24px rgba(240,180,41,0.32); cursor:pointer; }
+.task-balance-bar:active { transform:scale(0.98); }
+.task-balance-bar .material-icons-round:first-child { font-size:28px; color:#2a1c05; flex-shrink:0; }
+.tbb-info { flex:1; min-width:0; }
+.tbb-lbl { font-size:11px; color:rgba(42,28,5,0.75); font-weight:700; letter-spacing:0.5px; }
+.tbb-val { font-size:22px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; margin-top:2px; line-height:1.2; }
+.tbb-arrow { color:rgba(42,28,5,0.55); flex-shrink:0; }
 
 /* LIVE referral banner */
 .live-banner { margin:0 14px 12px; display:flex; align-items:center; gap:10px; padding:9px 13px; border-radius:13px; background:var(--surface); border:1px solid var(--border); overflow:hidden; }
@@ -681,6 +683,11 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 .wallet-balance-card::before { content:''; position:absolute; inset:0; backdrop-filter:blur(0.5px); background:radial-gradient(120% 90% at 15% 0%, rgba(255,255,255,0.28), transparent 55%); pointer-events:none; }
 .wbc-lbl { position:relative; font-size:12px; color:rgba(42,28,5,0.75); font-weight:700; letter-spacing:0.5px; }
 .wbc-val { position:relative; font-size:33px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; margin-top:4px; text-shadow:0 1px 0 rgba(255,255,255,0.25); }
+.wbc-stats-row { position:relative; display:flex; margin-top:16px; padding-top:14px; border-top:1px solid rgba(42,28,5,0.18); }
+.wbc-stat { flex:1; text-align:center; border-right:1px solid rgba(42,28,5,0.18); }
+.wbc-stat:last-child { border-right:none; }
+.wbc-stat-val { font-size:16px; font-weight:800; color:#2a1c05; font-family:'Rajdhani',sans-serif; }
+.wbc-stat-lbl { font-size:10px; color:rgba(42,28,5,0.7); margin-top:3px; font-weight:600; }
 .wallet-form-card { margin:0 14px; padding:16px; border-radius:18px; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 22px rgba(124,58,237,0.05); }
 .wallet-form-label { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px; }
 .wallet-methods { display:flex; gap:8px; flex-wrap:wrap; }
@@ -808,18 +815,15 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
 
     <div class="page" id="page-task">
       <div class="task-hero">
-        <div class="task-hero-top">
-          <div>
-            <div class="task-hero-title">মাইক্রো টাস্ক</div>
-            <div class="task-hero-sub">ছোট ছোট কাজ করে আয় করুন</div>
+        <div class="task-hero-title">মাইক্রো টাস্ক</div>
+        <div class="task-hero-sub">ছোট ছোট কাজ করে আয় করুন</div>
+        <div class="task-balance-bar ripple" onclick="showPage('wallet')">
+          <span class="material-icons-round">account_balance_wallet</span>
+          <div class="tbb-info">
+            <div class="tbb-lbl">আপনার ব্যালেন্স</div>
+            <div class="tbb-val" id="task-balance-chip">৳ 0.00</div>
           </div>
-          <div class="task-wallet-btn ripple" onclick="showPage('wallet')">
-            <span class="material-icons-round">account_balance_wallet</span>
-            <div>
-              <div class="twb-lbl">ব্যালেন্স</div>
-              <div class="twb-val" id="task-balance-chip">৳ 0.00</div>
-            </div>
-          </div>
+          <span class="material-icons-round tbb-arrow">chevron_right</span>
         </div>
       </div>
 
@@ -862,6 +866,10 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
       <div class="wallet-balance-card">
         <div class="wbc-lbl">উত্তোলনযোগ্য ব্যালেন্স</div>
         <div class="wbc-val" id="wallet-balance-val">৳ 0.00</div>
+        <div class="wbc-stats-row">
+          <div class="wbc-stat"><div class="wbc-stat-val" id="wallet-today-income">৳ 0.00</div><div class="wbc-stat-lbl">আজকের আয়</div></div>
+          <div class="wbc-stat"><div class="wbc-stat-val" id="wallet-total-income">৳ 0.00</div><div class="wbc-stat-lbl">সর্বমোট আয়</div></div>
+        </div>
       </div>
 
       <div class="wallet-form-card">
@@ -2306,18 +2314,18 @@ function renderPromoPost(){
     </div>`;
 }
 
-const defaultChannels=[
-  {name:'ভাইরাল ভিডিও L!NKS',desc:'মেইন চ্যানেলে জয়েন করুন',url:'https://t.me/',emoji:'📡'},
-  {name:'Movi Lover Official',desc:'অফিশিয়াল চ্যানেল',url:'https://t.me/',emoji:'🎬'},
-];
 async function loadChannels(){
   renderPromoPost();
-  const fromDb=await fbGet('channels');
-  STATE.channels=fromDb.length?fromDb:defaultChannels;
+  STATE.channels = await fbGet('channels');
   renderChannels();
 }
 function renderChannels(){
-  document.getElementById('channels-list').innerHTML=STATE.channels.map(ch=>`
+  const wrap = document.getElementById('channels-list');
+  if(!STATE.channels.length){
+    wrap.innerHTML = `<div class="empty-state" style="padding:30px;"><div class="empty-icon">📡</div><div class="empty-text">এখনো কোনো চ্যানেল যুক্ত করা হয়নি</div></div>`;
+    return;
+  }
+  wrap.innerHTML=STATE.channels.map(ch=>`
     <div class="channel-item">
       <div class="channel-item-top">
         <div class="channel-icon">${ch.emoji||'📢'}</div>
@@ -2332,10 +2340,10 @@ function renderChannels(){
 
 async function loadNotifications(){
   let all = await fbGet('notifications');
-  all = all.filter(n=>{
-    const t = String(n.type || n.kind || '').toLowerCase();
-    return t!=='unlock' && t!=='video_unlock' && t!=='user_unlock' && t!=='user_activity';
-  });
+  // Global notifications (new video, announcements) have no userId and go
+  // to everyone. Targeted ones (withdraw approved/rejected) only show for
+  // the user they were written for.
+  all = all.filter(n => !n.userId || n.userId === STATE.userId);
   STATE.notifications = all;
   STATE.notifications.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   if(STATE.notifications.length) document.getElementById('notif-badge').classList.add('show');
@@ -2386,6 +2394,7 @@ async function loadTasksAndLedger(){
   }catch(e){ STATE.referralBanner = {}; }
   await loadDailyAdSettings();
   renderReferralBanner();
+  await loadTasksOnce();
   await refreshLedger();
   await loadDailyAdProgress();
   subscribeTasks();
@@ -2427,15 +2436,33 @@ async function refreshLedger(){
     fbGetWhere('withdrawals','userId',STATE.userId),
     fbGetWhere('daily_ad_tasks','userId',STATE.userId)
   ]);
-  let bal = 0;
+  const dayStart = new Date(); dayStart.setHours(0,0,0,0);
+  const dayStartMs = dayStart.getTime();
+  let totalIncome = 0, todayIncome = 0;
   const doneMap = {};
   completions.forEach(c=>{
-    bal += (c.totalEarned||0);
+    totalIncome += (c.totalEarned||0);
     doneMap[c.taskId] = c; // { type, completedAt, totalEarned }
+    if((c.completedAt||0) >= dayStartMs){
+      if(c.type==='daily'){
+        // Each claim adds exactly one task.reward — find that task's
+        // current reward to know just today's slice of the running total.
+        const t = STATE.tasks.find(x=>x.id===c.taskId);
+        todayIncome += t ? (t.reward||0) : 0;
+      } else {
+        todayIncome += (c.totalEarned||0); // 'once' tasks: totalEarned IS the one-time amount
+      }
+    }
   });
-  dailyAds.forEach(d=>{ bal += (d.earned||0); });
-  withdrawals.forEach(w=>{ if(w.status!=='rejected') bal -= (w.amount||0); });
-  STATE.balance = Math.max(0, bal);
+  let totalWithdrawn = 0;
+  dailyAds.forEach(d=>{
+    totalIncome += (d.earned||0);
+    if(d.date === todayDateStr()) todayIncome += (d.earned||0);
+  });
+  withdrawals.forEach(w=>{ if(w.status!=='rejected') totalWithdrawn += (w.amount||0); });
+  STATE.totalIncome = totalIncome;
+  STATE.todayIncome = todayIncome;
+  STATE.balance = Math.max(0, totalIncome - totalWithdrawn);
   STATE.taskDoneMap = doneMap;
   STATE.myWithdrawals = withdrawals.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   updateBalanceUI();
@@ -2443,8 +2470,12 @@ async function refreshLedger(){
 function updateBalanceUI(){
   const chip = document.getElementById('task-balance-chip');
   const walletVal = document.getElementById('wallet-balance-val');
+  const todayEl = document.getElementById('wallet-today-income');
+  const totalEl = document.getElementById('wallet-total-income');
   if(chip) chip.textContent = '৳ ' + STATE.balance.toFixed(2);
   if(walletVal) walletVal.textContent = '৳ ' + STATE.balance.toFixed(2);
+  if(todayEl) todayEl.textContent = '৳ ' + (STATE.todayIncome||0).toFixed(2);
+  if(totalEl) totalEl.textContent = '৳ ' + (STATE.totalIncome||0).toFixed(2);
 }
 function taskCooldownRemainingMs(task){
   const c = STATE.taskDoneMap[task.id];
