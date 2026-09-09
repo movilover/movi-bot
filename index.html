@@ -140,6 +140,60 @@ header {
 .notif-badge.show { display:block; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
 
+/* ============ ANNOUNCEMENT BANNER (premium, dismissible) ============ */
+.announce-banner {
+  display:none; align-items:center; gap:11px;
+  padding:11px 14px; margin:0;
+  background: linear-gradient(100deg, #1a1030 0%, #241245 45%, #0f2438 100%);
+  border-bottom:1px solid rgba(168,85,247,0.35);
+  box-shadow: 0 4px 22px rgba(124,58,237,0.28), inset 0 -1px 0 rgba(34,211,238,0.12);
+  position:relative; z-index:90; overflow:hidden;
+  max-height:0; opacity:0; transform:translateY(-14px);
+  transition: max-height 0.42s cubic-bezier(.22,.68,0,1.2), opacity 0.35s ease, transform 0.42s cubic-bezier(.22,.68,0,1.2), padding 0.42s;
+}
+.announce-banner.show { display:flex; max-height:120px; opacity:1; transform:translateY(0); }
+.announce-banner.hide { max-height:0 !important; opacity:0 !important; transform:translateY(-14px) !important; padding-top:0; padding-bottom:0; border-bottom-width:0; }
+.announce-banner::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background: radial-gradient(220px 60px at 15% 0%, rgba(34,211,238,0.18), transparent 70%),
+              radial-gradient(220px 60px at 90% 100%, rgba(168,85,247,0.22), transparent 70%);
+}
+.announce-icon-wrap {
+  position:relative; z-index:1; flex-shrink:0; width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(34,211,238,0.2));
+  border:1px solid rgba(34,211,238,0.4);
+  box-shadow: 0 0 14px rgba(168,85,247,0.5), 0 0 6px rgba(34,211,238,0.4);
+  animation: announceIconPulse 1.8s ease-in-out infinite;
+  overflow:hidden;
+}
+.announce-icon-wrap img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.announce-icon-fallback { font-size:18px; color:#67e8f9; }
+@keyframes announceIconPulse {
+  0%,100% { box-shadow: 0 0 14px rgba(168,85,247,0.5), 0 0 6px rgba(34,211,238,0.4); transform:scale(1); }
+  50% { box-shadow: 0 0 22px rgba(168,85,247,0.75), 0 0 12px rgba(34,211,238,0.65); transform:scale(1.08); }
+}
+.announce-text {
+  position:relative; z-index:1; flex:1; min-width:0; font-size:12px; line-height:1.5; color:#e9e4fb;
+}
+.announce-actions { position:relative; z-index:1; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.announce-cta {
+  display:flex; align-items:center; gap:4px; padding:8px 14px; border-radius:20px;
+  background: linear-gradient(135deg, #a855f7 0%, #22d3ee 100%);
+  color:#0d0a12; font-family:'Rajdhani',sans-serif; font-weight:800; font-size:12px; letter-spacing:0.2px;
+  white-space:nowrap; text-decoration:none;
+  box-shadow: 0 0 16px rgba(34,211,238,0.45), 0 4px 12px rgba(168,85,247,0.35);
+  transition: transform 0.15s;
+}
+.announce-cta:active { transform:scale(0.94); }
+.announce-close {
+  width:26px; height:26px; border-radius:50%; flex-shrink:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#c9c3e0;
+}
+.announce-close:active { transform:scale(0.88); }
+.announce-close .material-icons-round { font-size:15px; }
+
 #pages { flex:1; overflow:hidden; position:relative; }
 .page { position:absolute; inset:0; overflow-y:auto; padding-bottom:calc(var(--nav-h) + 10px); display:none; flex-direction:column; }
 .page.active { display:flex; animation: pageIn 0.3s cubic-bezier(.22,.68,0,1.2); }
@@ -758,6 +812,18 @@ nav { height:var(--nav-h); flex-shrink:0; background:linear-gradient(0deg,var(--
     </div>
   </header>
 
+  <div id="announcement-banner" class="announce-banner">
+    <div class="announce-icon-wrap">
+      <img id="announce-icon-img" style="display:none;" />
+      <span class="material-icons-round announce-icon-fallback" id="announce-icon-fallback">campaign</span>
+    </div>
+    <div class="announce-text" id="announce-text"></div>
+    <div class="announce-actions">
+      <a class="announce-cta" id="announce-cta" href="#" target="_blank" rel="noopener">যোগ দিন</a>
+      <div class="announce-close ripple" onclick="dismissAnnouncement()"><span class="material-icons-round">close</span></div>
+    </div>
+  </div>
+
   <div id="pages">
     <div class="page active" id="page-home">
       <div class="categories-simple">
@@ -1172,6 +1238,7 @@ const STATE = {
   dailyAdToday: null,
   dailyAdBusy: false,
   referralBanner: {},
+  announceDismissKey: null,
 };
 
 const AVATAR_CHOICES = [
@@ -1272,6 +1339,7 @@ function playTone(f=440,t='sine',d=0.08,v=0.1){ try{const ac=gAC(),o=ac.createOs
 function clickSnd(){ playTone(700,'sine',0.05,0.07); }
 function successSnd(){ [440,554,659].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.15,0.13),i*80)); }
 function unlockSnd(){ [330,415,523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'triangle',0.18,0.16),i*90)); }
+function dingSnd(){ [988,1319].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.22,0.11),i*110)); }
 function stepDoneSnd(){ [523,659].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.15,0.15),i*90)); }
 
 document.addEventListener('click',function(e){
@@ -1332,6 +1400,7 @@ window.addEventListener('firebaseReady', async()=>{
   await loadTasksAndLedger();
   initProfile();
   hideSplash();
+  loadAnnouncement();
 });
 setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },4500);
 
@@ -1805,6 +1874,55 @@ async function fbGetWhere(col,field,value){
     const s = await window._getDocs(q);
     return s.docs.map(d=>({id:d.id,...d.data()}));
   }catch(e){ return []; }
+}
+
+/* ===================== ANNOUNCEMENT BANNER =====================
+   Admin-editable notice bar (settings/announcement) — icon, message, CTA
+   button text/link. Every time the admin saves it, `version` bumps by 1
+   in the admin panel, so previously-dismissed users see the *new*
+   announcement again even though they already closed an older one.
+   Dismissal is remembered per-version in localStorage, not just "seen
+   once ever". */
+async function loadAnnouncement(){
+  let s;
+  try{ s = await fbGetDoc('settings','announcement'); }catch(e){ return; }
+  if(!s || !s.enabled || !s.text) return;
+  const version = s.version || 1;
+  const dismissKey = 'ml_announce_dismissed_v' + version;
+  if(localStorage.getItem(dismissKey)) return;
+
+  document.getElementById('announce-text').textContent = s.text;
+  const cta = document.getElementById('announce-cta');
+  if(s.buttonText && s.buttonUrl){
+    cta.textContent = s.buttonText;
+    cta.href = s.buttonUrl;
+    cta.style.display = '';
+  } else {
+    cta.style.display = 'none';
+  }
+  const iconImg = document.getElementById('announce-icon-img');
+  const iconFallback = document.getElementById('announce-icon-fallback');
+  if(s.icon){
+    iconImg.src = s.icon;
+    iconImg.style.display = '';
+    iconImg.onerror = ()=>{ iconImg.style.display='none'; iconFallback.style.display=''; };
+    iconFallback.style.display = 'none';
+  } else {
+    iconImg.style.display = 'none';
+    iconFallback.style.display = '';
+  }
+
+  STATE.announceDismissKey = dismissKey;
+  const banner = document.getElementById('announcement-banner');
+  banner.classList.remove('hide');
+  banner.classList.add('show');
+  dingSnd();
+}
+function dismissAnnouncement(){
+  const banner = document.getElementById('announcement-banner');
+  banner.classList.add('hide');
+  banner.classList.remove('show');
+  if(STATE.announceDismissKey) localStorage.setItem(STATE.announceDismissKey, '1');
 }
 
 async function loadSettings(){
