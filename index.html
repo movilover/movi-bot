@@ -46,6 +46,7 @@
   window._onSnapshot = onSnapshot;
   window._getDoc = getDoc;
   window._setDoc = setDoc;
+  window._deleteDoc = deleteDoc;
 
   window.dispatchEvent(new Event('firebaseReady'));
 </script>
@@ -1313,6 +1314,9 @@ const STATE = {
   dailyAdBusy: false,
   referralBanner: {},
   announceDismissKey: null,
+  videoBot: { token:'', botUsername:'', retentionMinutes:15 },
+  pendingDeliveryId: null,
+  deletingIds: {},
 };
 
 const AVATAR_CHOICES = [
@@ -1378,7 +1382,8 @@ function copyVideoLink(id, evt){
   const v = findVideo(id);
   if(!v){ toast('⚠️ ভিডিও তথ্য এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন।'); return; }
   const url = buildVideoShareLink(id);
-  copyTextToClipboard(url, '✅ ভিডিও লিংক কপি হয়েছে!');
+  const label = 'Movi Lover' + (v.videoNo ? ' #' + v.videoNo : '');
+  copyTextToClipboard('🎬 ' + label + '\n' + url, '✅ ভিডিও লিংক কপি হয়েছে!');
 }
 function copyTextToClipboard(text, successMsg){
   if(navigator.clipboard && navigator.clipboard.writeText){
@@ -1400,7 +1405,7 @@ function shareVideoById(id, evt){
   const v = findVideo(id);
   if(!v){ toast('⚠️ ভিডিও তথ্য এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন।'); return; }
   const url = buildVideoShareLink(id);
-  const text = `🎬 ${v.title||'ভিডিও'}\n${STATE.siteName} এ দেখুন:`;
+  const text = `🎬 Movi Lover${v.videoNo?' #'+v.videoNo:''}\n${v.title||'ভিডিও'}\n${STATE.siteName} এ দেখুন:`;
   if(navigator.share){ navigator.share({ title: v.title||'ভিডিও', text, url }).catch(()=>{}); }
   else { copyTextToClipboard(url, '✅ শেয়ার সিট পাওয়া যায়নি — লিংক কপি হয়েছে!'); }
 }
@@ -1466,6 +1471,7 @@ window.addEventListener('firebaseReady', async()=>{
   await ensureAuth();
   await loadSettings();
   await loadAdNetworkConfig();
+  await loadVideoBotConfig();
   await ensureUserDoc();
   await loadTutorialVideo();
   subscribeVideos();
@@ -2256,19 +2262,144 @@ function openVideo(video){
   else startUnlockFromCard(video.id);
 }
 function openVideoById(id){ const v = findVideo(id); if(v) openVideo(v); }
+async function loadVideoBotConfig(){
+  try{
+    const p = await fbGetDoc('settings','videobot');
+    if(p) STATE.videoBot = { token:p.token||'', botUsername:p.botUsername||'', retentionMinutes:p.retentionMinutes||15 };
+  }catch(e){}
+}
+function openTelegramUrl(url){
+  const tg = window.Telegram?.WebApp;
+  if(tg && typeof tg.openTelegramLink === 'function' && /^https:\/\/t\.me\//.test(url)){ try{ tg.openTelegramLink(url); return; }catch(e){} }
+  window.open(url, '_blank');
+}
+function mainSiteLink(){ return `https://t.me/${TELEGRAM_BOT_USERNAME}/${TELEGRAM_WEBAPP_SHORT_NAME}`; }
+async function tgBot(method, body){
+  const r = await fetch('https://api.telegram.org/bot' + STATE.videoBot.token + '/' + method, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  return r.json();
+}
+function moreVideosMarkup(){
+  return { inline_keyboard: [[{ text:'🎬 আরও ভিডিও দেখতে এখানে ক্লিক করুন', url: mainSiteLink() }]] };
+}
+
+/* Watch Now (serverless): the Mini App itself sends the video to the
+   user's own Telegram chat through the delivery bot, then removes it after
+   the retention time. If the user never pressed Start on the bot, Telegram
+   refuses (403) — then we open the bot, and as soon as the user comes back
+   we retry automatically. Videos without a Telegram file keep the old
+   open-link behaviour. */
 function openWatchNow(id){
   const v = findVideo(id);
   if(!v) return;
   const parts = videoParts(v);
+  const tgParts = parts.filter(p=>p.tgFileId);
   const url = (parts[0] && parts[0].url) || v.url;
+
+  if(tgParts.length && STATE.videoBot.token){
+    registerWatch(v);
+    if(!STATE.tgUserId){
+      toast('⚠️ ভিডিও দেখতে টেলিগ্রাম অ্যাপের ভিতর থেকে সাইটটি খুলুন।');
+      if(STATE.videoBot.botUsername) openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername);
+      return;
+    }
+    deliverVideoToTelegram(v);
+    return;
+  }
   if(!url){ toast('⚠️ এই ভিডিওর লিংক পাওয়া যায়নি।'); return; }
+  registerWatch(v);
+  window.open(url, '_blank');
+}
+function registerWatch(v){
   try{ fbUpdate('videos', v.id, {views:(v.views||0)+1}); }catch(e){}
   STATE.watched++; localStorage.setItem('ml_watched', STATE.watched); updateProfileStats();
   STATE.watchHistory.unshift({ id: v.id, title: v.title||'ভিডিও', thumb: v.thumbnail||'', ts: Date.now() });
   STATE.watchHistory = STATE.watchHistory.slice(0,50);
   localStorage.setItem('ml_history', JSON.stringify(STATE.watchHistory));
-  window.open(url, '_blank');
 }
+async function deliverVideoToTelegram(v){
+  const parts = videoParts(v).filter(p=>p.tgFileId);
+  const mins = STATE.videoBot.retentionMinutes || 15;
+  const chatId = STATE.tgUserId;
+  toast('🎬 ভিডিও বটে পাঠানো হচ্ছে...');
+  const ids = [];
+  let failCode = 0;
+  try{
+    for(let i=0;i<parts.length;i++){
+      const last = i === parts.length-1;
+      const title = (v.title||'ভিডিও') + (parts.length>1 ? ` — পার্ট ${i+1}` : '');
+      const r = await tgBot('sendVideo', {
+        chat_id: chatId,
+        video: parts[i].tgFileId,
+        supports_streaming: true,
+        protect_content: true,
+        caption: `🎬 Movi Lover${v.videoNo?' #'+v.videoNo:''}\n${title}` + (last ? `\n\n⏳ এই ভিডিওটি ${mins} মিনিট পর্যন্ত থাকবে, তারপর মুছে যাবে।` : ''),
+        reply_markup: last ? moreVideosMarkup() : undefined
+      });
+      if(!r.ok){ failCode = r.error_code || 1; break; }
+      ids.push(r.result.message_id);
+    }
+  }catch(e){ failCode = 1; }
+
+  if(ids.length){
+    try{
+      const ref = await fbAdd('tg_deliveries', { userId: STATE.userId, chatId, messageIds: ids, deleteAt: Date.now() + mins*60*1000, videoNo: v.videoNo||null });
+      scheduleDeliveryDelete({ id: ref.id, chatId, messageIds: ids }, mins*60*1000);
+    }catch(e){
+      scheduleDeliveryDelete({ id: null, chatId, messageIds: ids }, mins*60*1000);
+    }
+    toast(`✅ ভিডিও বটে পাঠানো হয়েছে — ${mins} মিনিট থাকবে`);
+    if(STATE.videoBot.botUsername) setTimeout(()=>openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername), 700);
+    return;
+  }
+  // 403 / 400 => user hasn't started the bot yet
+  if(failCode === 403 || failCode === 400){
+    STATE.pendingDeliveryId = v.id;
+    toast('🤖 বটে গিয়ে Start চাপুন, তারপর এই অ্যাপে ফিরে আসুন — ভিডিও অটো পাঠানো হবে');
+    if(STATE.videoBot.botUsername) openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername + '?start=ready');
+  } else {
+    toast('⚠️ ভিডিও পাঠানো যায়নি — একটু পর আবার চেষ্টা করুন।');
+  }
+}
+function retryPendingDelivery(){
+  const id = STATE.pendingDeliveryId;
+  if(!id) return;
+  STATE.pendingDeliveryId = null;
+  const v = findVideo(id);
+  if(v) setTimeout(()=>deliverVideoToTelegram(v), 800);
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ retryPendingDelivery(); sweepMyDeliveries(); } });
+window.addEventListener('focus', ()=>{ retryPendingDelivery(); });
+
+function scheduleDeliveryDelete(d, delayMs){
+  setTimeout(()=>deleteDelivery(d), Math.max(0, delayMs));
+}
+async function deleteDelivery(d){
+  const key = d.id || (d.chatId + ':' + d.messageIds.join(','));
+  if(STATE.deletingIds[key]) return;
+  STATE.deletingIds[key] = true;
+  try{
+    for(const mid of (d.messageIds||[])){
+      try{ await tgBot('deleteMessage', { chat_id: d.chatId, message_id: mid }); }catch(e){}
+    }
+    try{
+      await tgBot('sendMessage', { chat_id: d.chatId, text: '⌛ ভিডিওর সময় শেষ, ভিডিওটি মুছে গেছে। আরও ভিডিও দেখতে নিচের বাটনে ক্লিক করুন।', reply_markup: moreVideosMarkup() });
+    }catch(e){}
+    if(d.id){ try{ await window._deleteDoc(window._doc(window._db,'tg_deliveries',d.id)); }catch(e){} }
+  } finally { delete STATE.deletingIds[key]; }
+}
+async function sweepMyDeliveries(){
+  if(!STATE.videoBot.token || !STATE.userId) return;
+  try{
+    const mine = await fbGetWhere('tg_deliveries','userId',STATE.userId);
+    const now = Date.now();
+    mine.filter(x=>(x.deleteAt||0) <= now).forEach(x=>deleteDelivery({ id:x.id, chatId:x.chatId, messageIds:x.messageIds||[] }));
+  }catch(e){}
+}
+setInterval(sweepMyDeliveries, 30000);
+window.addEventListener('firebaseReady', ()=>{ setTimeout(sweepMyDeliveries, 4000); });
+
 function findVideo(id){ return STATE.allVideos.find(x=>x.id===id); }
 
 function startUnlockFromCard(id){
