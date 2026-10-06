@@ -10,7 +10,7 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -46,6 +46,7 @@
   window._onSnapshot = onSnapshot;
   window._getDoc = getDoc;
   window._setDoc = setDoc;
+  window._serverTs = serverTimestamp;
   window._deleteDoc = deleteDoc;
 
   window.dispatchEvent(new Event('firebaseReady'));
@@ -855,9 +856,45 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
 .profile-card { background:linear-gradient(180deg,#171129,#110c1c); box-shadow:0 10px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05); }
 
 @media (prefers-reduced-motion: reduce){ * { animation:none !important; } }
+
+/* ============ TASK LANDING PAGE (3D cinema) ============ */
+html.lp-mode #app, html.lp-mode #loading-screen { display:none !important; }
+#lp-page { display:none; position:fixed; inset:0; z-index:9000; overflow-y:auto; background:radial-gradient(120% 80% at 50% -10%, #3b1a73 0%, #12091f 55%, #07060d 100%); color:var(--text); font-family:'Hind Siliguri',sans-serif; }
+html.lp-mode #lp-page { display:block; }
+.lp-floaters span { position:fixed; font-size:34px; opacity:.55; filter:drop-shadow(0 10px 14px rgba(0,0,0,.5)); left:var(--x); top:-50px; animation:lpFall var(--t) linear var(--d) infinite; pointer-events:none; }
+@keyframes lpFall { to { transform:translateY(115vh) rotateZ(360deg) rotateY(540deg); } }
+.lp-wrap { position:relative; z-index:2; max-width:420px; margin:0 auto; padding:26px 18px 40px; text-align:center; }
+.lp-logo { font-family:'Cinzel Decorative',serif; font-weight:900; font-size:34px; letter-spacing:2px; background:var(--grad-gold); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:0 0 30px rgba(242,184,48,.35); }
+.lp-sub { font-size:15px; font-weight:700; color:var(--wine-2); margin-top:2px; }
+.lp-emojis { font-size:26px; letter-spacing:8px; margin:12px 0 6px; animation:lpBob 2.4s ease-in-out infinite; }
+@keyframes lpBob { 50% { transform:translateY(-6px); } }
+.lp-tag { font-size:13px; color:var(--text-muted); line-height:1.6; }
+.lp-stage { perspective:900px; margin-top:22px; }
+.lp-card { transform-style:preserve-3d; transform:rotateX(6deg) rotateY(-8deg); animation:lpTilt 6s ease-in-out infinite; padding:24px 18px 20px; border-radius:24px; background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03)); border:1px solid var(--border-gold); backdrop-filter:blur(10px); box-shadow:0 30px 60px rgba(0,0,0,.55), 0 0 40px rgba(139,92,246,.25), inset 0 1px 0 rgba(255,255,255,.2); }
+@keyframes lpTilt { 50% { transform:rotateX(2deg) rotateY(8deg); } }
+.lp-task-title { font-size:16px; font-weight:700; transform:translateZ(30px); }
+.lp-reward { font-family:'Rajdhani',sans-serif; font-weight:800; font-size:22px; color:var(--green); margin:2px 0 14px; transform:translateZ(30px); }
+.lp-ring { position:relative; width:130px; height:130px; margin:0 auto 12px; transform:translateZ(50px); filter:drop-shadow(0 10px 20px rgba(242,184,48,.3)); }
+.lp-ring svg { transform:rotate(-90deg); }
+.lp-ring .bg { stroke:rgba(255,255,255,.12); } .lp-ring .fg { stroke:var(--gold); transition:stroke-dashoffset 1s linear; stroke-linecap:round; }
+#lp-count { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-weight:800; font-size:40px; color:var(--gold-2); }
+#lp-msg { font-size:12.5px; color:var(--text-muted); min-height:36px; line-height:1.5; margin-bottom:12px; }
+.lp-btn { width:100%; padding:14px; border:none; border-radius:14px; font-family:'Rajdhani',sans-serif; font-weight:800; font-size:16px; color:#fff; background:var(--grad-cta); box-shadow:0 10px 24px rgba(225,29,72,.4); cursor:pointer; transform:translateZ(40px); }
+.lp-btn:disabled { opacity:.6; box-shadow:none; }
+#lp-codebox { display:none; transform:translateZ(40px); }
+.lp-code-label { font-size:12px; color:var(--text-muted); }
+.lp-code { font-family:'Rajdhani',sans-serif; font-weight:800; font-size:38px; letter-spacing:8px; color:var(--gold-2); margin:6px 0 10px; text-shadow:0 0 22px rgba(242,184,48,.5); user-select:all; }
+.lp-feats { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:22px; }
+.lp-feats div { padding:8px 12px; border-radius:20px; font-size:12px; background:rgba(255,255,255,.06); border:1px solid var(--border); }
+/* code entry inside the in-app task modal */
+.task-launch-btn, .task-submit-btn { width:100%; padding:11px; border:none; border-radius:12px; font-weight:800; font-size:13px; color:#fff; cursor:pointer; margin-top:8px; font-family:'Rajdhani',sans-serif; }
+.task-launch-btn { background:var(--grad-btn); } .task-submit-btn { background:var(--grad-btn-done); }
+.task-launch-btn:disabled { opacity:.5; }
+.task-code-input { width:100%; box-sizing:border-box; margin-top:10px; padding:11px; border-radius:12px; text-align:center; font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:800; letter-spacing:6px; text-transform:uppercase; background:var(--bg-2); color:var(--gold-2); border:1px solid var(--border-gold); outline:none; }
 </style>
 </head>
 <body>
+<script>(function(){var p=new URLSearchParams(location.search);if(p.get("lp")){window.__LP={sid:p.get("lp"),tid:p.get("t")};document.documentElement.classList.add("lp-mode");}})();</script>
 
 <div id="loading-screen">
   <div class="sparkles" id="sparkles"></div>
@@ -1148,8 +1185,11 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
       </svg>
       <div class="verify-ring-icon"><span class="material-icons-round" id="task-ring-icon">open_in_new</span></div>
     </div>
-    <div class="task-modal-sub" id="task-modal-sub">লিংকে ক্লিক করে পেজে যান, তারপর ব্যাক করে ফিরে আসুন</div>
+    <div class="task-modal-sub" id="task-modal-sub">ল্যান্ডিং পেজে গিয়ে অপেক্ষা করুন, কোড কপি করে এখানে ফিরে সাবমিট করুন</div>
     <div class="task-modal-timer" id="task-modal-timer"></div>
+    <button class="task-launch-btn" id="task-launch-btn" onclick="launchLanding()" disabled>🎬 ল্যান্ডিং পেজ খুলুন</button>
+    <input class="task-code-input" id="task-code-input" maxlength="6" placeholder="••••••" autocomplete="off" autocapitalize="characters" spellcheck="false"/>
+    <button class="task-submit-btn" id="task-submit-btn" onclick="submitTaskCode()">✅ কোড সাবমিট করুন</button>
     <div class="verify-hint"><span class="material-icons-round">info</span>পেজে না গিয়ে ফিরে আসলে টাস্কটি সম্পন্ন হবে না — আবার চেষ্টা করতে পারবেন, কোনো পেনাল্টি নেই।</div>
   </div>
 </div>
@@ -1260,6 +1300,33 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
   </div>
 </div>
 
+
+<div id="lp-page">
+  <div class="lp-floaters"><span style="--x:6%;--t:9s;--d:0s">🎬</span><span style="--x:22%;--t:12s;--d:2s">🍿</span><span style="--x:40%;--t:10s;--d:5s">🎥</span><span style="--x:58%;--t:13s;--d:1s">⭐</span><span style="--x:74%;--t:9.5s;--d:4s">💎</span><span style="--x:90%;--t:11s;--d:3s">🔥</span></div>
+  <div class="lp-wrap">
+    <div class="lp-logo">MOVI LOVER</div>
+    <div class="lp-sub">মুভি লাভার ভিডিও</div>
+    <div class="lp-emojis">🎬 🍿 🎥 ⭐ 🔥 💎</div>
+    <div class="lp-tag">ইন্টারনেটে সকল ধরনের প্রিমিয়াম ভিডিও পাওয়া যায় এক জায়গায়</div>
+    <div class="lp-stage"><div class="lp-card">
+      <div class="lp-task-title" id="lp-title">লোড হচ্ছে...</div>
+      <div class="lp-reward" id="lp-reward"></div>
+      <div class="lp-ring">
+        <svg width="130" height="130" viewBox="0 0 130 130"><circle class="bg" cx="65" cy="65" r="56" fill="none" stroke-width="9"/><circle class="fg" id="lp-ring-fg" cx="65" cy="65" r="56" fill="none" stroke-width="9" stroke-dasharray="351.86" stroke-dashoffset="351.86"/></svg>
+        <div id="lp-count">--</div>
+      </div>
+      <div id="lp-msg"></div>
+      <button class="lp-btn" id="lp-btn" disabled>▶ শুরু করুন</button>
+      <div id="lp-codebox">
+        <div class="lp-code-label">🔐 আপনার ভেরিফিকেশন কোড</div>
+        <div class="lp-code" id="lp-code">------</div>
+        <button class="lp-btn" id="lp-copy">📋 কোড কপি করুন</button>
+        <div id="lp-msg2" style="font-size:12px;color:var(--text-muted);margin-top:10px;line-height:1.5;">কোডটি কপি করে অ্যাপে ফিরে যান এবং সাবমিট করুন।</div>
+      </div>
+    </div></div>
+    <div class="lp-feats"><div>🎞️ HD ভিডিও</div><div>💎 প্রিমিয়াম কনটেন্ট</div><div>⚡ ফাস্ট প্লে</div></div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -1467,6 +1534,7 @@ function ensureAuth(){
 }
 
 window.addEventListener('firebaseReady', async()=>{
+  if(window.__LP){ initLanding(); return; }
   checkExpiries();
   await ensureAuth();
   await loadSettings();
@@ -2956,114 +3024,135 @@ function startTaskFlow(taskId){
   const task = STATE.tasks.find(t=>t.id===taskId);
   if(!task) return;
   if(isTaskDone(task)){ toast('✅ এই টাস্কটি ইতিমধ্যে সম্পন্ন করেছেন।'); return; }
-  if(!task.link){ toast('⚠️ এই টাস্কের লিংক পাওয়া যায়নি।'); return; }
+  if(!taskLinks(task).length){ toast('⚠️ এই টাস্কের লিংক পাওয়া যায়নি।'); return; }
   STATE.currentTask = task;
   openTaskModal(task);
-  runTaskLinkWait(task);
+  createTaskSession(task);
 }
+/* Admin can paste several direct links (one per line / comma separated).
+   The landing page picks one at random per session, so traffic is spread
+   across all your ad networks. Only http(s) links are ever opened. */
+function taskLinks(task){ return String(task.link||'').split(/[\s,]+/).filter(u=>/^https?:\/\//i.test(u)); }
+function randSid(){ const a=new Uint8Array(12); crypto.getRandomValues(a); return Array.from(a,b=>b.toString(16).padStart(2,'0')).join(''); }
 
+/* A session is created with the SERVER clock (serverTimestamp). Firestore
+   rules later refuse the verification code until the task's wait time has
+   really passed on the server, so the timer can't be skipped by editing JS. */
+async function createTaskSession(task){
+  if(!STATE.userId){ toast('⚠️ লগইন হয়নি, একটু পর আবার চেষ্টা করুন।'); closeTaskModal(); return; }
+  const wait = Math.max(1, parseInt(task.waitSeconds)||15);
+  const sid = randSid();
+  try{
+    await window._setDoc(window._doc(window._db,'task_sessions',sid), { userId:STATE.userId, taskId:task.id, wait, startedAt: window._serverTs() });
+  }catch(e){ toast('⚠️ সেশন শুরু করা যায়নি, আবার চেষ্টা করুন।'); closeTaskModal(); return; }
+  STATE.taskSid = sid;
+  STATE.taskUrl = location.href.split('#')[0].split('?')[0] + '?lp=' + sid + '&t=' + encodeURIComponent(task.id);
+  const btn = document.getElementById('task-launch-btn'); if(btn) btn.disabled = false;
+  document.getElementById('task-modal-timer').textContent = wait + ' সেকেন্ডের ল্যান্ডিং পেজ';
+}
+function launchLanding(){
+  if(!STATE.taskUrl) return;
+  const tg = window.Telegram && window.Telegram.WebApp;
+  try{ if(tg && tg.openLink) tg.openLink(STATE.taskUrl); else window.open(STATE.taskUrl,'_blank'); }
+  catch(e){ window.open(STATE.taskUrl,'_blank'); }
+}
 function openTaskModal(task){
-  document.getElementById('task-modal-icon').textContent = task.icon ? '🗒️' : '🗒️';
+  document.getElementById('task-modal-icon').textContent = '🎬';
   document.getElementById('task-modal-title').textContent = task.title || 'টাস্ক';
   document.getElementById('task-modal-reward').textContent = '+৳ ' + (task.reward||0).toFixed(2);
-  document.getElementById('task-modal-sub').textContent = 'লিংকে ক্লিক করে পেজে যান, তারপর ব্যাক করে ফিরে আসুন';
-  document.getElementById('task-modal-timer').textContent = '';
-  const closeBtn = document.getElementById('task-modal-close');
-  if(closeBtn) closeBtn.classList.remove('show');
-  const ringBox = document.getElementById('task-ring-box');
-  if(ringBox) ringBox.classList.add('spinning');
-  const ringFg = document.getElementById('task-ring-fg');
-  if(ringFg) ringFg.classList.remove('done');
-  const ringIcon = document.getElementById('task-ring-icon');
-  if(ringIcon){ ringIcon.classList.remove('done'); ringIcon.textContent = 'open_in_new'; }
+  document.getElementById('task-modal-timer').textContent = 'সেশন তৈরি হচ্ছে...';
+  document.getElementById('task-code-input').value = '';
+  document.getElementById('task-launch-btn').disabled = true;
+  STATE.taskSid = null; STATE.taskUrl = null; STATE.codeTries = 0;
+  const closeBtn = document.getElementById('task-modal-close'); if(closeBtn) closeBtn.classList.add('show');
+  const ringBox = document.getElementById('task-ring-box'); if(ringBox) ringBox.classList.add('spinning');
   document.getElementById('task-modal').classList.add('open');
 }
 function closeTaskModal(){
-  const pending = STATE.taskPending;
   document.getElementById('task-modal').classList.remove('open');
-  STATE.taskLinkActive = false;
-  STATE.taskPending = null;
-  if(pending && pending.cleanup) pending.cleanup();
+  STATE.taskSid = null; STATE.taskUrl = null;
 }
 
-/* Same honest pattern as the ad-unlock direct-link flow: open the link,
-   then only start counting once the tab has actually gone away and come
-   back. If it never goes away (chooser cancelled, popup blocked, etc.)
-   the ring simply keeps spinning — nothing completes on its own. */
-function runTaskLinkWait(task){
-  const waitSeconds = Math.max(1, parseInt(task.waitSeconds)||15);
-  const openedAt = Date.now();
-  const timerText = document.getElementById('task-modal-timer');
-  const subEl = document.getElementById('task-modal-sub');
-  const closeBtn = document.getElementById('task-modal-close');
-  const ringBox = document.getElementById('task-ring-box');
-  const ringFg = document.getElementById('task-ring-fg');
-  const ringIcon = document.getElementById('task-ring-icon');
-
-  STATE.taskLinkActive = true;
-  try{ window.open(task.link, '_blank'); }catch(e){}
-
-  let countdownInterval = null;
-
-  function cleanup(){
-    document.removeEventListener('visibilitychange', onVisible);
-    if(countdownInterval){ clearInterval(countdownInterval); countdownInterval=null; }
-    STATE.taskLinkActive = false;
-  }
-  function finishSuccess(){
-    if(ringBox) ringBox.classList.remove('spinning');
-    if(ringFg) ringFg.classList.add('done');
-    if(ringIcon){ ringIcon.textContent='check'; ringIcon.classList.add('done'); }
-    if(subEl) subEl.textContent = 'টাস্কটি সম্পন্ন হয়েছে!';
-    if(timerText) timerText.textContent = 'এখন বন্ধ করতে পারবেন';
-    if(closeBtn) closeBtn.classList.add('show');
-    completeTaskReward(task);
-  }
-  function startCountdown(remainMs){
-    if(countdownInterval) clearInterval(countdownInterval);
-    let remain = Math.ceil(remainMs/1000);
-    if(timerText) timerText.textContent = remain + ' সেকেন্ড বাকি...';
-    if(subEl) subEl.textContent = 'পেজে থাকুন, সময় শেষ হলেই টাস্ক সম্পন্ন হবে';
-    countdownInterval = setInterval(()=>{
-      remain--;
-      if(remain<=0){ clearInterval(countdownInterval); countdownInterval=null; cleanup(); finishSuccess(); }
-      else if(timerText){ timerText.textContent = remain + ' সেকেন্ড বাকি...'; }
-    },1000);
-  }
-  function onVisible(){
-    if(document.hidden) return;
-    const elapsed = Date.now() - openedAt;
-    const remainMs = Math.max(0, waitSeconds*1000 - elapsed);
-    if(remainMs<=0){ cleanup(); finishSuccess(); }
-    else { startCountdown(remainMs); }
-  }
-  document.addEventListener('visibilitychange', onVisible);
-  STATE.taskPending = { cleanup };
-}
-
-async function completeTaskReward(task){
-  const uid = STATE.userId;
-  if(!uid) return;
-  const docId = `${task.id}_${uid}`;
+async function submitTaskCode(){
+  const task = STATE.currentTask, sid = STATE.taskSid, uid = STATE.userId;
+  if(!task || !sid || !uid){ toast('⚠️ আগে ল্যান্ডিং পেজ খুলে কোড নিন।'); return; }
+  const code = document.getElementById('task-code-input').value.trim().toUpperCase();
+  if(code.length !== 6){ toast('⚠️ ৬ অক্ষরের সঠিক কোড দিন।'); return; }
+  if((STATE.codeTries||0) >= 5){ toast('⚠️ অনেকবার ভুল হয়েছে — আবার টাস্ক শুরু করুন।'); closeTaskModal(); return; }
+  STATE.codeTries = (STATE.codeTries||0) + 1;
+  const btn = document.getElementById('task-submit-btn'); btn.disabled = true;
   const existing = STATE.taskDoneMap[task.id];
   const newTotal = (existing ? (existing.totalEarned||0) : 0) + (task.reward||0);
   try{
-    await window._setDoc(window._doc(window._db,'task_completions',docId), {
+    await window._setDoc(window._doc(window._db,'task_completions',`${task.id}_${uid}`), {
       userId: uid, taskId: task.id, type: task.type||'once',
-      totalEarned: newTotal, completedAt: Date.now()
+      totalEarned: newTotal, completedAt: Date.now(), sid, code, lastSid: sid
     });
     STATE.taskDoneMap[task.id] = { type: task.type||'once', totalEarned:newTotal, completedAt: Date.now() };
     STATE.balance += (task.reward||0);
-    updateBalanceUI();
-    renderTasks();
-    successSnd();
+    updateBalanceUI(); renderTasks(); closeTaskModal(); successSnd();
     document.getElementById('tcp-icon').textContent = '🎉';
     document.getElementById('tcp-title').textContent = 'টাস্ক সম্পন্ন!';
     document.getElementById('tcp-sub').textContent = '+৳ ' + (task.reward||0).toFixed(2) + ' আপনার ব্যালেন্সে যোগ হয়েছে।';
     document.getElementById('task-complete-popup').classList.add('open');
     setTimeout(()=>{ document.getElementById('task-complete-popup').classList.remove('open'); },1600);
   }catch(e){
-    toast('⚠️ টাস্কটি এর আগেই সম্পন্ন হয়েছে অথবা সমস্যা হয়েছে।');
+    toast('❌ কোড ভুল, মেয়াদ শেষ, অথবা ল্যান্ডিং পেজের সময় এখনো শেষ হয়নি।');
+  }
+  btn.disabled = false;
+}
+
+/* ===================== LANDING PAGE LOGIC (runs when URL has ?lp=) ===================== */
+async function initLanding(){
+  const $ = id => document.getElementById(id);
+  const sid = window.__LP.sid, tid = window.__LP.tid;
+  try{ await ensureAuth(); }catch(e){}
+  loadAdNetworkConfig().catch(()=>{});
+  const task = tid ? await fbGetDoc('tasks', tid) : null;
+  if(!/^[a-f0-9]{24}$/.test(sid||'') || !task || task.active===false){
+    $('lp-title').textContent = 'লিংকটি সঠিক নয় বা মেয়াদ শেষ';
+    $('lp-btn').style.display = 'none'; return;
+  }
+  const links = taskLinks(task);
+  const wait = Math.max(1, parseInt(task.waitSeconds)||15);
+  const C = 351.86, ring = $('lp-ring-fg'), btn = $('lp-btn');
+  $('lp-title').textContent = task.title || 'টাস্ক';
+  $('lp-reward').textContent = '+৳ ' + (task.reward||0).toFixed(2);
+  $('lp-count').textContent = wait;
+  $('lp-msg').textContent = 'শুরু করুন চাপুন, তারপর ' + wait + ' সেকেন্ড এই পেজে থাকুন। (অন্য ট্যাবে গেলে কাউন্টডাউন থেমে যাবে)';
+  btn.disabled = false;
+  let remain = wait, started = false;
+  btn.onclick = ()=>{
+    if(started) return; started = true; btn.disabled = true; btn.textContent = '⏳ অপেক্ষা করুন...';
+    if(links.length){ try{ window.open(links[Math.floor(Math.random()*links.length)], '_blank'); }catch(e){} }
+    $('lp-msg').textContent = 'পেজে থাকুন — সময় শেষ হলে কোড দেখাবে।';
+    const iv = setInterval(()=>{
+      if(document.hidden) return;
+      remain--;
+      $('lp-count').textContent = Math.max(remain,0);
+      ring.style.strokeDashoffset = C * (remain / wait);
+      if(remain <= 0){ clearInterval(iv); finishLanding(); }
+    }, 1000);
+  };
+  async function finishLanding(){
+    const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', r = new Uint32Array(6);
+    crypto.getRandomValues(r);
+    const code = Array.from(r, n=>abc[n % abc.length]).join('');
+    $('lp-msg').textContent = 'কোড তৈরি হচ্ছে...';
+    let ok = false;
+    for(let i=0;i<6 && !ok;i++){
+      try{ await window._setDoc(window._doc(window._db,'task_codes',sid), { code }); ok = true; }
+      catch(e){ await new Promise(res=>setTimeout(res,2000)); }
+    }
+    if(!ok){ $('lp-msg').textContent = '⚠️ কোড তৈরি করা যায়নি। অ্যাপে ফিরে নতুন করে টাস্ক শুরু করুন।'; btn.style.display='none'; return; }
+    $('lp-code').textContent = code;
+    $('lp-msg').textContent = '✅ সম্পন্ন!';
+    btn.style.display = 'none';
+    $('lp-codebox').style.display = 'block';
+    $('lp-copy').onclick = ()=>{
+      const done = ()=>{ $('lp-copy').textContent = '✅ কপি হয়েছে'; };
+      try{ navigator.clipboard.writeText(code).then(done, done); }catch(e){ done(); }
+    };
   }
 }
 
