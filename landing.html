@@ -1,0 +1,329 @@
+ <!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="robots" content="noindex,nofollow"/>
+<meta name="referrer" content="no-referrer"/>
+<title>Movi Lover — প্রিমিয়াম ভিডিও</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07060d; --surface:#130f1d; --surface2:#1a1428;
+  --gold:#f2b830; --gold2:#ffd36a; --gold3:#e8aa1c;
+  --wine:#7a1230; --wine2:#b3253c;
+  --text:#f6efe2; --muted:#a79cb8; --green:#2fd08a;
+  --border:rgba(255,255,255,.09); --borderGold:rgba(242,184,48,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:'Hind Siliguri',system-ui,sans-serif;min-height:100%;overflow-x:hidden}
+body{background:
+  radial-gradient(120% 70% at 50% -10%, rgba(179,37,60,.45), transparent 60%),
+  radial-gradient(90% 60% at 100% 30%, rgba(242,184,48,.14), transparent 60%),
+  radial-gradient(90% 60% at 0% 60%, rgba(124,58,237,.16), transparent 60%),
+  var(--bg);
+  background-attachment:fixed}
+.wrap{max-width:480px;margin:0 auto;padding:18px 16px calc(40px + env(safe-area-inset-bottom));position:relative;z-index:2}
+
+/* ---------- floating emoji particles ---------- */
+.particles{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.particles span{position:absolute;bottom:-40px;font-size:22px;opacity:0;animation:rise linear infinite;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+@keyframes rise{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:.85}90%{opacity:.6}100%{transform:translateY(-110vh) rotate(360deg);opacity:0}}
+
+/* ---------- hero ---------- */
+.brand{display:flex;justify-content:center;margin-bottom:6px}
+.brand-pill{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--gold2);border:1px solid var(--borderGold);padding:5px 12px;border-radius:30px;background:rgba(242,184,48,.08)}
+.title{font-family:'Cinzel Decorative',serif;font-weight:900;text-align:center;font-size:clamp(34px,11vw,48px);line-height:1.05;margin-top:12px;
+  background:linear-gradient(180deg,#fff3c4 0%,#f2b830 45%,#b87912 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 6px 18px rgba(242,184,48,.35));letter-spacing:1px}
+.subtitle{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;margin-top:8px;color:#fff;letter-spacing:.4px}
+.subtitle .em{display:inline-block;animation:bob 2.4s ease-in-out infinite}
+.subtitle .em:nth-child(2){animation-delay:.2s}.subtitle .em:nth-child(3){animation-delay:.4s}.subtitle .em:nth-child(4){animation-delay:.6s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.tagline{text-align:center;color:var(--muted);font-size:13.5px;margin-top:6px;line-height:1.6}
+.tagline b{color:var(--gold2)}
+
+/* ---------- 3D stage ---------- */
+.stage{height:230px;margin:10px auto 2px;perspective:900px;position:relative;display:flex;align-items:center;justify-content:center}
+.scene{width:120px;height:120px;position:relative;transform-style:preserve-3d;transform:rotateX(-18deg) rotateY(25deg);animation:spin 14s linear infinite;
+  will-change:transform}
+@keyframes spin{to{transform:rotateX(-18deg) rotateY(385deg)}}
+.face{position:absolute;width:120px;height:120px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:54px;
+  border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(2px);
+  background:linear-gradient(145deg,rgba(255,255,255,.28),rgba(255,255,255,.04) 45%,rgba(0,0,0,.25)),linear-gradient(135deg,var(--c1),var(--c2));
+  box-shadow:inset 0 0 26px rgba(255,255,255,.18),0 0 30px rgba(0,0,0,.35);backface-visibility:hidden}
+.f1{--c1:#b3253c;--c2:#5a0c22;transform:translateZ(60px)}
+.f2{--c1:#f2b830;--c2:#a46a0a;transform:rotateY(90deg) translateZ(60px)}
+.f3{--c1:#7c3aed;--c2:#34146e;transform:rotateY(180deg) translateZ(60px)}
+.f4{--c1:#0ea5a4;--c2:#06504f;transform:rotateY(-90deg) translateZ(60px)}
+.f5{--c1:#ff7a3d;--c2:#9a2c0b;transform:rotateX(90deg) translateZ(60px)}
+.f6{--c1:#2563eb;--c2:#0b2a72;transform:rotateX(-90deg) translateZ(60px)}
+.floor{position:absolute;bottom:6px;left:50%;width:170px;height:34px;transform:translateX(-50%);
+  background:radial-gradient(closest-side,rgba(242,184,48,.45),transparent);filter:blur(6px);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55;transform:translateX(-50%) scale(.85)}}
+.orbit{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.card3d{position:absolute;width:74px;height:104px;border-radius:12px;border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:30px;
+  background:linear-gradient(160deg,rgba(255,255,255,.3),rgba(255,255,255,.04)),linear-gradient(135deg,#2a1b45,#0e0818);box-shadow:0 18px 30px rgba(0,0,0,.45)}
+.c-a{left:2%;top:18%;transform:translateZ(40px) rotateY(24deg) rotateZ(-8deg);animation:fl 5s ease-in-out infinite}
+.c-b{right:2%;top:10%;transform:translateZ(60px) rotateY(-24deg) rotateZ(9deg);animation:fl 6s ease-in-out infinite .8s}
+@keyframes fl{50%{translate:0 -12px}}
+
+/* ---------- panel ---------- */
+.panel{margin-top:6px;border-radius:24px;padding:18px 16px 16px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025));
+  border:1px solid var(--borderGold);backdrop-filter:blur(14px);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);position:relative;overflow:hidden}
+.panel::before{content:'';position:absolute;top:0;left:18px;right:18px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.task-head{display:flex;align-items:center;gap:12px}
+.task-ico{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--gold2),var(--gold3));display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 18px rgba(242,184,48,.35);flex-shrink:0}
+.task-name{font-weight:700;font-size:15px;line-height:1.3}
+.task-reward{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:20px;color:var(--gold2);margin-top:2px}
+.sec-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.5px;color:var(--muted);margin:16px 0 8px;text-transform:uppercase}
+
+.ads{display:flex;flex-direction:column;gap:8px}
+.ad-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;text-decoration:none;color:var(--text);background:var(--surface2);border:1px solid var(--border);position:relative;transition:transform .12s,border-color .2s}
+.ad-btn:active{transform:scale(.98)}
+.ad-btn .n{width:28px;height:28px;border-radius:50%;background:var(--gold-soft,rgba(242,184,48,.15));color:var(--gold2);font-family:'Rajdhani',sans-serif;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ad-btn .t{flex:1;font-size:13.5px;font-weight:600}
+.ad-btn .t small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:1px}
+.ad-btn .go{font-size:12px;font-weight:700;color:#2a1c05;background:linear-gradient(135deg,var(--gold2),var(--gold3));padding:7px 12px;border-radius:30px;font-family:'Rajdhani',sans-serif;letter-spacing:.4px}
+.ad-btn.done{border-color:rgba(47,208,138,.5);background:rgba(47,208,138,.08)}
+.ad-btn.done .n{background:var(--green);color:#04281a}
+.ad-btn.done .go{background:rgba(47,208,138,.18);color:var(--green)}
+
+/* ---------- countdown ring ---------- */
+.timer{display:flex;flex-direction:column;align-items:center;margin-top:6px}
+.ring{position:relative;width:132px;height:132px}
+.ring svg{transform:rotate(-90deg);width:132px;height:132px}
+.ring .bg{fill:none;stroke:rgba(255,255,255,.09);stroke-width:9}
+.ring .fg{fill:none;stroke:url(#g);stroke-width:9;stroke-linecap:round;stroke-dasharray:326.7;stroke-dashoffset:326.7;transition:stroke-dashoffset .4s linear}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:800;font-size:40px;line-height:1}
+.ring .num small{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:1px;margin-top:3px}
+.status{margin-top:10px;font-size:12.5px;color:var(--muted);text-align:center;min-height:36px;line-height:1.55}
+.status b{color:var(--gold2)}
+
+/* ---------- code ---------- */
+.code-box{display:none;margin-top:14px;text-align:center;padding:16px 12px;border-radius:18px;background:linear-gradient(180deg,rgba(47,208,138,.14),rgba(47,208,138,.04));border:1px solid rgba(47,208,138,.45);animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+.code-box.show{display:block}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+.code-label{font-size:12px;color:var(--green);font-weight:700}
+.code{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:42px;letter-spacing:10px;color:#fff;margin:6px 0 2px;padding-left:10px;text-shadow:0 0 22px rgba(47,208,138,.6)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:14px;border:none;font-family:'Hind Siliguri',sans-serif;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;margin-top:10px}
+.btn.gold{background:linear-gradient(135deg,var(--gold2),var(--gold3));color:#2a1c05;box-shadow:0 10px 22px rgba(242,184,48,.3)}
+.btn.ghost{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--border)}
+.hint{margin-top:12px;font-size:11.5px;color:var(--muted);line-height:1.6;text-align:center}
+.err{padding:22px 14px;text-align:center;color:#ff8a98;font-size:14px;line-height:1.7}
+.footer{margin-top:18px;text-align:center;font-size:10.5px;color:#6f6580;line-height:1.7}
+@media (prefers-reduced-motion:reduce){.scene,.particles span,.floor,.c-a,.c-b,.subtitle .em{animation:none}}
+</style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+
+<div class="wrap">
+  <div class="brand"><span class="brand-pill">🎬 PREMIUM VIDEO CLUB</span></div>
+  <div class="title">Movi Lover</div>
+  <div class="subtitle">Movi Lover Video <span class="em">🎬</span><span class="em">🔥</span><span class="em">💎</span><span class="em">🌐</span></div>
+  <div class="tagline"><b>সকল ধরনের প্রিমিয়াম ভিডিও</b> পাওয়া যায়</div>
+
+  <div class="stage" id="stage">
+    <div class="floor"></div>
+    <div class="orbit">
+      <div class="card3d c-a">🍿</div>
+      <div class="card3d c-b">⭐</div>
+    </div>
+    <div class="scene" id="scene">
+      <div class="face f1">🎬</div><div class="face f2">💎</div><div class="face f3">🔥</div>
+      <div class="face f4">🎞️</div><div class="face f5">🍿</div><div class="face f6">⭐</div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="err" id="loading">⏳ লোড হচ্ছে...</div>
+  </div>
+
+  <div class="footer">Movi Lover • এই পেজ থেকে পাওয়া কোডটি টেলিগ্রামে ফিরে গিয়ে সাবমিট করুন</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDse8sC_hsrHrLx92zUobO7PezW0SUChHQ",
+  authDomain: "movi-vairal.firebaseapp.com",
+  projectId: "movi-vairal",
+  storageBucket: "movi-vairal.firebasestorage.app",
+  messagingSenderId: "343081500219",
+  appId: "1:343081500219:web:072eaec3f2d47a4c36661e"
+};
+const BOT_LINK = 'https://t.me/movilovervairal_bot/webapp';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ---------- decorative particles ---------- */
+(function(){
+  const em = ['🎬','🍿','💎','🔥','⭐','🎞️','✨','🎥'];
+  const box = $('particles');
+  for(let i=0;i<14;i++){
+    const s = document.createElement('span');
+    s.textContent = em[i % em.length];
+    s.style.left = (Math.random()<.5 ? Math.random()*10 : 88+Math.random()*10) + '%';
+    s.style.fontSize = (16 + Math.random()*20) + 'px';
+    s.style.animationDuration = (11 + Math.random()*12) + 's';
+    s.style.animationDelay = (-Math.random()*20) + 's';
+    box.appendChild(s);
+  }
+  // pointer / gyro parallax tilt on the stage
+  const stage = $('stage');
+  const tilt = (x,y)=>{ stage.style.transform = 'rotateX(' + (y*-8) + 'deg) rotateY(' + (x*10) + 'deg)'; };
+  window.addEventListener('pointermove', e=>tilt((e.clientX/innerWidth-.5)*2,(e.clientY/innerHeight-.5)*2), {passive:true});
+  window.addEventListener('deviceorientation', e=>{ if(e.gamma!=null) tilt(Math.max(-1,Math.min(1,e.gamma/30)), Math.max(-1,Math.min(1,(e.beta-45)/40))); }, {passive:true});
+})();
+
+/* ---------- read parameters (task code travels in the #fragment: never sent to any server) ---------- */
+const qs = new URLSearchParams(location.search);
+const hs = new URLSearchParams(location.hash.replace(/^#/, ''));
+const unlockToken = (qs.get('k') || '').trim();
+const MODE_UNLOCK = !!unlockToken;
+const taskId = (qs.get('t') || '').trim();
+const videoId = (qs.get('v') || '').trim();
+const stepNo = Math.max(1, parseInt(qs.get('s')) || 1);
+let code = (hs.get('c') || '').trim();
+const KEY = 'ml_land_' + (MODE_UNLOCK ? ('u_' + unlockToken) : taskId);
+let saved = {};
+try{ saved = JSON.parse(sessionStorage.getItem(KEY) || '{}'); }catch(e){}
+if(!MODE_UNLOCK){
+  if(code){ saved.code = code; try{ sessionStorage.setItem(KEY, JSON.stringify(saved)); }catch(e){} }
+  else code = saved.code || '';
+  try{ history.replaceState(null, '', location.pathname + '?t=' + encodeURIComponent(taskId)); }catch(e){}
+}
+const save = () => { try{ sessionStorage.setItem(KEY, JSON.stringify(saved)); }catch(e){} };
+
+function fail(msg){ $('panel').innerHTML = '<div class="err">⚠️ ' + esc(msg) + '<br><a class="btn gold" href="' + BOT_LINK + '">টেলিগ্রামে ফিরে যান</a></div>'; }
+const wrapLinks = arr => (Array.isArray(arr) ? arr : []).filter(l => l && /^https?:\/\//i.test(l.url || ''));
+
+async function main(){
+  const idOk = x => /^[A-Za-z0-9]{10,40}$/.test(x);
+  if(MODE_UNLOCK){
+    if(!/^[A-Za-z0-9]{16,32}$/.test(unlockToken) || !idOk(videoId)){ fail('লিংকটি সঠিক নয় বা মেয়াদ শেষ। টেলিগ্রামের অ্যাপ থেকে ভিডিওতে আবার ট্যাপ করুন।'); return; }
+  } else if(!idOk(taskId) || !/^\d{6}$/.test(code)){
+    fail('লিংকটি সঠিক নয় বা মেয়াদ শেষ। টেলিগ্রামের অ্যাপ থেকে টাস্কে আবার "শুরু করুন" চাপুন।'); return;
+  }
+  let db, cfg;
+  try{
+    db = getFirestore(initializeApp(firebaseConfig));
+    if(MODE_UNLOCK){
+      const [vs, ls] = await Promise.all([getDoc(doc(db, 'videos', videoId)), getDoc(doc(db, 'settings', 'landing')).catch(() => null)]);
+      if(!vs.exists()){ fail('ভিডিওটি পাওয়া যায়নি।'); return; }
+      const v = vs.data();
+      const w = ls && ls.exists() ? parseInt(ls.data().unlockWaitSeconds) : 15;
+      let links = wrapLinks(v.directLinkSets && v.directLinkSets[String(stepNo)]);
+      if(!links.length && v.directLinks && v.directLinks[String(stepNo)]) links = wrapLinks([{ name:'Direct', url:v.directLinks[String(stepNo)] }]);
+      cfg = { icon:'🔓', title:v.title || 'ভিডিও', sub:'ভিডিও আনলক (ধাপ ' + stepNo + ')', wait:Math.min(120, Math.max(5, w || 15)), links, need:Math.min(1, links.length) };
+    } else {
+      const snap = await getDoc(doc(db, 'tasks', taskId));
+      if(!snap.exists()){ fail('টাস্কটি পাওয়া যায়নি।'); return; }
+      const t = snap.data();
+      if(t.active === false){ fail('এই টাস্কটি এখন বন্ধ আছে।'); return; }
+      const links = wrapLinks(t.adLinks);
+      cfg = { icon:'🎁', title:t.title || 'টাস্ক', sub:'+৳ ' + (Number(t.reward) || 0).toFixed(2), wait:Math.min(120, Math.max(5, parseInt(t.waitSeconds) || 30)), links,
+              need: links.length ? Math.min(links.length, Math.max(1, parseInt(t.requiredClicks) || 1)) : 0 };
+    }
+  }catch(e){ fail('সার্ভারে সংযোগ করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।'); return; }
+
+  const { wait, links, need } = cfg;
+  // pick `need` links in random order so every network gets traffic over time
+  if(!saved.order || saved.order.length !== need){
+    const idx = links.map((_,i)=>i);
+    for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+    saved.order = idx.slice(0, need); save();
+  }
+  const picked = saved.order.map(i => links[i]).filter(Boolean);
+  const clicked = new Set(saved.clicked || []);
+
+  $('panel').innerHTML =
+    '<div class="task-head"><div class="task-ico">' + cfg.icon + '</div><div><div class="task-name">' + esc(cfg.title) + '</div>' +
+    '<div class="task-reward">' + esc(cfg.sub) + '</div></div></div>' +
+    (picked.length ? '<div class="sec-title">ধাপ ১ • ' + (picked.length > 1 ? 'বিজ্ঞাপন খুলুন (' + picked.length + 'টি)' : 'বিজ্ঞাপন খুলুন') + '</div><div class="ads" id="ads"></div>' : '') +
+    '<div class="sec-title">' + (picked.length ? 'ধাপ ২' : 'ধাপ ১') + ' • অপেক্ষা করুন</div>' +
+    '<div class="timer"><div class="ring"><svg viewBox="0 0 120 120"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36a"/><stop offset="1" stop-color="#e8aa1c"/></linearGradient></defs>' +
+    '<circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="fg" cx="60" cy="60" r="52"/></svg>' +
+    '<div class="num"><span id="sec">' + wait + '</span><small>সেকেন্ড</small></div></div>' +
+    '<div class="status" id="status"></div></div>' +
+    (MODE_UNLOCK
+      ? '<div class="code-box" id="codeBox"><div class="code-label">✅ ধাপ সম্পন্ন!</div><div style="font-size:15px;font-weight:700;margin:8px 0 2px;line-height:1.5;">এখন টেলিগ্রামে ব্যাক করুন —<br>ভিডিওর ধাপ নিজে থেকেই সম্পন্ন হবে।</div></div>'
+      : '<div class="code-box" id="codeBox"><div class="code-label">✅ ভেরিফিকেশন কোড তৈরি</div><div class="code" id="codeVal"></div><button class="btn gold" id="copyBtn">📋 কোড কপি করুন</button></div>') +
+    '<a class="btn ' + (MODE_UNLOCK ? 'gold' : 'ghost') + '" id="backBtn" href="' + BOT_LINK + '" style="display:none;">↩️ টেলিগ্রামে ফিরে যান</a>' +
+    '<div class="hint">' + (MODE_UNLOCK ? 'পুরো সময় এই পেজে থাকুন। সময় শেষের আগে ব্যাক করলে ভিডিও আনলক হবে না।' : 'কোড নিয়ে টেলিগ্রামের Movi Lover অ্যাপে ব্যাক করুন, টাস্কের কোড-বক্সে বসিয়ে সাবমিট চাপুন — সাথে সাথে ব্যালেন্স যোগ হবে।') + '</div>';
+
+  const adsEl = $('ads');
+  picked.forEach((l, i) => {
+    const a = document.createElement('a');
+    a.className = 'ad-btn' + (clicked.has(i) ? ' done' : '');
+    a.href = l.url; a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
+    a.innerHTML = '<span class="n">' + (clicked.has(i) ? '✓' : (i+1)) + '</span><span class="t">স্পনসর পেজ ' + (i+1) + '<small>খুলে কয়েক সেকেন্ড দেখে ফিরে আসুন</small></span><span class="go">' + (clicked.has(i) ? 'খোলা হয়েছে' : 'খুলুন ↗') + '</span>';
+    a.addEventListener('click', () => {
+      clicked.add(i); saved.clicked = [...clicked];
+      if(!saved.t0){ saved.t0 = Date.now(); }
+      save();
+      setTimeout(() => { a.classList.add('done'); a.querySelector('.n').textContent = '✓'; a.querySelector('.go').textContent = 'খোলা হয়েছে'; tick(); }, 300);
+    });
+    adsEl.appendChild(a);
+  });
+  if(!picked.length && !saved.t0){ saved.t0 = Date.now(); save(); }
+
+  const C = 326.7;
+  let finishing = false;
+  function showDone(){
+    if(!MODE_UNLOCK) $('codeVal').textContent = code;
+    $('codeBox').classList.add('show');
+    $('backBtn').style.display = 'flex';
+  }
+  async function finishUnlock(){
+    if(finishing) return; finishing = true;
+    const status = $('status');
+    status.innerHTML = '⏳ সম্পন্ন হচ্ছে...';
+    try{
+      await setDoc(doc(db, 'unlock_done', unlockToken), { doneAt: serverTimestamp() });
+      status.innerHTML = '🎉 সম্পন্ন! এখন টেলিগ্রামে ব্যাক করুন।';
+      showDone(); clearInterval(timer);
+    }catch(e){
+      finishing = false;
+      status.innerHTML = '⚠️ নিশ্চিত করা যায়নি (সময় বা নেটওয়ার্ক)। <b>আবার চেষ্টা করছি...</b>';
+    }
+  }
+  function tick(){
+    const status = $('status'), fg = $('fg');
+    if(!saved.t0){
+      $('sec').textContent = wait; fg.style.strokeDashoffset = C;
+      status.innerHTML = 'প্রথমে নিচের <b>বিজ্ঞাপন খুলুন</b> — তারপর টাইমার চালু হবে।';
+      return;
+    }
+    // timestamp based: throttling, tab switches or slowing the clock don't help
+    const elapsed = (Date.now() - saved.t0) / 1000;
+    const left = Math.max(0, Math.ceil(wait - elapsed));
+    $('sec').textContent = left;
+    fg.style.strokeDashoffset = String(C * (1 - Math.min(1, elapsed / wait)));
+    const remainClicks = Math.max(0, picked.length - clicked.size);
+    if(left > 0){
+      status.innerHTML = remainClicks ? ('টাইমার চলছে। আরও <b>' + remainClicks + 'টি বিজ্ঞাপন</b> খুলুন।') : 'টাইমার চলছে — এই পেজেই থাকুন...';
+      return;
+    }
+    if(remainClicks){ status.innerHTML = 'সময় শেষ! বাকি <b>' + remainClicks + 'টি বিজ্ঞাপন</b> খুলুন।'; return; }
+    if(MODE_UNLOCK){ finishUnlock(); return; }
+    status.innerHTML = '🎉 সব সম্পন্ন! নিচের কোডটি কপি করে টেলিগ্রামে ব্যাক করুন।';
+    showDone(); clearInterval(timer);
+  }
+  const timer = setInterval(tick, 700);
+  document.addEventListener('visibilitychange', tick);
+  tick();
+
+  $('copyBtn')?.addEventListener('click', async () => {
+    try{ await navigator.clipboard.writeText(code); $('copyBtn').textContent = '✅ কপি হয়েছে'; }
+    catch(e){ const r = document.createRange(); r.selectNodeContents($('codeVal')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $('copyBtn').textContent = 'কোডটি সিলেক্ট হয়েছে, কপি করুন'; }
+  });
+}
+main();
+</script>
+</body>
+</html>
