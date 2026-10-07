@@ -1389,7 +1389,8 @@ function parseStartParam(sp){
   const out = {};
   if(!sp) return out;
   const parts = String(sp).split('-');
-  if(parts[0]==='v'){ out.vid = parts[1]||''; if(parts[2]==='r') out.ref = parts.slice(3).join('-')||''; }
+  if(parts[0]==='tk'){ out.page = 'task'; }
+  else if(parts[0]==='v'){ out.vid = parts[1]||''; if(parts[2]==='r') out.ref = parts.slice(3).join('-')||''; }
   else if(parts[0]==='r'){ out.ref = parts.slice(1).join('-')||''; }
   return out;
 }
@@ -2613,6 +2614,7 @@ async function runLandingUnlockStep(v, stepNum){
 
   const base = new URL(LANDING_FILE, location.href); base.search = ''; base.hash = '';
   STATE.unlockLandingUrl = base.toString() + '?v=' + encodeURIComponent(v.id) + '&s=' + stepNum + '&k=' + token;
+  try{ localStorage.setItem('ml_pending_unlock', JSON.stringify({ token, videoId: v.id, step: stepNum, ts: Date.now() })); }catch(e){}
 
   let done = false, unsub = null, poll = null;
   function cleanup(){
@@ -2653,6 +2655,7 @@ async function runLandingUnlockStep(v, stepNum){
   STATE.verifyPending = {
     // the ✕ button: counts only if the landing page confirmed; otherwise it just cancels this attempt
     resolve: function(){
+      try{ localStorage.removeItem('ml_pending_unlock'); }catch(e){}
       if(done){ cleanup(); onSingleAdWatched(); }
       else { cleanup(); STATE.verifyModalOpen = false; document.getElementById('verify-modal').classList.remove('open'); toast('আনলক সম্পন্ন হয়নি — ল্যান্ডিং পেজে পুরো সময় থাকতে হবে।'); }
     },
@@ -2661,6 +2664,53 @@ async function runLandingUnlockStep(v, stepNum){
     cleanupDirectLink: cleanup
   };
 }
+
+/* If Telegram reloads the Mini App while the visitor is on the landing page
+   (opening the "back to app" link can do that), pick up where they left off. */
+async function resumePendingUnlock(){
+  let p = null;
+  try{ p = JSON.parse(localStorage.getItem('ml_pending_unlock') || 'null'); }catch(e){}
+  if(!p) return;
+  if(Date.now() - (p.ts||0) > 30*60*1000){ localStorage.removeItem('ml_pending_unlock'); return; }
+  const d = await fbGetDoc('unlock_done', p.token);
+  if(!d) return;                       // landing page not finished: nothing is unlocked
+  localStorage.removeItem('ml_pending_unlock');
+  const v = findVideo(p.videoId);
+  if(!v) return;
+  STATE.currentVideo = v; STATE.taskAdsRequired = adsReq(v); STATE.taskStep = getTaskStep(v.id);
+  if(STATE.taskStep + 1 !== p.step) return;   // already counted / stale
+  onSingleAdWatched();
+}
+function resumePendingTask(){
+  let p = null;
+  try{ p = JSON.parse(localStorage.getItem('ml_pending_task') || 'null'); }catch(e){}
+  if(!p) return;
+  if(Date.now() - (p.ts||0) > 30*60*1000){ localStorage.removeItem('ml_pending_task'); return; }
+  const task = STATE.tasks.find(t=>t.id===p.taskId);
+  if(!task || isTaskDone(task)){ localStorage.removeItem('ml_pending_task'); return; }
+  STATE.currentTask = task;
+  STATE.landing = { task, code: p.code, url: landingUrlFor(task, p.code) };
+  document.getElementById('task-modal-icon').textContent = '🚀';
+  document.getElementById('task-modal-title').textContent = task.title || 'টাস্ক';
+  document.getElementById('task-modal-reward').textContent = '+৳ ' + (task.reward||0).toFixed(2);
+  document.getElementById('task-modal-sub').textContent = 'ল্যান্ডিং পেজ থেকে পাওয়া ৬ সংখ্যার কোডটি এখানে লিখুন';
+  document.getElementById('task-modal-timer').textContent = '';
+  const closeBtn = document.getElementById('task-modal-close'); if(closeBtn) closeBtn.classList.add('show');
+  document.getElementById('task-code-input').value = '';
+  document.getElementById('task-code-block').classList.add('show');
+  document.getElementById('task-modal').classList.add('open');
+}
+(function bootResume(){
+  let tries = 0;
+  const t = setInterval(()=>{
+    tries++;
+    if(STATE.userId && STATE.allVideos && STATE.allVideos.length && STATE.tasks && STATE.tasks.length){
+      clearInterval(t);
+      resumePendingUnlock().catch(()=>{});
+      resumePendingTask();
+    } else if(tries > 40){ clearInterval(t); }
+  }, 500);
+})();
 
 function renderPartSelector(video, activeIdx){
   const row = document.getElementById('part-selector-row');
@@ -3121,6 +3171,7 @@ function closeTaskModal(){
   const pending = STATE.taskPending;
   document.getElementById('task-modal').classList.remove('open');
   STATE.landing = null;
+  try{ localStorage.removeItem('ml_pending_task'); }catch(e){}
   STATE.taskLinkActive = false;
   STATE.taskPending = null;
   if(pending && pending.cleanup) pending.cleanup();
@@ -3245,6 +3296,7 @@ async function startLandingTask(task){
   }catch(e){ toast('⚠️ টাস্ক শুরু করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।'); return; }
   STATE.currentTask = task;
   STATE.landing = { task, code, url: landingUrlFor(task, code) };
+  try{ localStorage.setItem('ml_pending_task', JSON.stringify({ taskId: task.id, code, ts: Date.now() })); }catch(e){}
   const wait = Math.max(5, parseInt(task.waitSeconds)||30);
   document.getElementById('task-modal-icon').textContent = '🚀';
   document.getElementById('task-modal-title').textContent = task.title || 'টাস্ক';
@@ -3474,9 +3526,11 @@ function timeAgo(ts){ if(!ts)return'এইমাত্র'; const d=Date.now()-t
   if(startParam){
     const parsed = parseStartParam(startParam);
     if(parsed.vid) vid = parsed.vid;
+    if(parsed.page) STATE.startPage = parsed.page;
     if(parsed.ref) ref = parsed.ref;
   }
   if(vid){ STATE.sharedVideoId = vid; }
+  if(STATE.startPage){ setTimeout(()=>{ try{ showPage(STATE.startPage); }catch(e){} }, 700); }
   if(ref && ref!==STATE.userId && ref!==STATE.tgUserId){
     const stored=JSON.parse(localStorage.getItem('ml_ref_by')||'null');
     if(!stored){
