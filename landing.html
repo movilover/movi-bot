@@ -243,11 +243,11 @@ async function main(){
       const [vs, ls] = await Promise.all([getDoc(doc(db, 'videos', videoId)), getDoc(doc(db, 'settings', 'landing')).catch(() => null)]);
       if(!vs.exists()){ fail('ভিডিওটি পাওয়া যায়নি।'); return; }
       const v = vs.data();
-      const w = ls && ls.exists() ? parseInt(ls.data().unlockWaitSeconds) : 15;
+      const w = ls && ls.exists() ? parseInt(ls.data().unlockWaitSeconds) : 7;
       let links = wrapLinks(v.directLinkSets && v.directLinkSets[String(stepNo)]);
       if(!links.length && v.directLinks && v.directLinks[String(stepNo)]) links = wrapLinks([{ name:'Direct', url:v.directLinks[String(stepNo)] }]);
       const total = Math.max(1, parseInt(v.adsRequired) || 3);
-      cfg = { icon:'🔓', title:v.title || 'ভিডিও', chip:'ধাপ ' + bn(stepNo) + ' / ' + bn(total), wait:Math.min(120, Math.max(5, w || 15)), links };
+      cfg = { icon:'🔓', title:v.title || 'ভিডিও', chip:'ধাপ ' + bn(stepNo) + ' / ' + bn(total), wait:Math.min(120, Math.max(5, w || 7)), links };
     } else {
       const snap = await getDoc(doc(db, 'tasks', taskId));
       if(!snap.exists()){ fail('টাস্কটি পাওয়া যায়নি।'); return; }
