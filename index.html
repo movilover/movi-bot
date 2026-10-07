@@ -208,6 +208,12 @@ header {
 .categories-simple { display:flex; align-items:center; padding:14px 14px 6px; flex-shrink:0; }
 .all-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 20px; border-radius:20px; background:var(--grad-btn); border:none; color:#fff; font-family:'Hind Siliguri',sans-serif; font-size:13.5px; font-weight:700; box-shadow:0 6px 16px rgba(139,92,246,0.22); }
 .all-pill .material-icons-round { font-size:16px; }
+.categories-simple { gap:8px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.categories-simple::-webkit-scrollbar { display:none; }
+.cat-pill { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:20px; background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--text-muted); font-family:'Hind Siliguri',sans-serif; font-size:13.5px; font-weight:600; white-space:nowrap; flex-shrink:0; cursor:pointer; transition:transform .12s; }
+.cat-pill:active { transform:scale(.96); }
+.cat-pill.active { background:var(--grad-btn); border-color:transparent; color:#fff; font-weight:700; box-shadow:0 6px 16px rgba(139,92,246,0.22); }
+.cat-pill .material-icons-round { font-size:16px; }
 
 .section-title { font-size:11.5px; font-weight:700; color:var(--gold-3); padding:10px 14px 6px; letter-spacing:2px; text-transform:uppercase; display:flex; align-items:center; gap:8px; font-family:'Rajdhani',sans-serif; }
 .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
@@ -910,8 +916,8 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
 
   <div id="pages">
     <div class="page active" id="page-home">
-      <div class="categories-simple">
-        <span class="all-pill"><span class="material-icons-round">apps</span>সব</span>
+      <div class="categories-simple" id="category-bar">
+        <span class="cat-pill active" data-cat="all"><span class="material-icons-round">apps</span>সব</span>
       </div>
       <div class="notice"><span class="material-icons-round">local_activity</span>প্রতিটি ভিডিও একটি বিজ্ঞাপন দেখে আনলক করা যায় — আনলকের পর <b>৩ মিনিট</b> খোলা থাকে।</div>
 
@@ -1039,7 +1045,7 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
         <button class="wallet-submit-btn ripple" onclick="submitWithdraw()"><span class="material-icons-round">send</span>রিকুয়েস্ট পাঠান</button>
       </div>
 
-      <div class="profile-section-label" style="padding:16px 4px 8px;">উইথড্র হিস্ট্রি</div>
+      <div class="profile-section-label" style="padding:16px 4px 8px;">লেনদেন হিস্ট্রি</div>
       <div class="wallet-history-list" id="wallet-history-list"></div>
     </div>
 
@@ -1331,7 +1337,7 @@ const STATE = {
   announceDismissKey: null,
   videoBot: { token:'', botUsername:'', retentionMinutes:15 },
   pendingDeliveryId: null,
-  landingWait: 15,
+  landingWait: 7,
   unlockLandingUrl: '',
   deletingIds: {},
 };
@@ -1491,6 +1497,8 @@ window.addEventListener('firebaseReady', async()=>{
   await loadAdNetworkConfig();
   await loadVideoBotConfig();
   await loadLandingConfig();
+  await loadVideoRewardConfig();
+  await loadCategories();
   await ensureUserDoc();
   await loadTutorialVideo();
   subscribeVideos();
@@ -1716,6 +1724,43 @@ async function registerAdWatched(){
     await fbSet('users', STATE.userId, { adsWatched: newCount, lastAdAt: Date.now() });
   }catch(e){}
 }
+/* ===================== PER-VIDEO WALLET REWARD =====================
+   Every video a user fully unlocks (all ads done) pays settings/rewards.videoReward
+   (default ৳1) — once per user per video (doc id = uid_videoId, so re-unlocking
+   the same video can't be farmed). Shows a popup + tune, balance updates now. */
+async function loadVideoRewardConfig(){
+  STATE.videoReward = 1;
+  try{
+    const c = await fbGetDoc('settings','rewards');
+    if(c && c.videoReward!=null && !isNaN(parseFloat(c.videoReward))) STATE.videoReward = Math.max(0, parseFloat(c.videoReward));
+  }catch(e){}
+}
+async function rewardVideoUnlock(v){
+  const uid = STATE.userId; const amt = STATE.videoReward;
+  if(!uid || !v || !(amt>0)) return;
+  STATE.videoRewardMap = STATE.videoRewardMap || {};
+  if(STATE.videoRewardMap[v.id]) return;
+  try{
+    const id = uid + '_' + v.id;
+    const ex = await fbGetDoc('video_rewards', id);
+    if(ex){ STATE.videoRewardMap[v.id] = ex; return; }
+    const rec = { userId: uid, videoId: v.id, title: v.title||'ভিডিও', amount: amt, createdAt: Date.now() };
+    await window._setDoc(window._doc(window._db,'video_rewards',id), rec);
+    STATE.videoRewardMap[v.id] = rec;
+    STATE.balance += amt; STATE.totalIncome = (STATE.totalIncome||0) + amt; STATE.todayIncome = (STATE.todayIncome||0) + amt;
+    (STATE.myVideoRewards = STATE.myVideoRewards || []).unshift(rec);
+    updateBalanceUI(); renderWalletHistory();
+    setTimeout(()=>{
+      document.getElementById('tcp-icon').textContent = '💰';
+      document.getElementById('tcp-title').textContent = 'ওয়ালেটে ৳ ' + amt.toFixed(2) + ' জমা হয়েছে!';
+      document.getElementById('tcp-sub').textContent = 'ভিডিও দেখার রিওয়ার্ড — ওয়ালেটে গিয়ে ব্যালেন্স চেক করুন।';
+      document.getElementById('task-complete-popup').classList.add('open');
+      successSnd(); setTimeout(dingSnd, 350);
+      setTimeout(()=>{ document.getElementById('task-complete-popup').classList.remove('open'); }, 2600);
+    }, 1450);
+  }catch(e){ /* rules missing or offline: unlock still works, reward is skipped */ }
+}
+
 async function registerVideoUnlock(){
   try{
     const cur = await fbGetDoc('users', STATE.userId);
@@ -1773,7 +1818,7 @@ function subscribeVideos(){
     window._onSnapshot(q, snap=>{
       STATE.allVideos = snap.docs.map(d=>({id:d.id,...d.data()}));
       STATE.videosLoaded = true;
-      STATE.filteredVideos = STATE.allVideos;
+      applyCategoryFilter(false);
       renderVideos(STATE.filteredVideos);
       renderPinnedRow();
       maybeJumpToSharedVideo();
@@ -1784,7 +1829,7 @@ async function loadVideosFallback(){
   STATE.allVideos = await fbGet('videos');
   STATE.allVideos.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   STATE.videosLoaded = true;
-  STATE.filteredVideos = STATE.allVideos;
+  applyCategoryFilter(false);
   renderVideos(STATE.filteredVideos);
   renderPinnedRow();
   maybeJumpToSharedVideo();
@@ -2146,6 +2191,31 @@ function renderTutorialSteps(){
           </div>
         </div>`).join('')}
     </div>`).join('');
+}
+
+/* ===================== CATEGORIES (admin -> user site) ===================== */
+async function loadCategories(){
+  try{
+    const list = await fbGet('categories');
+    list.sort((x,y)=>(x.order||0)-(y.order||0));
+    STATE.categories = list;
+  }catch(e){ STATE.categories = []; }
+  renderCategoryBar();
+}
+function renderCategoryBar(){
+  const bar = document.getElementById('category-bar'); if(!bar) return;
+  const cur = STATE.activeCat || 'all';
+  const cats = STATE.categories || [];
+  if(cur!=='all' && !cats.some(c=>c.key===cur)) STATE.activeCat = 'all';
+  const act = STATE.activeCat || 'all';
+  bar.innerHTML = `<span class="cat-pill ${act==='all'?'active':''}" data-cat="all"><span class="material-icons-round">apps</span>সব</span>` +
+    cats.map(c=>`<span class="cat-pill ${act===c.key?'active':''}" data-cat="${escHtml(c.key)}">${c.emoji?escHtml(c.emoji)+' ':''}${escHtml(c.label)}</span>`).join('');
+  bar.querySelectorAll('.cat-pill').forEach(el=>el.addEventListener('click',()=>{ STATE.activeCat = el.dataset.cat; renderCategoryBar(); applyCategoryFilter(true); }));
+}
+function applyCategoryFilter(render){
+  const c = STATE.activeCat || 'all';
+  STATE.filteredVideos = c==='all' ? STATE.allVideos : STATE.allVideos.filter(v=>v.category===c);
+  if(render) renderVideos(STATE.filteredVideos);
 }
 
 function renderVideos(videos){
@@ -2527,6 +2597,7 @@ function finishUnlock(){
     STATE.unlockHistory = STATE.unlockHistory.slice(0,50);
     localStorage.setItem('ml_unlock_history',JSON.stringify(STATE.unlockHistory));
     registerVideoUnlock();
+    rewardVideoUnlock(v);
   }
   STATE.unlockExpiry[v.id] = Date.now() + UNLOCK_WINDOW_MS;
   localStorage.setItem('ml_unlock_expiry', JSON.stringify(STATE.unlockExpiry));
@@ -2567,7 +2638,7 @@ function stepLinkSet(v, stepNum){
 async function loadLandingConfig(){
   try{
     const c = await fbGetDoc('settings','landing');
-    if(c && c.unlockWaitSeconds) STATE.landingWait = Math.min(120, Math.max(5, parseInt(c.unlockWaitSeconds)||15));
+    if(c && c.unlockWaitSeconds) STATE.landingWait = Math.min(120, Math.max(5, parseInt(c.unlockWaitSeconds)||7));
   }catch(e){}
 }
 function randomAlnum(len){
@@ -2577,7 +2648,7 @@ function randomAlnum(len){
 }
 function reopenUnlockLanding(){ if(STATE.unlockLandingUrl) openExternal(STATE.unlockLandingUrl); }
 async function runLandingUnlockStep(v, stepNum){
-  const wait = STATE.landingWait || 15;
+  const wait = STATE.landingWait || 7;
   const token = randomAlnum(20);
   const titleEl = document.getElementById('verify-title');
   const subEl = document.getElementById('verify-sub');
@@ -2941,10 +3012,11 @@ async function loadTasksOnce(){
 }
 async function refreshLedger(){
   if(!STATE.userId) return;
-  const [completions, withdrawals, dailyAds] = await Promise.all([
+  const [completions, withdrawals, dailyAds, vRewards] = await Promise.all([
     fbGetWhere('task_completions','userId',STATE.userId),
     fbGetWhere('withdrawals','userId',STATE.userId),
-    fbGetWhere('daily_ad_tasks','userId',STATE.userId)
+    fbGetWhere('daily_ad_tasks','userId',STATE.userId),
+    fbGetWhere('video_rewards','userId',STATE.userId)
   ]);
   const dayStart = new Date(); dayStart.setHours(0,0,0,0);
   const dayStartMs = dayStart.getTime();
@@ -2964,6 +3036,8 @@ async function refreshLedger(){
       }
     }
   });
+  STATE.videoRewardMap = {}; STATE.myVideoRewards = vRewards.sort((x,y)=>(y.createdAt||0)-(x.createdAt||0));
+  vRewards.forEach(r=>{ totalIncome += (r.amount||0); STATE.videoRewardMap[r.videoId] = r; if((r.createdAt||0) >= dayStartMs) todayIncome += (r.amount||0); });
   let totalWithdrawn = 0;
   dailyAds.forEach(d=>{
     totalIncome += (d.earned||0);
@@ -3383,10 +3457,19 @@ function selectWithdrawMethod(key){
 function renderWalletHistory(){
   const wrap = document.getElementById('wallet-history-list');
   if(!wrap) return;
-  if(!STATE.myWithdrawals.length){ wrap.innerHTML = `<div class="hist-empty">এখনো কোনো উইথড্র রিকুয়েস্ট নেই</div>`; return; }
+  const rewards = (STATE.myVideoRewards||[]).slice(0,10);
+  if(!STATE.myWithdrawals.length && !rewards.length){ wrap.innerHTML = `<div class="hist-empty">এখনো কোনো লেনদেন নেই</div>`; return; }
   const labels = { pending:'পেন্ডিং', approved:'অনুমোদিত', rejected:'বাতিল' };
   const methods = currentWithdrawMethods();
-  wrap.innerHTML = STATE.myWithdrawals.map(w=>`
+  const rewardRows = rewards.map(r=>`
+    <div class="wh-row">
+      <div class="wh-info">
+        <div class="wh-amount">🎬 ভিডিও রিওয়ার্ড +৳ ${(r.amount||0).toFixed(2)}</div>
+        <div class="wh-meta">${escHtml(r.title||'')} · ${timeAgo(r.createdAt)}</div>
+      </div>
+      <span class="wh-status approved">জমা</span>
+    </div>`).join('');
+  const wdRows = STATE.myWithdrawals.map(w=>`
     <div class="wh-row">
       <div class="wh-info">
         <div class="wh-amount">৳ ${(w.amount||0).toFixed(2)} — ${escHtml((methods.find(m=>m.key===w.method)||{}).name || w.method || '')}</div>
@@ -3394,6 +3477,7 @@ function renderWalletHistory(){
       </div>
       <span class="wh-status ${w.status||'pending'}">${labels[w.status]||'পেন্ডিং'}</span>
     </div>`).join('');
+  wrap.innerHTML = rewardRows + wdRows;
 }
 async function submitWithdraw(){
   const amount = parseFloat(document.getElementById('wd-amount').value);
