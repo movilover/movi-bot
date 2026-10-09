@@ -3473,7 +3473,7 @@ function renderWalletHistory(){
     <div class="wh-row">
       <div class="wh-info">
         <div class="wh-amount">৳ ${(w.amount||0).toFixed(2)} — ${escHtml((methods.find(m=>m.key===w.method)||{}).name || w.method || '')}</div>
-        <div class="wh-meta">${escHtml(w.number||'')} · ${timeAgo(w.createdAt)}</div>
+        <div class="wh-meta">${escHtml(w.number||'')} · ${timeAgo(w.createdAt)}${(w.status==='rejected' && w.rejectReason) ? '<br><span style="color:#ff8a9b;">কারণ: ' + escHtml(w.rejectReason) + '</span>' : ''}</div>
       </div>
       <span class="wh-status ${w.status||'pending'}">${labels[w.status]||'পেন্ডিং'}</span>
     </div>`).join('');
