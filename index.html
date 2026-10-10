@@ -869,6 +869,53 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
 .nav-item-task.active .material-icons-round { color:var(--gold-2); }
 .profile-card { background:linear-gradient(180deg,#171129,#110c1c); box-shadow:0 10px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05); }
 
+/* =====================================================================
+   PREMIUM THEME v3 — "Royal Cinema": ৩টি রঙের প্রফেশনাল সিস্টেম
+   Violet = প্রাইমারি অ্যাকশন · Gold = প্লে/রিওয়ার্ড · Emerald = টাস্ক/সফল
+   সব বাটনে একই উচ্চতা, গ্লাস-হাইলাইট, হালকা ঝলক ও নরম গ্লো
+   ===================================================================== */
+:root {
+  --v3-violet: linear-gradient(180deg,#8b5cf6 0%,#6d28d9 55%,#5b21b6 100%);
+  --v3-gold:   linear-gradient(180deg,#ffe9a8 0%,#f5c542 50%,#d99a14 100%);
+  --v3-emerald:linear-gradient(180deg,#34d399 0%,#10b981 55%,#059669 100%);
+  --v3-ring: 0 0 0 1px rgba(255,255,255,.14) inset;
+}
+.channel-open-btn, .ref-copy-btn, .wallet-submit-btn, .watch-now-btn, .unlock-btn, .task-start-btn, .dailyad-btn, .promo-open-btn, .part-btn, .avatar-url-apply, .tcb-btn {
+  border:none; border-radius:14px; letter-spacing:.4px; font-weight:800;
+  transition:transform .14s ease, box-shadow .25s ease, filter .2s ease;
+  position:relative; overflow:hidden;
+}
+.channel-open-btn, .wallet-submit-btn, .ref-copy-btn, .part-btn.active, .avatar-url-apply {
+  background-image:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%), var(--v3-violet);
+  color:#fff; text-shadow:0 1px 2px rgba(20,5,50,.5); border:1px solid rgba(196,181,253,.45);
+  box-shadow:0 10px 26px rgba(109,40,217,.40), var(--v3-ring), inset 0 -2px 0 rgba(0,0,0,.22);
+}
+.watch-now-btn, .unlock-btn.play-btn {
+  background-image:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.45) 50%,transparent 60%), var(--v3-gold);
+  color:#2b1d03; text-shadow:0 1px 0 rgba(255,255,255,.4); border:1px solid rgba(255,240,180,.7);
+  box-shadow:0 12px 28px rgba(245,197,66,.38), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(130,80,0,.30);
+}
+.task-start-btn, .dailyad-btn, .promo-open-btn, .tcb-btn.gold {
+  background-image:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.28) 50%,transparent 60%), var(--v3-emerald);
+  color:#032a1c; text-shadow:0 1px 0 rgba(255,255,255,.3); border:1px solid rgba(167,243,208,.6);
+  box-shadow:0 10px 24px rgba(16,185,129,.34), inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 0 rgba(0,0,0,.20);
+}
+.unlock-btn:not(.play-btn) {
+  background:linear-gradient(180deg,rgba(245,197,66,.20),rgba(245,197,66,.06));
+  border:1.5px solid rgba(245,197,66,.65); color:#ffe08a;
+  box-shadow:0 8px 22px rgba(245,197,66,.14), inset 0 1px 0 rgba(255,255,255,.14);
+}
+.channel-open-btn:hover, .wallet-submit-btn:hover, .watch-now-btn:hover, .task-start-btn:hover, .promo-open-btn:hover { filter:brightness(1.07) saturate(1.05); }
+.channel-open-btn:active, .ref-copy-btn:active, .wallet-submit-btn:active, .watch-now-btn:active, .unlock-btn:active, .task-start-btn:active, .dailyad-btn:active:not(:disabled), .promo-open-btn:active { transform:translateY(1px) scale(.975); filter:brightness(.94); }
+.dailyad-btn:disabled, .task-start-btn.done { background:rgba(16,185,129,.12); background-image:none; color:#6ee7b7; border:1px solid rgba(16,185,129,.35); box-shadow:none; text-shadow:none; }
+.tcb-btn.ghost, .card-share-btn { background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.14); color:#e9e4ff; }
+.pdp-fav-btn { background:linear-gradient(180deg,rgba(139,92,246,.22),rgba(139,92,246,.08)); border:1px solid rgba(167,139,250,.5); color:#ddd0ff; }
+.pdp-share-btn, .pdp-copy-btn { background:linear-gradient(180deg,rgba(245,197,66,.20),rgba(245,197,66,.07)); border:1px solid rgba(245,197,66,.5); color:#ffe08a; }
+.icon-btn { background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.16); }
+.cat-pill.active, .all-pill { background:var(--v3-violet); border:1px solid rgba(196,181,253,.45); box-shadow:0 8px 20px rgba(109,40,217,.38), var(--v3-ring); }
+.nav-item.active, .nav-item.active .material-icons-round { color:#ffe08a; }
+.nav-item.active .material-icons-round { filter:drop-shadow(0 0 8px rgba(245,197,66,.6)); }
+.channel-open-btn:focus-visible, .wallet-submit-btn:focus-visible, .watch-now-btn:focus-visible, .task-start-btn:focus-visible { outline:2px solid #ffe08a; outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){ * { animation:none !important; } }
 </style>
 </head>
@@ -1069,6 +1116,10 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
         <div class="ref-row">
           <div class="ref-link-box" id="ref-link-box">লোড হচ্ছে...</div>
           <button class="ref-copy-btn ripple" onclick="copyRefLink()"><span class="material-icons-round">content_copy</span>কপি</button>
+        </div>
+        <div class="ref-stats">
+          <div class="ref-stat">সফল জয়েন: <span id="ref-stat-joins">0</span></div>
+          <div class="ref-stat">আয়: <span id="ref-stat-earned">৳ 0.00</span></div>
         </div>
       </div>
 
@@ -1987,10 +2038,17 @@ async function saveTelegramProfileToFirestore(u){
 }
 function effectiveRefId(){ return STATE.tgUserId || STATE.userId; }
 function buildReferralLink(){
-  const refPart = encodeStartParamPart(effectiveRefId());
+  const refPart = STATE.refSlug || encodeStartParamPart(effectiveRefId());
   STATE.refLink = buildTelegramDeepLink(`r-${refPart}`);
   const box = document.getElementById('ref-link-box');
   if(box) box.textContent = STATE.refLink;
+  // if the admin gave this user a custom slug, switch the link to it (once)
+  if(!STATE.refSlugChecked && window._db){
+    STATE.refSlugChecked = true;
+    fbGetWhere('referral_slugs','userId',String(effectiveRefId())).then(list=>{
+      if(list && list.length){ STATE.refSlug = list[0].id; buildReferralLink(); }
+    });
+  }
 }
 function updateProfileStats(){
   const aEl=document.getElementById('stat-ads'), uEl=document.getElementById('stat-unlocked'), wEl=document.getElementById('stat-watched');
@@ -3602,6 +3660,13 @@ async function loadReferralHistorySection(){
     const myRef = effectiveRefId();
     const mine = all.filter(r=>r.ref===myRef).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     if(countEl) countEl.textContent = mine.length;
+    // earnings = valid (not left) joins x admin-set rate; computed, never stored
+    let rate = 5;
+    try{ const rc = await fbGetDoc('settings','referralRate'); if(rc && rc.ratePerJoin!=null && !isNaN(parseFloat(rc.ratePerJoin))) rate = parseFloat(rc.ratePerJoin); }catch(e){}
+    const valid = mine.filter(r=>!r.leftAt && r.status!=='left').length;
+    const jEl = document.getElementById('ref-stat-joins'), eEl = document.getElementById('ref-stat-earned');
+    if(jEl) jEl.textContent = valid;
+    if(eEl) eEl.textContent = '৳ ' + (valid*rate).toFixed(2);
     body.innerHTML = mine.length ? mine.slice(0,30).map(r=>`
       <div class="hist-row">
         <div class="hist-thumb"><span class="material-icons-round" style="color:var(--gold-3);font-size:18px;">person</span></div>
@@ -3652,14 +3717,42 @@ function timeAgo(ts){ if(!ts)return'এইমাত্র'; const d=Date.now()-t
   }
   if(vid){ STATE.sharedVideoId = vid; }
   if(STATE.startPage){ setTimeout(()=>{ try{ showPage(STATE.startPage); }catch(e){} }, 700); }
-  if(ref && ref!==STATE.userId && ref!==STATE.tgUserId){
-    const stored=JSON.parse(localStorage.getItem('ml_ref_by')||'null');
-    if(!stored){
-      localStorage.setItem('ml_ref_by',JSON.stringify({ref,tg:tgRef||'',ts:Date.now()}));
-      if(window._db) setTimeout(()=>fbAdd('referrals',{ref,refTelegramId:tgRef||'',userId:STATE.userId}),2000);
-    }
-  }
+  if(ref){ recordReferral(ref, tgRef||''); }
 })();
+
+/* Referral tracking (serverless). Earnings are never stored on the client:
+   every join is one referrals/{uid} doc (create-only, one per user), every
+   unique visit is one referral_clicks/{uid_ref} doc. The earned balance is
+   always computed as valid joins x settings/referralRate.ratePerJoin, so
+   nobody can edit their own earnings. A custom slug (referral_slugs/{slug})
+   is resolved to the real referrer id before anything is written. */
+async function resolveRefSlug(raw){
+  try{ const s = await fbGetDoc('referral_slugs', raw); if(s && s.userId) return String(s.userId); }catch(e){}
+  return raw;
+}
+function recordReferral(rawRef, tgRef){
+  let tries = 0;
+  const t = setInterval(async ()=>{
+    tries++;
+    const au = window._auth && window._auth.currentUser;
+    if(!au){ if(tries > 30) clearInterval(t); return; }
+    clearInterval(t);
+    const uid = au.uid;
+    const ref = await resolveRefSlug(rawRef);
+    if(!ref || ref === uid || ref === STATE.tgUserId) return;
+    // 1) unique click (create-only; a repeat visit is simply refused by the rules)
+    try{ await window._setDoc(window._doc(window._db,'referral_clicks', uid+'_'+ref), { ref, userId: uid, createdAt: Date.now() }); }catch(e){}
+    // 2) join, only the first referrer counts
+    if(localStorage.getItem('ml_ref_by')) return;
+    try{
+      await window._setDoc(window._doc(window._db,'referrals', uid), { ref, refTelegramId: tgRef||'', userId: uid, createdAt: Date.now() });
+      localStorage.setItem('ml_ref_by', JSON.stringify({ ref, tg: tgRef||'', ts: Date.now() }));
+    }catch(e){
+      // already joined earlier (doc exists) -> remember it so we stop trying
+      if(e && e.code === 'permission-denied') localStorage.setItem('ml_ref_by', JSON.stringify({ ref, tg: tgRef||'', ts: Date.now() }));
+    }
+  }, 500);
+}
 
 if(window.Telegram?.WebApp){
   const tg=window.Telegram.WebApp;
