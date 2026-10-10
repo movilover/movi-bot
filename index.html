@@ -2090,13 +2090,33 @@ async function loadTutorialVideo(){
   STATE.tutorialVideo = d;
   renderTutorialVideo();
 }
+/* Tutorial video uploaded through the bot: tap -> sent to the user's bot chat (same as Watch Now) */
+function tutorialAsVideo(){
+  const t = STATE.tutorialVideo;
+  if(!t || !t.tgFileId) return null;
+  return { id:'__tutorial__', title: t.label || 'টিউটোরিয়াল ভিডিও', parts:[{ tgFileId: t.tgFileId }] };
+}
+function openTutorial(){
+  const t = STATE.tutorialVideo; if(!t) return;
+  const v = tutorialAsVideo();
+  if(v && STATE.videoBot && STATE.videoBot.token){
+    if(!STATE.tgUserId){
+      toast('⚠️ ভিডিও দেখতে টেলিগ্রাম অ্যাপের ভিতর থেকে সাইটটি খুলুন।');
+      if(STATE.videoBot.botUsername) openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername);
+      return;
+    }
+    deliverVideoToTelegram(v);
+    return;
+  }
+  if(t.url) playTutorialVideo(t.url); else toast('⚠️ টিউটোরিয়াল ভিডিও এখনো পাওয়া যায়নি।');
+}
 function renderTutorialVideo(){
   const sec = document.getElementById('tutorial-video-section');
   const v = STATE.tutorialVideo;
-  if(!v || !v.url){ sec.innerHTML=''; return; }
+  if(!v || (!v.url && !v.tgFileId)){ sec.innerHTML=''; return; }
   sec.innerHTML=`
     <div class="tutorial-video-card">
-      <div class="tutorial-video-thumb" onclick="playTutorialVideo('${escHtml(v.url)}')">
+      <div class="tutorial-video-thumb" onclick="openTutorial()">
         ${v.thumb?`<img src="${escHtml(v.thumb)}" onerror="this.style.display='none'"/>`:''}
         <div class="play-btn"><span class="material-icons-round">play_arrow</span></div>
       </div>
@@ -2407,7 +2427,24 @@ function registerWatch(v){
   STATE.watchHistory = STATE.watchHistory.slice(0,50);
   localStorage.setItem('ml_history', JSON.stringify(STATE.watchHistory));
 }
+/* After the video is sent, take the user INTO the bot chat and close the Mini App,
+   so they see the video instead of staying on the site and tapping Watch Now again. */
+function goToBotChat(){
+  const bu = (STATE.videoBot && STATE.videoBot.botUsername) || '';
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const url = bu ? 'https://t.me/' + bu : '';
+  if(tg){
+    try{ if(url && typeof tg.openTelegramLink === 'function') tg.openTelegramLink(url); }catch(e){}
+    setTimeout(()=>{ try{ tg.close(); }catch(e){} }, 450);
+  } else if(url){ window.open(url, '_blank'); }
+}
 async function deliverVideoToTelegram(v){
+  if(STATE.delivering){ return; }          // ignore repeated taps while a video is being sent
+  STATE.delivering = true;
+  try{ await _deliverVideoToTelegram(v); }
+  finally{ setTimeout(()=>{ STATE.delivering = false; }, 2500); }
+}
+async function _deliverVideoToTelegram(v){
   const parts = videoParts(v).filter(p=>p.tgFileId);
   const mins = STATE.videoBot.retentionMinutes || 15;
   const chatId = STATE.tgUserId;
@@ -2438,8 +2475,8 @@ async function deliverVideoToTelegram(v){
     }catch(e){
       scheduleDeliveryDelete({ id: null, chatId, messageIds: ids }, mins*60*1000);
     }
-    toast(`✅ ভিডিও বটে পাঠানো হয়েছে — ${mins} মিনিট থাকবে`);
-    if(STATE.videoBot.botUsername) setTimeout(()=>openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername), 700);
+    toast('✅ ভিডিও বটে পাঠানো হয়েছে — বটে নিয়ে যাওয়া হচ্ছে...');
+    setTimeout(goToBotChat, 900);
     return;
   }
   // 403 / 400 => user hasn't started the bot yet
@@ -2455,7 +2492,7 @@ function retryPendingDelivery(){
   const id = STATE.pendingDeliveryId;
   if(!id) return;
   STATE.pendingDeliveryId = null;
-  const v = findVideo(id);
+  const v = id === '__tutorial__' ? tutorialAsVideo() : findVideo(id);
   if(v) setTimeout(()=>deliverVideoToTelegram(v), 800);
 }
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ retryPendingDelivery(); sweepMyDeliveries(); } });
