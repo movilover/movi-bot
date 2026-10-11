@@ -385,6 +385,10 @@ function watchJobs() {
   }
   bot.telegram.setMyCommands([{ command: 'start', description: 'বট চালু করুন' }, { command: 'mylink', description: 'আমার রেফারেল লিংক' }]).catch(() => {});
 
+  // হার্টবিট: এডমিন প্যানেল দেখে বট সার্ভার চালু আছে কি না (বন্ধ থাকলে ভিডিও ব্রাউজার থেকে পাঠানো হয়)
+  const beat = () => db.doc('settings/botStatus').set({ lastBeat: Date.now(), username: me.username }, { merge: true }).catch(() => {});
+  beat(); setInterval(beat, 60000);
+
   watchVideos();
   watchJobs();
   await bot.launch({ allowedUpdates: ['message', 'my_chat_member', 'chat_member', 'callback_query'] });
