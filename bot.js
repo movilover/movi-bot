@@ -36,17 +36,17 @@ const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g,
 let siteCache = { at: 0, base: '' };
 async function webappBase() {
   if (Date.now() - siteCache.at < 30000 && siteCache.base) return siteCache.base;
+  // ফলব্যাক আগে ঠিক করি: env লিংক, নইলে চলতি বটের নিজের ইউজারনেম (Firestore ব্যর্থ হলেও লিংক কখনো খালি হবে না)
   let base = (process.env.WEBAPP_LINK || '').replace(/\/$/, '');
+  if (!base && bot && bot.botInfo && bot.botInfo.username) base = 'https://t.me/' + bot.botInfo.username;
   try {
     const d = await db.doc('settings/site').get();
     if (d.exists && d.data().botUsername) {
       const u = String(d.data().botUsername).replace(/^@/, '');
       const app = String(d.data().appShort || '').replace(/[^A-Za-z0-9_]/g, '');
       base = `https://t.me/${u}${app ? '/' + app : ''}`;
-    } else if (!base && bot && bot.botInfo) {
-      base = `https://t.me/${bot.botInfo.username}`;
     }
-  } catch (e) {}
+  } catch (e) { noteError('settings/site পড়া', e); }
   siteCache = { at: Date.now(), base };
   return base;
 }
@@ -242,20 +242,35 @@ async function welcomeButtons(w, refId) {
   if (w.b2Label && /^https?:\/\//i.test(w.b2Url || '')) rows.push([{ text: w.b2Label, url: w.b2Url }]);
   return rows;
 }
+/* অবস্থা/ত্রুটি Firestore-এ লিখে রাখি (settings/botStatus) — এডমিন প্যানেলের "বট যাচাই করুন" বাটনে দেখা যায় */
+function noteStatus(patch) { db.doc('settings/botStatus').set(patch, { merge: true }).catch(() => {}); }
+function noteError(where, e) {
+  const msg = where + ': ' + (e && e.message ? e.message : String(e));
+  console.error('ERROR', msg);
+  noteStatus({ lastError: msg.slice(0, 400), lastErrorAt: Date.now() });
+}
+
+/** ছবি+লেখা+বাটন; কোনো ধাপে (নষ্ট ছবি/বাটন লিংক) আটকালে ধাপে ধাপে সহজ রূপে পাঠায়, যাতে ইউজার কিছু একটা পায়ই */
 async function sendWelcome(ctx, w, refId) {
   const cap = welcomeCaption(w, ctx.from.first_name);
-  const kb = { inline_keyboard: await welcomeButtons(w, refId) };
+  let rows = [];
+  try { rows = await welcomeButtons(w, refId); } catch (e) { noteError('welcomeButtons', e); }
+  const kb = { inline_keyboard: rows };
+  const text = cap || '🎬 স্বাগতম!';
+  // ১) ছবি + ক্যাপশন + বাটন
   try {
-    if (w.image && cap.length <= 1000) {
-      await ctx.replyWithPhoto(w.image, { caption: cap, parse_mode: 'HTML', reply_markup: kb });
-    } else {
-      if (w.image) await ctx.replyWithPhoto(w.image).catch(() => {});
-      await ctx.reply(cap || ' ', { parse_mode: 'HTML', reply_markup: kb, disable_web_page_preview: true });
-    }
-  } catch (e) {
-    // ছবির লিংক নষ্ট হলে অন্তত লেখা + বাটন যাক
-    await ctx.reply(cap || ' ', { parse_mode: 'HTML', reply_markup: kb, disable_web_page_preview: true }).catch(err => console.error('welcome', err.message));
-  }
+    if (w.image && cap.length <= 1000) { await ctx.replyWithPhoto(w.image, { caption: cap, parse_mode: 'HTML', reply_markup: kb }); return; }
+    if (w.image) await ctx.replyWithPhoto(w.image).catch(e => noteError('welcome photo', e));
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb, disable_web_page_preview: true }); return;
+  } catch (e) { noteError('welcome(ছবি+বাটন)', e); }
+  // ২) ছবি ছাড়া, লেখা + বাটন
+  try { await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb, disable_web_page_preview: true }); return; }
+  catch (e) { noteError('welcome(লেখা+বাটন)', e); }
+  // ৩) শুধু লেখা, বাটন ছাড়া
+  try { await ctx.reply(text, { parse_mode: 'HTML', disable_web_page_preview: true }); return; }
+  catch (e) { noteError('welcome(শুধু লেখা)', e); }
+  // ৪) একদম সাদামাটা
+  await ctx.reply('🎬 Movi Lover-এ স্বাগতম!').catch(e => noteError('welcome(plain)', e));
 }
 
 /* ---------------- হ্যান্ডলার ---------------- */
@@ -263,22 +278,34 @@ function registerHandlers() {
   bot.start(async ctx => {
     const from = ctx.from;
     const payload = (ctx.startPayload || '').trim();
-    const isNew = await upsertBotUser(from);
-    let referrer = null;
-    if (payload && !/^(v-|tk-)/.test(payload)) referrer = await recordReferral(from, payload);
-    if (!isNew) await markLeft(from.id, false).catch(() => {});
+    console.log('/start পেয়েছি: ' + from.id + (payload ? ' payload=' + payload : ''));
+    noteStatus({ lastStart: Date.now(), lastStartUser: String(from.id) });
 
-    const w = await getWelcome();
-    if (w && w.enabled !== false && (w.text || w.title || w.image)) {
-      await sendWelcome(ctx, w, referrer || (payload && !/^(v-|tk-)/.test(payload) ? await resolveRef(payload) : ''));
-    } else {
-      const rows = [];
-      if (SITE_URL) rows.push([Markup.button.webApp('▶️ সাইট খুলুন', SITE_URL)]);
-      else rows.push([Markup.button.url('▶️ সাইট খুলুন', await webappBase() + '?startapp=home')]);
-      await ctx.reply(
-        `🎬 <b>Movi Lover-এ স্বাগতম, ${esc(from.first_name || 'বন্ধু')}!</b>\n\nনতুন ভিডিও আসলেই সবার আগে এখানে পাবেন। নিচের বাটনে চাপ দিয়ে সাইট খুলুন।`,
-        { parse_mode: 'HTML', ...Markup.inlineKeyboard(rows) }
-      );
+    // ডাটাবেসের কাজ ব্যর্থ হলেও স্বাগত বার্তা যাবেই (আগে এখানে ত্রুটি হলে ইউজার কিছুই পেত না)
+    let isNew = false, referrer = null, refRaw = '';
+    try {
+      isNew = await upsertBotUser(from);
+      if (payload && !/^(v-|tk-)/.test(payload)) { referrer = await recordReferral(from, payload); refRaw = referrer || await resolveRef(payload); }
+      if (!isNew) await markLeft(from.id, false).catch(() => {});
+    } catch (e) { noteError('Firestore (/start)', e); }
+
+    let w = null;
+    try { w = await getWelcome(); } catch (e) { noteError('getWelcome', e); }
+    try {
+      if (w && w.enabled !== false && (w.text || w.title || w.image)) {
+        await sendWelcome(ctx, w, refRaw);
+      } else {
+        const rows = [];
+        if (SITE_URL) rows.push([Markup.button.webApp('▶️ সাইট খুলুন', SITE_URL)]);
+        else rows.push([Markup.button.url('▶️ সাইট খুলুন', await webappBase() + '?startapp=home')]);
+        await ctx.reply(
+          `🎬 <b>Movi Lover-এ স্বাগতম, ${esc(from.first_name || 'বন্ধু')}!</b>\n\nনতুন ভিডিও আসলেই সবার আগে এখানে পাবেন। নিচের বাটনে চাপ দিয়ে সাইট খুলুন।`,
+          { parse_mode: 'HTML', ...Markup.inlineKeyboard(rows) }
+        );
+      }
+    } catch (e) {
+      noteError('/start reply', e);
+      await ctx.reply('🎬 Movi Lover-এ স্বাগতম!').catch(() => {});
     }
     if (isNew) console.log('new user', from.id, referrer ? '(ref ' + referrer + ')' : '');
   });
@@ -375,7 +402,7 @@ function watchJobs() {
 
   bot = new Telegraf(token);
   registerHandlers();
-  bot.catch((err, ctx) => console.error('bot error', ctx && ctx.updateType, err.message));
+  bot.catch((err, ctx) => noteError('bot ' + (ctx && ctx.updateType), err));
 
   const me = await bot.telegram.getMe();
   bot.botInfo = me;
@@ -394,5 +421,7 @@ function watchJobs() {
   await bot.launch({ allowedUpdates: ['message', 'my_chat_member', 'chat_member', 'callback_query'] });
 })().catch(e => { console.error('চালু করা যায়নি:', e.message); process.exit(1); });
 
+process.on('unhandledRejection', e => noteError('unhandledRejection', e));
+process.on('uncaughtException', e => noteError('uncaughtException', e));
 process.once('SIGINT', () => bot && bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot && bot.stop('SIGTERM'));
