@@ -1426,8 +1426,10 @@ const PROMO_POST = {
 const UNLOCK_WINDOW_MS = 3*60*1000; // 3 minutes — after this the video re-locks and a new ad is required. Kept exactly as requested.
 
 /* ===================== TELEGRAM BOT / MINI APP CONFIG ===================== */
-const TELEGRAM_BOT_USERNAME = 'movilovervairal_bot';
-const TELEGRAM_WEBAPP_SHORT_NAME = 'webapp';
+/* এই দুটি মান এখন এডমিন প্যানেল → ভিডিও বট → "সাইট লিংক সেটিং" থেকে বদলানো যায় (settings/site)।
+   নতুন বট বসালে কোড বদলাতে হবে না। নিচের মান শুধু ফলব্যাক। */
+let TELEGRAM_BOT_USERNAME = 'movilovervairal_bot';
+let TELEGRAM_WEBAPP_SHORT_NAME = 'webapp'; // খালি রাখলে Main Mini App লিংক (t.me/বট?startapp=...) ব্যবহার হবে
 
 (function(){
   let uid = localStorage.getItem('ml_uid');
@@ -1441,7 +1443,10 @@ function buildVideoShareLink(id){
   return buildTelegramDeepLink(`v-${vidPart}-r-${refPart}`);
 }
 function encodeStartParamPart(s){ return String(s||'').replace(/[^A-Za-z0-9_-]/g,''); }
-function buildTelegramDeepLink(startParam){ return `https://t.me/${TELEGRAM_BOT_USERNAME}/${TELEGRAM_WEBAPP_SHORT_NAME}?startapp=${startParam}`; }
+function buildTelegramDeepLink(startParam){
+  const app = TELEGRAM_WEBAPP_SHORT_NAME ? '/' + TELEGRAM_WEBAPP_SHORT_NAME : '';
+  return `https://t.me/${TELEGRAM_BOT_USERNAME}${app}?startapp=${startParam}`;
+}
 function parseStartParam(sp){
   const out = {};
   if(!sp) return out;
@@ -2434,13 +2439,26 @@ async function loadVideoBotConfig(){
     const p = await fbGetDoc('settings','videobot');
     if(p) STATE.videoBot = { token:p.token||'', botUsername:p.botUsername||'', retentionMinutes:p.retentionMinutes||15 };
   }catch(e){}
+  // সাইট লিংক সেটিং (সবার জন্য পাবলিক): মেইন বটের ইউজারনেম ও মিনি অ্যাপ নাম
+  try{
+    const s = await fbGetDoc('settings','site');
+    if(s && s.botUsername) TELEGRAM_BOT_USERNAME = String(s.botUsername).replace(/^@/,'');
+    else if(STATE.videoBot && STATE.videoBot.botUsername) TELEGRAM_BOT_USERNAME = STATE.videoBot.botUsername;
+    if(s && typeof s.appShort === 'string') TELEGRAM_WEBAPP_SHORT_NAME = s.appShort.replace(/[^A-Za-z0-9_]/g,'');
+    STATE.refSlugChecked = false;
+    try{ buildReferralLink(); }catch(e){}
+  }catch(e){}
 }
 function openTelegramUrl(url){
   const tg = window.Telegram?.WebApp;
   if(tg && typeof tg.openTelegramLink === 'function' && /^https:\/\/t\.me\//.test(url)){ try{ tg.openTelegramLink(url); return; }catch(e){} }
   window.open(url, '_blank');
 }
-function mainSiteLink(){ return `https://t.me/${TELEGRAM_BOT_USERNAME}/${TELEGRAM_WEBAPP_SHORT_NAME}`; }
+function mainSiteLink(){
+  return TELEGRAM_WEBAPP_SHORT_NAME
+    ? `https://t.me/${TELEGRAM_BOT_USERNAME}/${TELEGRAM_WEBAPP_SHORT_NAME}`
+    : `https://t.me/${TELEGRAM_BOT_USERNAME}?startapp=home`;
+}
 async function tgBot(method, body){
   const r = await fetch('https://api.telegram.org/bot' + STATE.videoBot.token + '/' + method, {
     method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
@@ -3740,6 +3758,10 @@ function recordReferral(rawRef, tgRef){
     const uid = au.uid;
     const ref = await resolveRefSlug(rawRef);
     if(!ref || ref === uid || ref === STATE.tgUserId) return;
+    // বট আগেই এই টেলিগ্রাম ইউজারের জয়েন গুনে থাকলে দ্বিতীয়বার গুনব না (ডাবল আয় এড়াতে)
+    if(STATE.tgUserId){
+      try{ const botJoin = await fbGetDoc('referrals','tg'+STATE.tgUserId); if(botJoin){ localStorage.setItem('ml_ref_by', JSON.stringify({ ref:botJoin.ref||ref, ts:Date.now() })); return; } }catch(e){}
+    }
     // 1) unique click (create-only; a repeat visit is simply refused by the rules)
     try{ await window._setDoc(window._doc(window._db,'referral_clicks', uid+'_'+ref), { ref, userId: uid, createdAt: Date.now() }); }catch(e){}
     // 2) join, only the first referrer counts
@@ -3760,6 +3782,23 @@ if(window.Telegram?.WebApp){
   tg.setHeaderColor('#f6efe0');
   tg.setBackgroundColor('#f6efe0');
 }
+
+/* বটের মেসেজ পাওয়ার অনুমতি: ইউজার সাইট খুললে টেলিগ্রামের নিজস্ব পপআপে "বট মেসেজ পাঠাতে পারবে?" জিজ্ঞেস করা হয়।
+   "Allow" দিলে ইউজার আলাদা করে /start না দিলেও বট তাকে মেসেজ পাঠাতে পারে — এভাবেই সবাই নতুন বটে জয়েন হয়ে যায়।
+   দিনে সর্বোচ্চ একবার জিজ্ঞেস করা হয়, যাতে বিরক্ত না লাগে। */
+function askBotWriteAccess(){
+  try{
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if(!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return;
+    if(tg.initDataUnsafe.user.allows_write_to_pm) return;      // আগেই অনুমতি দেওয়া আছে
+    if(typeof tg.requestWriteAccess !== 'function') return;
+    const last = parseInt(localStorage.getItem('ml_wa_ask')||'0',10);
+    if(Date.now() - last < 24*3600*1000) return;
+    localStorage.setItem('ml_wa_ask', String(Date.now()));
+    setTimeout(()=>{ try{ tg.requestWriteAccess(); }catch(e){} }, 2500);
+  }catch(e){}
+}
+askBotWriteAccess();
 </script>
 </body>
 </html>
