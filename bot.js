@@ -21,6 +21,7 @@
 const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 
+const BOT_VERSION = 'v3-welcome'; // এডমিন প্যানেল "বট যাচাই" এটা দেখে বোঝে আপনি নতুন bot.js চালাচ্ছেন কি না
 const SITE_URL = (process.env.SITE_URL || '').trim();
 const CHANNEL_ID = process.env.CHANNEL_ID || '';
 const DEFAULT_RATE = parseFloat(process.env.DEFAULT_RATE || '5');
@@ -213,13 +214,10 @@ async function broadcast(job, onProgress) {
 }
 
 /* ---------------- স্বাগত বার্তা (এডমিন প্যানেল → স্বাগত পেজ = settings/welcome) ---------------- */
-let welcomeCache = { at: 0, data: null };
+/** প্রতিটি /start-এ সরাসরি পড়ি (একটা ডক রিড, সস্তা) — এডমিন যা সংরক্ষণ করেছে ঠিক সেটাই যাবে */
 async function getWelcome() {
-  if (Date.now() - welcomeCache.at < 30000) return welcomeCache.data;
-  let data = null;
-  try { const d = await db.doc('settings/welcome').get(); data = d.exists ? d.data() : null; } catch (e) {}
-  welcomeCache = { at: Date.now(), data };
-  return data;
+  try { const d = await db.doc('settings/welcome').get(); return d.exists ? d.data() : null; }
+  catch (e) { noteError('settings/welcome পড়া', e); return null; }
 }
 function welcomeCaption(w, name) {
   const nm = esc(name || 'বন্ধু');
@@ -293,8 +291,10 @@ function registerHandlers() {
     try { w = await getWelcome(); } catch (e) { noteError('getWelcome', e); }
     try {
       if (w && w.enabled !== false && (w.text || w.title || w.image)) {
+        noteStatus({ lastWelcome: 'custom', lastWelcomeAt: Date.now(), lastWelcomeImage: !!w.image });
         await sendWelcome(ctx, w, refRaw);
       } else {
+        noteStatus({ lastWelcome: !w ? 'default:no-doc' : (w.enabled === false ? 'default:disabled' : 'default:empty'), lastWelcomeAt: Date.now() });
         const rows = [];
         if (SITE_URL) rows.push([Markup.button.webApp('▶️ সাইট খুলুন', SITE_URL)]);
         else rows.push([Markup.button.url('▶️ সাইট খুলুন', await webappBase() + '?startapp=home')]);
@@ -413,7 +413,7 @@ function watchJobs() {
   bot.telegram.setMyCommands([{ command: 'start', description: 'বট চালু করুন' }, { command: 'mylink', description: 'আমার রেফারেল লিংক' }]).catch(() => {});
 
   // হার্টবিট: এডমিন প্যানেল দেখে বট সার্ভার চালু আছে কি না (বন্ধ থাকলে ভিডিও ব্রাউজার থেকে পাঠানো হয়)
-  const beat = () => db.doc('settings/botStatus').set({ lastBeat: Date.now(), username: me.username }, { merge: true }).catch(() => {});
+  const beat = () => db.doc('settings/botStatus').set({ lastBeat: Date.now(), username: me.username, version: BOT_VERSION }, { merge: true }).catch(() => {});
   beat(); setInterval(beat, 60000);
 
   watchVideos();
