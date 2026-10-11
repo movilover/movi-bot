@@ -918,6 +918,37 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
 .channel-open-btn:focus-visible, .wallet-submit-btn:focus-visible, .watch-now-btn:focus-visible, .task-start-btn:focus-visible { outline:2px solid #ffe08a; outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){ * { animation:none !important; } }
 </style>
+<style id="mlt-style">
+/* ===== থাম্বনেইল ব্র্যান্ডিং (এডমিন → থাম্বনেইল স্টাইল থেকে নিয়ন্ত্রিত) ===== */
+.mlt-host { position:relative; overflow:hidden; }
+.mlt-wm { position:absolute; z-index:4; pointer-events:none; font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.7px; color:#fff; white-space:nowrap;
+  font-size:var(--mlt-fs,11px); opacity:var(--mlt-wm-op,.35); text-shadow:0 1px 6px rgba(0,0,0,.65); }
+.mlt-wm.p-br { right:8px; bottom:6px; } .mlt-wm.p-bl { left:8px; bottom:6px; }
+.mlt-wm.p-tr { right:8px; top:6px; }   .mlt-wm.p-tl { left:8px; top:6px; }
+.mlt-wm.p-c  { left:50%; top:50%; transform:translate(-50%,-50%); font-size:calc(var(--mlt-fs,11px)*1.6); }
+.mlt-ring { position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:inherit;
+  box-shadow:inset 0 0 calc(var(--mlt-gi,.5)*30px) calc(var(--mlt-gi,.5)*3px) var(--mlt-gc,rgba(139,92,246,.8)); }
+.mlt-ring.pulse { animation:mltPulse var(--mlt-gs,3.2s) ease-in-out infinite; }
+@keyframes mltPulse { 0%,100% { opacity:.35; } 50% { opacity:1; } }
+.mlt-sheen { position:absolute; inset:0; z-index:3; pointer-events:none; overflow:hidden; border-radius:inherit; }
+.mlt-sheen:after { content:""; position:absolute; top:-20%; bottom:-20%; width:38%; left:-60%; transform:skewX(-18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent); animation:mltSheen var(--mlt-gs,3.2s) ease-in-out infinite; }
+@keyframes mltSheen { 0% { left:-60%; } 55%,100% { left:130%; } }
+/* থাম্বনেইল নেই / মুছে গেছে → "Movi Lover" ফুটে উঠছে, মিলিয়ে যাচ্ছে */
+.mlt-ph { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; pointer-events:none;
+  background:radial-gradient(circle at 50% 40%,rgba(139,92,246,.35),transparent 65%),linear-gradient(135deg,#221a34,#130f1d); }
+.mlt-ph b { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:clamp(14px,5.2vw,22px); letter-spacing:1.2px; line-height:1.05; color:#ffe08a;
+  text-shadow:0 0 14px rgba(245,197,66,.55); animation:mltBreath 2.4s ease-in-out infinite; }
+.mlt-ph b + b { color:#fff; animation-delay:.35s; }
+.mlt-ph i { display:flex; gap:4px; margin-top:6px; }
+.mlt-ph i span { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.7); animation:mltDot 1.2s ease-in-out infinite; }
+.mlt-ph i span:nth-child(2) { animation-delay:.18s; } .mlt-ph i span:nth-child(3) { animation-delay:.36s; }
+@keyframes mltBreath { 0%,100% { opacity:.18; transform:scale(.94); } 50% { opacity:1; transform:scale(1.03); } }
+@keyframes mltDot { 0%,100% { opacity:.2; transform:translateY(0); } 50% { opacity:1; transform:translateY(-3px); } }
+.mlt-host.mlt-missing > span:not(.mlt-wm):not(.mlt-ring):not(.mlt-sheen) { visibility:hidden; }
+.mlt-sm .mlt-ph b { font-size:9px; letter-spacing:.4px; } .mlt-sm .mlt-ph b + b, .mlt-sm .mlt-ph i { display:none; }
+@media (prefers-reduced-motion: reduce){ .mlt-ph b,.mlt-ph i span,.mlt-ring.pulse,.mlt-sheen:after { animation:none !important; } .mlt-ph b { opacity:1; } }
+</style>
 </head>
 <body>
 
@@ -1550,6 +1581,7 @@ window.addEventListener('firebaseReady', async()=>{
   checkExpiries();
   await ensureAuth();
   await loadSettings();
+  loadThumbStyle();
   await loadAdNetworkConfig();
   await loadVideoBotConfig();
   await loadLandingConfig();
@@ -3782,6 +3814,75 @@ if(window.Telegram?.WebApp){
   tg.setHeaderColor('#f6efe0');
   tg.setBackgroundColor('#f6efe0');
 }
+
+/* ===== থাম্বনেইল ব্র্যান্ডিং: ওয়াটারমার্ক + গ্লো + মিসিং থাম্বনেইলের প্লেসহোল্ডার ===== */
+const MLT_DEFAULT = { wm:true, wmText:'Movi Lover', wmOp:35, wmPos:'br', glow:true, glowColor:'#8b5cf6', glowInt:50, pulse:true, speed:3.2, sheen:false, phText:'Movi Lover' };
+let MLT = Object.assign({}, MLT_DEFAULT);
+const MLT_SEL = '.video-thumb,.pinned-thumb,.tutorial-video-thumb,.fav-row-thumb,.search-thumb,.hist-thumb';
+const MLT_SMALL = '.fav-row-thumb,.search-thumb,.hist-thumb';
+function mltClamp(v,a,b,d){ v = parseFloat(v); return isNaN(v) ? d : Math.min(b, Math.max(a, v)); }
+function mltSanitize(d){
+  const o = Object.assign({}, MLT_DEFAULT, d || {});
+  o.wm = o.wm !== false; o.glow = o.glow !== false; o.pulse = o.pulse !== false; o.sheen = !!o.sheen;
+  o.wmOp = mltClamp(o.wmOp, 0, 100, 35); o.glowInt = mltClamp(o.glowInt, 0, 100, 50); o.speed = mltClamp(o.speed, 1, 10, 3.2);
+  o.wmPos = ['br','bl','tr','tl','c'].indexOf(o.wmPos) > -1 ? o.wmPos : 'br';
+  o.glowColor = /^#[0-9a-f]{6}$/i.test(o.glowColor||'') ? o.glowColor : '#8b5cf6';
+  o.wmText = String(o.wmText || 'Movi Lover').slice(0, 24);
+  o.phText = String(o.phText || 'Movi Lover').slice(0, 24);
+  return o;
+}
+function mltApplyVars(){
+  const r = document.documentElement.style, c = MLT.glowColor;
+  const rgb = [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)].join(',');
+  r.setProperty('--mlt-wm-op', String(MLT.wmOp/100));
+  r.setProperty('--mlt-gi', String(MLT.glowInt/100));
+  r.setProperty('--mlt-gc', 'rgba(' + rgb + ',.85)');
+  r.setProperty('--mlt-gs', MLT.speed + 's');
+}
+function mltBrand(){
+  document.querySelectorAll(MLT_SEL).forEach(el=>{
+    const small = el.matches(MLT_SMALL);
+    el.classList.add('mlt-host'); el.classList.toggle('mlt-sm', small);
+    const img = el.querySelector('img');
+    const broken = !img || img.style.display === 'none' || (img.complete && img.naturalWidth === 0);
+    el.classList.toggle('mlt-missing', broken);
+    // প্লেসহোল্ডার
+    let ph = el.querySelector(':scope > .mlt-ph');
+    if(broken){
+      const words = MLT.phText.split(/\s+/).filter(Boolean);
+      const sig = words.join('|');
+      if(!ph){ ph = document.createElement('div'); ph.className = 'mlt-ph'; el.appendChild(ph); }
+      if(ph.getAttribute('data-sig') !== sig){
+        ph.setAttribute('data-sig', sig);
+        ph.innerHTML = words.slice(0,2).map(w=>'<b>' + escHtml(w) + '</b>').join('') + '<i><span></span><span></span><span></span></i>';
+      }
+    } else if(ph){ ph.remove(); }
+    // বড় থাম্বনেইলে ওয়াটারমার্ক, গ্লো, শিমার
+    const want = (cls, on, make)=>{
+      let n = el.querySelector(':scope > .' + cls.split(' ')[0]);
+      if(on && !small){ if(!n){ n = make(); el.appendChild(n); } }
+      else if(n){ n.remove(); n = null; }
+      return n;
+    };
+    const wm = want('mlt-wm', MLT.wm && !broken, ()=>{ const n = document.createElement('span'); n.className = 'mlt-wm'; return n; });
+    if(wm){ wm.className = 'mlt-wm p-' + MLT.wmPos; if(wm.textContent !== MLT.wmText) wm.textContent = MLT.wmText; }
+    const ring = want('mlt-ring', MLT.glow, ()=>{ const n = document.createElement('span'); n.className = 'mlt-ring'; return n; });
+    if(ring) ring.className = 'mlt-ring' + (MLT.pulse ? ' pulse' : '');
+    want('mlt-sheen', MLT.sheen, ()=>{ const n = document.createElement('span'); n.className = 'mlt-sheen'; return n; });
+  });
+}
+async function loadThumbStyle(){
+  try{ const d = await fbGetDoc('settings','thumbStyle'); if(d) MLT = mltSanitize(d); }catch(e){}
+  mltApplyVars(); mltBrand();
+}
+(function(){
+  let t = null;
+  const later = ()=>{ clearTimeout(t); t = setTimeout(mltBrand, 120); };
+  document.addEventListener('error', e=>{ if(e.target && e.target.tagName === 'IMG') later(); }, true);
+  document.addEventListener('load',  e=>{ if(e.target && e.target.tagName === 'IMG') later(); }, true);
+  try{ new MutationObserver(later).observe(document.body, { childList:true, subtree:true }); }catch(e){}
+  mltApplyVars(); later();
+})();
 
 /* বটের মেসেজ পাওয়ার অনুমতি: ইউজার সাইট খুললে টেলিগ্রামের নিজস্ব পপআপে "বট মেসেজ পাঠাতে পারবে?" জিজ্ঞেস করা হয়।
    "Allow" দিলে ইউজার আলাদা করে /start না দিলেও বট তাকে মেসেজ পাঠাতে পারে — এভাবেই সবাই নতুন বটে জয়েন হয়ে যায়।
