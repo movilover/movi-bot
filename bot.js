@@ -20,8 +20,10 @@
  */
 const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
+const { makeSigner, linkExistingAccount, createMigration } = require('./migration');
 
-const BOT_VERSION = 'v3-welcome'; // এডমিন প্যানেল "বট যাচাই" এটা দেখে বোঝে আপনি নতুন bot.js চালাচ্ছেন কি না
+const BOT_VERSION = 'v4-migration'; // এডমিন প্যানেল "বট যাচাই" এটা দেখে বোঝে আপনি নতুন bot.js চালাচ্ছেন কি না
 const SITE_URL = (process.env.SITE_URL || '').trim();
 const CHANNEL_ID = process.env.CHANNEL_ID || '';
 const DEFAULT_RATE = parseFloat(process.env.DEFAULT_RATE || '5');
@@ -29,6 +31,8 @@ const DEFAULT_RATE = parseFloat(process.env.DEFAULT_RATE || '5');
 admin.initializeApp(); // GOOGLE_APPLICATION_CREDENTIALS
 const db = admin.firestore();
 let bot = null;
+let signer = null;     // sync লিংক সাইন/যাচাই
+let migration = null; // পুরোনো বট থেকে ইউজার আনার ইঞ্জিন (migration.js)
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -283,9 +287,27 @@ function registerHandlers() {
     let isNew = false, referrer = null, refRaw = '';
     try {
       isNew = await upsertBotUser(from);
-      if (payload && !/^(v-|tk-)/.test(payload)) { referrer = await recordReferral(from, payload); refRaw = referrer || await resolveRef(payload); }
+      if (payload && !/^(v-|tk-|sync_)/.test(payload)) { referrer = await recordReferral(from, payload); refRaw = referrer || await resolveRef(payload); }
       if (!isNew) await markLeft(from.id, false).catch(() => {});
     } catch (e) { noteError('Firestore (/start)', e); }
+
+    // পুরোনো বট থেকে আসা ইউজারের অ্যাকাউন্ট যুক্ত করা। Telegram ID সব বটে একই, তাই from.id দিয়েই পুরোনো ডক মেলে —
+    // লিংকের `sync_<ID>_<সাইন>` থেকে কখনো পরিচয় নিই না (অন্যের ID বসিয়ে অ্যাকাউন্ট দখল ঠেকাতে)।
+    let linkedCount = 0, syncValid = false;
+    try {
+      linkedCount = await linkExistingAccount(db, from);
+      const sp = signer && signer.parse(payload);
+      if (sp) {
+        if (!sp.valid) console.warn('sync: সাইন মেলেনি', from.id);
+        else if (sp.oldId !== String(from.id)) {
+          console.warn('sync: লিংকের ID (' + sp.oldId + ') আর ইউজারের ID (' + from.id + ') মেলেনি — যুক্ত করা হয়নি');
+          await db.doc('bot_users/' + from.id).set({ migrationClaim: { oldId: sp.oldId, at: Date.now() } }, { merge: true });
+        } else {
+          syncValid = true;
+          await db.doc('bot_users/' + from.id).set({ migrationStatus: 'synced', migrationSyncedAt: Date.now() }, { merge: true });
+        }
+      }
+    } catch (e) { noteError('sync/link', e); }
 
     let w = null;
     try { w = await getWelcome(); } catch (e) { noteError('getWelcome', e); }
@@ -307,7 +329,12 @@ function registerHandlers() {
       noteError('/start reply', e);
       await ctx.reply('🎬 Movi Lover-এ স্বাগতম!').catch(() => {});
     }
-    if (isNew) console.log('new user', from.id, referrer ? '(ref ' + referrer + ')' : '');
+    if (syncValid) {
+      await ctx.reply(linkedCount > 0
+        ? '✅ আপনার আগের অ্যাকাউন্ট (ব্যালেন্স ও হিস্ট্রিসহ) নতুন বটের সাথে যুক্ত হয়েছে। কিছুই হারায়নি!'
+        : 'ℹ️ এই টেলিগ্রাম আইডিতে আগের কোনো অ্যাকাউন্ট পাওয়া যায়নি। সাইট খুলে নতুন করে শুরু করুন।').catch(() => {});
+    }
+    if (isNew) console.log('new user', from.id, referrer ? '(ref ' + referrer + ')' : '', syncValid ? '[sync]' : '');
   });
 
   bot.command('mylink', async ctx => {
@@ -383,6 +410,16 @@ function watchJobs() {
       const ref = ch.doc.ref;
       try { await ref.update({ status: 'sending', startedAt: Date.now() }); } catch (e) { return; }
       const j = ch.doc.data();
+      if (j.type === 'migration') {
+        try {
+          if (!migration) throw new Error('migration ইঞ্জিন প্রস্তুত নয়');
+          console.log('মাইগ্রেশন শুরু');
+          const r = await migration.run(j, p => ref.update({ progress: p }).catch(() => {}));
+          await ref.update({ status: 'done', result: r, finishedAt: Date.now() });
+          console.log('মাইগ্রেশন শেষ', r);
+        } catch (e) { noteError('migration', e); await ref.update({ status: 'failed', error: e.message }).catch(() => {}); }
+        return;
+      }
       const buttons = (j.buttons || []).filter(b => b.text && /^https?:\/\//i.test(b.url || '')).map(b => [{ text: b.text, url: b.url }]);
       try {
         const r = await broadcast({ text: j.text || ' ', photo: j.imageUrl || '', buttons }, p => ref.update({ progress: p }).catch(() => {}));
@@ -406,6 +443,9 @@ function watchJobs() {
 
   const me = await bot.telegram.getMe();
   bot.botInfo = me;
+  // SYNC_SECRET ঠিক করে রাখলে টোকেন বদলালেও আগের পাঠানো লিংকের সাইন বৈধ থাকে
+  signer = makeSigner(process.env.SYNC_SECRET || crypto.createHash('sha256').update(token + ':sync').digest('hex'));
+  migration = createMigration({ db, telegram: bot.telegram, botUsername: me.username, signer });
   console.log('বট চালু: @' + me.username);
   if (SITE_URL) {
     bot.telegram.setChatMenuButton({ menuButton: { type: 'web_app', text: '🎬 সাইট', web_app: { url: SITE_URL } } }).catch(e => console.error('menu button', e.message));
