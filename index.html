@@ -142,59 +142,37 @@ header {
 .notif-badge.show { display:block; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
 
-/* ============ ANNOUNCEMENT BANNER (premium, dismissible) ============ */
-.announce-banner {
-  display:none; align-items:center; gap:11px;
-  padding:11px 14px; margin:0;
-  background: linear-gradient(100deg, #1a1030 0%, #241245 45%, #0f2438 100%);
-  border-bottom:1px solid rgba(168,85,247,0.35);
-  box-shadow: 0 4px 22px rgba(139,92,246,0.28), inset 0 -1px 0 rgba(34,211,238,0.12);
-  position:relative; z-index:90; overflow:hidden;
-  max-height:0; opacity:0; transform:translateY(-14px);
-  transition: max-height 0.42s cubic-bezier(.22,.68,0,1.2), opacity 0.35s ease, transform 0.42s cubic-bezier(.22,.68,0,1.2), padding 0.42s;
-}
-.announce-banner.show { display:flex; max-height:120px; opacity:1; transform:translateY(0); }
-.announce-banner.hide { max-height:0 !important; opacity:0 !important; transform:translateY(-14px) !important; padding-top:0; padding-bottom:0; border-bottom-width:0; }
-.announce-banner::before {
-  content:''; position:absolute; inset:0; pointer-events:none;
-  background: radial-gradient(220px 60px at 15% 0%, rgba(34,211,238,0.18), transparent 70%),
-              radial-gradient(220px 60px at 90% 100%, rgba(168,85,247,0.22), transparent 70%);
-}
-.announce-icon-wrap {
-  position:relative; z-index:1; flex-shrink:0; width:36px; height:36px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(34,211,238,0.2));
-  border:1px solid rgba(34,211,238,0.4);
-  box-shadow: 0 0 14px rgba(168,85,247,0.5), 0 0 6px rgba(34,211,238,0.4);
-  animation: announceIconPulse 1.8s ease-in-out infinite;
-  overflow:hidden;
-}
-.announce-icon-wrap img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
-.announce-icon-fallback { font-size:18px; color:#67e8f9; }
-@keyframes announceIconPulse {
-  0%,100% { box-shadow: 0 0 14px rgba(168,85,247,0.5), 0 0 6px rgba(34,211,238,0.4); transform:scale(1); }
-  50% { box-shadow: 0 0 22px rgba(168,85,247,0.75), 0 0 12px rgba(34,211,238,0.65); transform:scale(1.08); }
-}
-.announce-text {
-  position:relative; z-index:1; flex:1; min-width:0; font-size:12px; line-height:1.5; color:#e9e4fb;
-}
-.announce-actions { position:relative; z-index:1; display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.announce-cta {
-  display:flex; align-items:center; gap:4px; padding:8px 14px; border-radius:20px;
-  background: linear-gradient(135deg, #a855f7 0%, #22d3ee 100%);
-  color:#07060d; font-family:'Rajdhani',sans-serif; font-weight:800; font-size:12px; letter-spacing:0.2px;
-  white-space:nowrap; text-decoration:none;
-  box-shadow: 0 0 16px rgba(34,211,238,0.45), 0 4px 12px rgba(168,85,247,0.35);
-  transition: transform 0.15s;
-}
-.announce-cta:active { transform:scale(0.94); }
-.announce-close {
-  width:26px; height:26px; border-radius:50%; flex-shrink:0; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#c9c3e0;
-}
-.announce-close:active { transform:scale(0.88); }
-.announce-close .material-icons-round { font-size:15px; }
+/* ============ ANNOUNCEMENT POPUP (premium, centered, dismissible) ============ */
+.announce-overlay{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;padding:22px;
+  background:rgba(6,4,14,0.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .35s ease}
+.announce-overlay.show{display:flex}
+.announce-overlay.in{opacity:1}
+.announce-card{position:relative;width:100%;max-width:340px;border-radius:22px;overflow:hidden;
+  background:linear-gradient(160deg,#1c1236 0%,#241245 50%,#0f2438 100%);
+  border:1px solid rgba(168,85,247,0.45);
+  box-shadow:0 0 0 1px rgba(34,211,238,0.12),0 18px 60px rgba(0,0,0,0.65),0 0 46px rgba(139,92,246,0.4);
+  transform:translateY(26px) scale(.92);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.25,1.15),opacity .35s ease}
+.announce-overlay.in .announce-card{transform:none;opacity:1}
+.announce-card::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(240px 120px at 10% 0%,rgba(34,211,238,0.16),transparent 70%),radial-gradient(240px 140px at 95% 100%,rgba(168,85,247,0.2),transparent 70%)}
+.announce-media{position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#2b1760,#0f3a52);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.announce-media img{width:100%;height:100%;object-fit:cover;display:block}
+.announce-media::after{content:'';position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,#1c1236)}
+.announce-icon-fallback{font-size:54px;color:#67e8f9;filter:drop-shadow(0 0 14px rgba(34,211,238,.7))}
+.announce-body{position:relative;z-index:1;padding:4px 20px 20px;text-align:center}
+.announce-title{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px;color:#fff;margin-bottom:6px;text-shadow:0 0 18px rgba(168,85,247,.55)}
+.announce-text{font-size:13px;line-height:1.65;color:#e0daf5;white-space:pre-line}
+.announce-cta{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:16px;padding:13px 16px;border-radius:14px;
+  background:linear-gradient(135deg,#a855f7 0%,#22d3ee 100%);color:#07060d;font-family:'Rajdhani',sans-serif;font-weight:800;font-size:15px;letter-spacing:.3px;
+  text-decoration:none;box-shadow:0 0 22px rgba(34,211,238,.45),0 8px 18px rgba(168,85,247,.38);position:relative;overflow:hidden;transition:transform .15s}
+.announce-cta::before{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:annSheen 2.8s ease-in-out infinite}
+@keyframes annSheen{0%{left:-60%}55%,100%{left:130%}}
+.announce-cta:active{transform:scale(.96)}
+.announce-cta .material-icons-round{font-size:19px}
+.announce-close{position:absolute;top:10px;right:10px;z-index:3;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  background:rgba(8,5,18,.62);border:1px solid rgba(255,255,255,.28);color:#fff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.announce-close:active{transform:scale(.88)}
+.announce-close .material-icons-round{font-size:18px}
 
 #pages { flex:1; overflow:hidden; position:relative; }
 .page { position:absolute; inset:0; overflow-y:auto; padding-bottom:calc(var(--nav-h) + 10px); display:none; flex-direction:column; }
@@ -980,15 +958,18 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
     </div>
   </header>
 
-  <div id="announcement-banner" class="announce-banner">
-    <div class="announce-icon-wrap">
-      <img id="announce-icon-img" style="display:none;" />
-      <span class="material-icons-round announce-icon-fallback" id="announce-icon-fallback">campaign</span>
-    </div>
-    <div class="announce-text" id="announce-text"></div>
-    <div class="announce-actions">
-      <a class="announce-cta" id="announce-cta" href="#" target="_blank" rel="noopener">যোগ দিন</a>
-      <div class="announce-close ripple" onclick="dismissAnnouncement()"><span class="material-icons-round">close</span></div>
+  <div id="announcement-banner" class="announce-overlay" onclick="if(event.target===this)dismissAnnouncement()">
+    <div class="announce-card" role="dialog" aria-modal="true">
+      <div class="announce-close ripple" onclick="dismissAnnouncement()" aria-label="বন্ধ করুন"><span class="material-icons-round">close</span></div>
+      <div class="announce-media">
+        <img id="announce-icon-img" style="display:none;" alt="" />
+        <span class="material-icons-round announce-icon-fallback" id="announce-icon-fallback">campaign</span>
+      </div>
+      <div class="announce-body">
+        <div class="announce-title" id="announce-title"></div>
+        <div class="announce-text" id="announce-text"></div>
+        <a class="announce-cta" id="announce-cta" href="#" onclick="return announceCta(event)"><span class="material-icons-round">send</span><span id="announce-cta-txt">যোগ দিন</span></a>
+      </div>
     </div>
   </div>
 
@@ -2128,12 +2109,15 @@ async function loadAnnouncement(){
   if(!s || !s.enabled || !s.text) return;
   const version = s.version || 1;
   const dismissKey = 'ml_announce_dismissed_v' + version;
-  if(localStorage.getItem(dismissKey)) return;
+  try{ if(localStorage.getItem(dismissKey)) return; }catch(e){}
 
+  const title = document.getElementById('announce-title');
+  title.textContent = s.title || ''; title.style.display = s.title ? '' : 'none';
   document.getElementById('announce-text').textContent = s.text;
   const cta = document.getElementById('announce-cta');
   if(s.buttonText && s.buttonUrl){
-    cta.textContent = s.buttonText;
+    document.getElementById('announce-cta-txt').textContent = s.buttonText;
+    cta.dataset.url = s.buttonUrl;
     cta.href = s.buttonUrl;
     cta.style.display = '';
   } else {
@@ -2142,9 +2126,9 @@ async function loadAnnouncement(){
   const iconImg = document.getElementById('announce-icon-img');
   const iconFallback = document.getElementById('announce-icon-fallback');
   if(s.icon){
+    iconImg.onerror = ()=>{ iconImg.style.display='none'; iconFallback.style.display=''; };
     iconImg.src = s.icon;
     iconImg.style.display = '';
-    iconImg.onerror = ()=>{ iconImg.style.display='none'; iconFallback.style.display=''; };
     iconFallback.style.display = 'none';
   } else {
     iconImg.style.display = 'none';
@@ -2152,16 +2136,39 @@ async function loadAnnouncement(){
   }
 
   STATE.announceDismissKey = dismissKey;
-  const banner = document.getElementById('announcement-banner');
-  banner.classList.remove('hide');
-  banner.classList.add('show');
-  dingSnd();
+  const ov = document.getElementById('announcement-banner');
+  setTimeout(()=>{
+    ov.classList.add('show');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>ov.classList.add('in')));
+    announceSound();
+  }, 700);
+}
+/* সাউন্ড: ব্রাউজার ইউজারের প্রথম ট্যাপের আগে অডিও আটকে দিতে পারে — তাই চেষ্টা করি, না পারলে প্রথম ট্যাপে বাজে */
+function announceSound(){
+  try{
+    const ac = gAC();
+    const go = ()=>{ [784,988,1319].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.28,0.12),i*120)); };
+    if(ac.state === 'suspended'){
+      ac.resume().then(()=>{ if(ac.state === 'running') go(); }).catch(()=>{});
+      if(ac.state !== 'running'){
+        const once = ()=>{ document.removeEventListener('pointerdown', once, true); try{ ac.resume(); }catch(e){} };
+        document.addEventListener('pointerdown', once, true);
+      }
+    } else go();
+  }catch(e){}
+}
+function announceCta(e){
+  const cta = document.getElementById('announce-cta'), url = cta.dataset.url;
+  dismissAnnouncement();
+  if(url && typeof openTelegramUrl === 'function' && /^https?:\/\/(t\.me|telegram\.me)\//i.test(url)){ if(e) e.preventDefault(); openTelegramUrl(url); return false; }
+  if(url){ if(e) e.preventDefault(); window.open(url, '_blank', 'noopener'); return false; }
+  return false;
 }
 function dismissAnnouncement(){
-  const banner = document.getElementById('announcement-banner');
-  banner.classList.add('hide');
-  banner.classList.remove('show');
-  if(STATE.announceDismissKey) localStorage.setItem(STATE.announceDismissKey, '1');
+  const ov = document.getElementById('announcement-banner');
+  ov.classList.remove('in');
+  setTimeout(()=>ov.classList.remove('show'), 350);
+  try{ if(STATE.announceDismissKey) localStorage.setItem(STATE.announceDismissKey, '1'); }catch(e){}
 }
 
 async function loadSettings(){
