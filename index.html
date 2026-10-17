@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Movi Lover</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/><link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
 
@@ -147,7 +148,8 @@ header {
   background:rgba(6,4,14,0.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .35s ease}
 .announce-overlay.show{display:flex}
 .announce-overlay.in{opacity:1}
-.announce-card{position:relative;width:100%;max-width:340px;border-radius:22px;overflow:hidden;
+.announce-wrap{position:relative;width:100%;max-width:340px}
+.announce-card{position:relative;width:100%;border-radius:22px;overflow:hidden;
   background:linear-gradient(160deg,#1c1236 0%,#241245 50%,#0f2438 100%);
   border:1px solid rgba(168,85,247,0.45);
   box-shadow:0 0 0 1px rgba(34,211,238,0.12),0 18px 60px rgba(0,0,0,0.65),0 0 46px rgba(139,92,246,0.4);
@@ -158,7 +160,19 @@ header {
 .announce-media{position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#2b1760,#0f3a52);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .announce-media img{width:100%;height:100%;object-fit:cover;display:block}
 .announce-media::after{content:'';position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,#1c1236)}
-.announce-icon-fallback{font-size:54px;color:#67e8f9;filter:drop-shadow(0 0 14px rgba(34,211,238,.7))}
+.announce-hero{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:radial-gradient(120% 90% at 20% 0%,#6d28d9 0%,transparent 60%),radial-gradient(110% 90% at 100% 100%,#0891b2 0%,transparent 62%),linear-gradient(135deg,#1b0f3b,#0b2540)}
+.announce-hero i{position:absolute;left:50%;top:50%;border-radius:50%;border:1.5px solid rgba(103,232,249,.4);transform:translate(-50%,-50%) scale(.4);opacity:0;animation:annRing 3s ease-out infinite}
+.announce-hero i:nth-child(2){animation-delay:1s}.announce-hero i:nth-child(3){animation-delay:2s}
+@keyframes annRing{0%{width:80px;height:80px;opacity:.9;transform:translate(-50%,-50%) scale(.6)}100%{width:300px;height:300px;opacity:0;transform:translate(-50%,-50%) scale(1)}}
+.announce-plane{position:relative;z-index:2;width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#a855f7,#22d3ee);box-shadow:0 0 36px rgba(34,211,238,.65),0 0 70px rgba(168,85,247,.5);animation:annFloat 2.6s ease-in-out infinite}
+.announce-plane svg{width:40px;height:40px;fill:#fff;margin-left:-3px;margin-top:2px}
+@keyframes annFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.announce-badge{position:absolute;left:12px;bottom:12px;z-index:3;padding:5px 10px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-weight:800;font-size:11.5px;letter-spacing:.8px;color:#fff;
+  background:rgba(8,5,18,.55);border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.announce-badge.r{left:auto;right:12px}
+.announce-title{text-wrap:balance}
 .announce-body{position:relative;z-index:1;padding:4px 20px 20px;text-align:center}
 .announce-title{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px;color:#fff;margin-bottom:6px;text-shadow:0 0 18px rgba(168,85,247,.55)}
 .announce-text{font-size:13px;line-height:1.65;color:#e0daf5;white-space:pre-line}
@@ -169,8 +183,11 @@ header {
 @keyframes annSheen{0%{left:-60%}55%,100%{left:130%}}
 .announce-cta:active{transform:scale(.96)}
 .announce-cta .material-icons-round{font-size:19px}
-.announce-close{position:absolute;top:10px;right:10px;z-index:3;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  background:rgba(8,5,18,.62);border:1px solid rgba(255,255,255,.28);color:#fff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.announce-wrap{transform:translateY(26px) scale(.92);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.25,1.15),opacity .35s ease}
+.announce-overlay.in .announce-wrap{transform:none;opacity:1}
+.announce-wrap .announce-card{transform:none;opacity:1;transition:none}
+.announce-close{position:absolute;top:-13px;right:-9px;z-index:5;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#2a1856,#140b2c);border:1.5px solid rgba(168,85,247,.75);color:#fff;box-shadow:0 0 0 3px rgba(10,6,22,.7),0 6px 18px rgba(0,0,0,.6),0 0 16px rgba(168,85,247,.55)}
 .announce-close:active{transform:scale(.88)}
 .announce-close .material-icons-round{font-size:18px}
 
@@ -959,16 +976,21 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
   </header>
 
   <div id="announcement-banner" class="announce-overlay" onclick="if(event.target===this)dismissAnnouncement()">
-    <div class="announce-card" role="dialog" aria-modal="true">
+    <div class="announce-wrap">
       <div class="announce-close ripple" onclick="dismissAnnouncement()" aria-label="বন্ধ করুন"><span class="material-icons-round">close</span></div>
-      <div class="announce-media">
-        <img id="announce-icon-img" style="display:none;" alt="" />
-        <span class="material-icons-round announce-icon-fallback" id="announce-icon-fallback">campaign</span>
-      </div>
-      <div class="announce-body">
-        <div class="announce-title" id="announce-title"></div>
-        <div class="announce-text" id="announce-text"></div>
-        <a class="announce-cta" id="announce-cta" href="#" onclick="return announceCta(event)"><span class="material-icons-round">send</span><span id="announce-cta-txt">যোগ দিন</span></a>
+      <div class="announce-card" role="dialog" aria-modal="true">
+        <div class="announce-media">
+          <div class="announce-hero" id="announce-hero"><i></i><i></i><i></i>
+            <div class="announce-plane"><svg viewBox="0 0 24 24"><path d="M21.9 3.4 2.6 10.8c-1.3.5-1.3 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.1.8.7.8.5 0 .7-.2 1-.5l2.4-2.3 4.9 3.6c.9.5 1.5.2 1.7-.8l3.2-15.1c.3-1.3-.5-1.9-1.4-1.5ZM8.6 13.5l9.6-6c.5-.3.9-.1.5.2l-8 7.2-.3 3.3-1.8-4.7Z"/></svg></div>
+            <span class="announce-badge">🔥 VIRAL VIDEOS</span><span class="announce-badge r">Movi Lover</span>
+          </div>
+          <img id="announce-icon-img" style="display:none;position:relative;z-index:1" alt="" />
+        </div>
+        <div class="announce-body">
+          <div class="announce-title" id="announce-title"></div>
+          <div class="announce-text" id="announce-text"></div>
+          <a class="announce-cta" id="announce-cta" href="#" onclick="return announceCta(event)"><span class="material-icons-round">send</span><span id="announce-cta-txt">যোগ দিন</span></a>
+        </div>
       </div>
     </div>
   </div>
@@ -1561,22 +1583,20 @@ function ensureAuth(){
 window.addEventListener('firebaseReady', async()=>{
   checkExpiries();
   await ensureAuth();
-  await loadSettings();
-  loadThumbStyle();
-  await loadAdNetworkConfig();
-  await loadVideoBotConfig();
-  await loadLandingConfig();
-  await loadVideoRewardConfig();
-  await loadCategories();
+  // স্বাধীন কনফিগ/ডাটা একসাথে (আগে একটার পর একটা — ওয়াটারফল — ছিল, তাই ধীর লাগত)
+  const safe = f => { try{ return Promise.resolve(f()).catch(()=>{}); }catch(e){ return Promise.resolve(); } };
+  await Promise.all([
+    safe(async()=>{ await loadSettings(); loadThumbStyle(); }),
+    safe(loadAdNetworkConfig), safe(loadVideoBotConfig), safe(loadLandingConfig), safe(loadVideoRewardConfig),
+    safe(loadCategories), safe(loadTutorialVideo), safe(loadChannels)
+  ]);
+  subscribeVideos();            // ভিডিও লিস্ট সবচেয়ে আগে শুরু
   await ensureUserDoc();
-  await loadTutorialVideo();
-  subscribeVideos();
-  await loadChannels();
-  await loadNotifications();
-  await loadTasksAndLedger();
-  initProfile();
-  hideSplash();
+  hideSplash();                 // স্প্ল্যাশ আর ওয়ালেট/নোটিফিকেশনের জন্য আটকে থাকে না
   loadAnnouncement();
+  await safe(loadNotifications);
+  await safe(loadTasksAndLedger);
+  initProfile();
 });
 setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },4500);
 
@@ -2106,34 +2126,28 @@ async function fbGetWhere(col,field,value){
 async function loadAnnouncement(){
   let s;
   try{ s = await fbGetDoc('settings','announcement'); }catch(e){ return; }
-  if(!s || !s.enabled || !s.text) return;
+  if(!s || !s.enabled) return;
+  const url = s.buttonUrl || STATE.officialChannelUrl || '';
+  if(!url && !s.text) return;
   const version = s.version || 1;
   const dismissKey = 'ml_announce_dismissed_v' + version;
   try{ if(localStorage.getItem(dismissKey)) return; }catch(e){}
 
   const title = document.getElementById('announce-title');
-  title.textContent = s.title || ''; title.style.display = s.title ? '' : 'none';
-  document.getElementById('announce-text').textContent = s.text;
+  title.textContent = s.title || 'সকল ভাইরাল ভিডিও পেতে আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন';
+  document.getElementById('announce-text').textContent = s.text || 'সব নতুন ও ভাইরাল ভিডিও সবার আগে পেতে এখনই চ্যানেলে যুক্ত হোন।';
   const cta = document.getElementById('announce-cta');
-  if(s.buttonText && s.buttonUrl){
-    document.getElementById('announce-cta-txt').textContent = s.buttonText;
-    cta.dataset.url = s.buttonUrl;
-    cta.href = s.buttonUrl;
-    cta.style.display = '';
-  } else {
-    cta.style.display = 'none';
-  }
+  if(url){
+    document.getElementById('announce-cta-txt').textContent = s.buttonText || 'জয়েন টেলিগ্রাম চ্যানেল';
+    cta.dataset.url = url; cta.href = url; cta.style.display = '';
+  } else cta.style.display = 'none';
   const iconImg = document.getElementById('announce-icon-img');
-  const iconFallback = document.getElementById('announce-icon-fallback');
+  const hero = document.getElementById('announce-hero');
   if(s.icon){
-    iconImg.onerror = ()=>{ iconImg.style.display='none'; iconFallback.style.display=''; };
+    iconImg.onload = ()=>{ hero.style.display = 'none'; iconImg.style.display = ''; };
+    iconImg.onerror = ()=>{ iconImg.style.display = 'none'; hero.style.display = ''; };
     iconImg.src = s.icon;
-    iconImg.style.display = '';
-    iconFallback.style.display = 'none';
-  } else {
-    iconImg.style.display = 'none';
-    iconFallback.style.display = '';
-  }
+  } else { iconImg.style.display = 'none'; hero.style.display = ''; }
 
   STATE.announceDismissKey = dismissKey;
   const ov = document.getElementById('announcement-banner');
@@ -2141,7 +2155,7 @@ async function loadAnnouncement(){
     ov.classList.add('show');
     requestAnimationFrame(()=>requestAnimationFrame(()=>ov.classList.add('in')));
     announceSound();
-  }, 700);
+  }, 500);
 }
 /* সাউন্ড: ব্রাউজার ইউজারের প্রথম ট্যাপের আগে অডিও আটকে দিতে পারে — তাই চেষ্টা করি, না পারলে প্রথম ট্যাপে বাজে */
 function announceSound(){
@@ -3907,6 +3921,14 @@ function askBotWriteAccess(){
   }catch(e){}
 }
 askBotWriteAccess();
+
+/* ছবি দেখা গেলে তবেই লোড (দ্রুত স্ক্রিন) */
+(function(){
+  const fix = r => { (r.querySelectorAll ? r.querySelectorAll('img:not([loading])') : []).forEach(i=>{ if(i.id!=='announce-icon-img'){ i.loading='lazy'; i.decoding='async'; } }); };
+  try{
+    new MutationObserver(m=>m.forEach(x=>x.addedNodes.forEach(n=>{ if(n.nodeType===1){ if(n.tagName==='IMG' && !n.hasAttribute('loading')){ n.loading='lazy'; n.decoding='async'; } else fix(n); } }))).observe(document.documentElement,{childList:true,subtree:true});
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
