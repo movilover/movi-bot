@@ -38,21 +38,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /* ---------------- সেটিংস (Firestore থেকে, ৩০ সেকেন্ড ক্যাশ) ---------------- */
-let siteCache = { at: 0, base: '' };
+let siteCache = { at: 0, base: '', appUrl: '', appOn: true };
 async function webappBase() {
   if (Date.now() - siteCache.at < 30000 && siteCache.base) return siteCache.base;
+  let appUrl = '', appOn = true;
   // ফলব্যাক আগে ঠিক করি: env লিংক, নইলে চলতি বটের নিজের ইউজারনেম (Firestore ব্যর্থ হলেও লিংক কখনো খালি হবে না)
   let base = (process.env.WEBAPP_LINK || '').replace(/\/$/, '');
   if (!base && bot && bot.botInfo && bot.botInfo.username) base = 'https://t.me/' + bot.botInfo.username;
   try {
     const d = await db.doc('settings/site').get();
+    if (d.exists) { appUrl = String(d.data().appUrl || ''); appOn = d.data().appEnabled !== false; }
     if (d.exists && d.data().botUsername) {
       const u = String(d.data().botUsername).replace(/^@/, '');
       const app = String(d.data().appShort || '').replace(/[^A-Za-z0-9_]/g, '');
       base = `https://t.me/${u}${app ? '/' + app : ''}`;
     }
   } catch (e) { noteError('settings/site পড়া', e); }
-  siteCache = { at: Date.now(), base };
+  siteCache = { at: Date.now(), base, appUrl, appOn };
   return base;
 }
 async function startappLink(param) { return (await webappBase()) + '?startapp=' + param; }
@@ -242,6 +244,8 @@ async function welcomeButtons(w, refId) {
     else rows.push([{ text: w.b1Label, url: await startappLink(refId ? 'r-' + refId : 'home') }]);
   }
   if (w.b2Label && /^https?:\/\//i.test(w.b2Url || '')) rows.push([{ text: w.b2Label, url: w.b2Url }]);
+  await webappBase();
+  if (siteCache.appOn && /^https:\/\//i.test(siteCache.appUrl || '')) rows.push([{ text: '📲 অ্যাপ ডাউনলোড', url: siteCache.appUrl }]);
   return rows;
 }
 /* অবস্থা/ত্রুটি Firestore-এ লিখে রাখি (settings/botStatus) — এডমিন প্যানেলের "বট যাচাই করুন" বাটনে দেখা যায় */
@@ -335,6 +339,14 @@ function registerHandlers() {
         : 'ℹ️ এই টেলিগ্রাম আইডিতে আগের কোনো অ্যাকাউন্ট পাওয়া যায়নি। সাইট খুলে নতুন করে শুরু করুন।').catch(() => {});
     }
     if (isNew) console.log('new user', from.id, referrer ? '(ref ' + referrer + ')' : '', syncValid ? '[sync]' : '');
+  });
+
+  // /app — Android অ্যাপের ডাউনলোড লিংক
+  bot.command('app', async ctx => {
+    await webappBase();
+    if (!/^https:\/\//i.test(siteCache.appUrl || '')) return ctx.reply('অ্যাপের লিংক এখনো সেট করা হয়নি।');
+    await ctx.reply('📲 Movi Lover Android অ্যাপ ডাউনলোড করুন। ফাইল খুলে ইনস্টল করুন (প্রয়োজনে "অজানা উৎস থেকে ইনস্টল" অনুমতি দিন)।',
+      { reply_markup: { inline_keyboard: [[{ text: '📲 অ্যাপ ডাউনলোড', url: siteCache.appUrl }]] } });
   });
 
   bot.command('mylink', async ctx => {
