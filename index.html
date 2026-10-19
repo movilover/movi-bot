@@ -143,6 +143,34 @@ header {
 .notif-badge.show { display:block; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
 
+/* ============ APP DOWNLOAD (header pill + sheet) ============ */
+.app-dl-btn{display:none;align-items:center;gap:5px;height:34px;padding:0 12px 0 9px;border-radius:17px;cursor:pointer;white-space:nowrap;position:relative;overflow:hidden;
+  font-family:'Rajdhani','Hind Siliguri',sans-serif;font-weight:800;font-size:12.5px;letter-spacing:.2px;color:#1a0f00;
+  background:linear-gradient(135deg,#f7d070 0%,#d9a53f 55%,#b98626 100%);box-shadow:0 0 14px rgba(217,165,63,.45),0 3px 10px rgba(0,0,0,.25)}
+.app-dl-btn .material-icons-round{font-size:17px}
+.app-dl-btn::after{content:'';position:absolute;top:0;bottom:0;width:36%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-20deg);animation:annSheen 3.2s ease-in-out infinite}
+.app-dl-btn:active{transform:scale(.95)}
+.app-sheet{position:fixed;inset:0;z-index:9997;display:none;align-items:flex-end;justify-content:center;background:rgba(6,4,14,.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .3s}
+.app-sheet.show{display:flex}.app-sheet.in{opacity:1}
+.app-card{position:relative;width:100%;max-width:460px;border-radius:24px 24px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom));text-align:center;
+  background:linear-gradient(165deg,#1c1236,#241245 55%,#0f2438);border:1px solid rgba(168,85,247,.45);border-bottom:0;box-shadow:0 -10px 50px rgba(139,92,246,.4);
+  transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.9,.25,1.05)}
+.app-sheet.in .app-card{transform:none}
+.app-card .app-logo{width:84px;height:84px;margin:-62px auto 10px;border-radius:22px;box-shadow:0 0 30px rgba(168,85,247,.6),0 10px 24px rgba(0,0,0,.5);overflow:hidden}
+.app-card .app-logo svg{width:100%;height:100%;display:block}
+.app-card h3{margin:0 0 4px;font-family:'Rajdhani',sans-serif;font-weight:800;font-size:22px;color:#fff}
+.app-card .sub{font-size:12.5px;color:#cfc8ea;margin-bottom:14px}
+.app-feats{display:grid;gap:8px;text-align:left;margin:0 0 16px}
+.app-feats div{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#e6e0f8;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.app-feats .material-icons-round{font-size:18px;color:#67e8f9}
+.app-go{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:15px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:800;font-size:16px;color:#07060d;
+  background:linear-gradient(135deg,#a855f7,#22d3ee);box-shadow:0 0 22px rgba(34,211,238,.45),0 8px 18px rgba(168,85,247,.38);position:relative;overflow:hidden}
+.app-go::before{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:annSheen 2.8s ease-in-out infinite}
+.app-go:active{transform:scale(.97)}
+.app-note{margin-top:12px;font-size:11px;line-height:1.6;color:#a79fc7}
+.app-card .app-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff}
+.app-x .material-icons-round{font-size:18px}
+
 /* ============ ANNOUNCEMENT POPUP (premium, centered, dismissible) ============ */
 .announce-overlay{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;padding:22px;
   background:rgba(6,4,14,0.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .35s ease}
@@ -967,6 +995,7 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
       <span class="logo-movi">Movi</span>&nbsp;<span class="logo-lover">Lover</span>
     </div>
     <div class="header-actions">
+      <div class="app-dl-btn" id="app-dl-btn" onclick="openAppSheet()"><span class="material-icons-round">android</span>অ্যাপ ডাউনলোড</div>
       <div class="icon-btn ripple" onclick="openSearch()"><span class="material-icons-round">search</span></div>
       <div class="icon-btn ripple" onclick="openNotif()">
         <span class="material-icons-round">notifications</span>
@@ -992,6 +1021,39 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#130d1f 100%); border-top:1px s
           <a class="announce-cta" id="announce-cta" href="#" onclick="return announceCta(event)"><span class="material-icons-round">send</span><span id="announce-cta-txt">যোগ দিন</span></a>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="app-sheet" class="app-sheet" onclick="if(event.target===this)closeAppSheet()">
+    <div class="app-card" role="dialog" aria-modal="true">
+      <div class="app-x" onclick="closeAppSheet()"><span class="material-icons-round">close</span></div>
+      <div class="app-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs>
+  <linearGradient id="abg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1262"/><stop offset=".55" stop-color="#150a33"/><stop offset="1" stop-color="#08243d"/></linearGradient>
+  <linearGradient id="aring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7d070"/><stop offset=".5" stop-color="#d9a53f"/><stop offset="1" stop-color="#a97a2b"/></linearGradient>
+  <linearGradient id="acore" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
+  <radialGradient id="ahalo"><stop offset=".6" stop-color="#a855f7" stop-opacity=".55"/><stop offset="1" stop-color="#a855f7" stop-opacity="0"/></radialGradient>
+  <radialGradient id="aglow" cx=".2" cy=".1" r=".9"><stop offset="0" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/></radialGradient>
+  <radialGradient id="aglow2" cx=".95" cy=".95" r=".8"><stop offset="0" stop-color="#06b6d4" stop-opacity=".45"/><stop offset="1" stop-color="#06b6d4" stop-opacity="0"/></radialGradient>
+</defs><rect width="512" height="512" rx="112" fill="url(#abg)"/><rect width="512" height="512" rx="112" fill="url(#aglow)"/><rect width="512" height="512" rx="112" fill="url(#aglow2)"/>
+  <circle cx="256" cy="248" r="190.4" fill="url(#ahalo)"/>
+  <circle cx="256" cy="248" r="170" fill="url(#aring)"/>
+  <circle cx="256" cy="248" r="153.0" fill="#12082a"/>
+  <circle cx="256" cy="248" r="108.8" fill="url(#acore)"/>
+  <circle cx="388.60" cy="248.00" r="14.45" fill="#e0b04a" fill-opacity=".8"/><circle cx="349.76" cy="341.76" r="14.45" fill="#e0b04a" fill-opacity=".8"/><circle cx="256.00" cy="380.60" r="14.45" fill="#e0b04a" fill-opacity=".8"/><circle cx="162.24" cy="341.76" r="14.45" fill="#e0b04a" fill-opacity=".8"/><circle cx="123.40" cy="248.00" r="14.45" fill="#e0b04a" fill-opacity=".8"/><circle cx="162.24" cy="154.24" r="14.45" fill="#e0b04a" fill-opacity=".8"/><circle cx="256.00" cy="115.40" r="14.45" fill="#e0b04a" fill-opacity=".8"/><circle cx="349.76" cy="154.24" r="14.45" fill="#e0b04a" fill-opacity=".8"/>
+  <polygon points="211.73,176.60 211.73,319.40 333.11,248.00" fill="#fff" stroke="#fff" stroke-width="11.90" stroke-linejoin="round"/>
+  <g transform="translate(368.20,370.40) scale(3.696)">
+    <circle r="19" fill="#12082a" stroke="url(#aring)" stroke-width="3"/>
+    <path d="M0 9.5C-11 2 -12.5 -4.5 -8 -8.5c3.2-2.6 6.6-1.2 8 1.7 1.4-2.9 4.8-4.3 8-1.7 4.5 4 3 10.5-8 18Z" fill="#ff4d8d"/>
+  </g></svg></div>
+      <h3>Movi Lover অ্যাপ</h3>
+      <div class="sub">Android ফোনের জন্য অফিসিয়াল অ্যাপ</div>
+      <div class="app-feats">
+        <div><span class="material-icons-round">bolt</span>দ্রুত খোলে, ব্রাউজার ছাড়াই ফুল স্ক্রিন</div>
+        <div><span class="material-icons-round">swipe_vertical</span>স্ক্রল ও ব্যাক বাটন ঠিকমতো কাজ করে</div>
+        <div><span class="material-icons-round">autorenew</span>সাইটের নতুন আপডেট অ্যাপে নিজে থেকেই আসে</div>
+      </div>
+      <div class="app-go ripple" onclick="downloadApp()"><span class="material-icons-round">download</span>অ্যাপ ডাউনলোড করুন</div>
+      <div class="app-note">ডাউনলোডের পর ফাইলটি খুলুন। ফোন "অজানা উৎস থেকে ইনস্টল" অনুমতি চাইলে <b>অনুমতি দিন</b>, তারপর ইনস্টল করুন।</div>
     </div>
   </div>
 
@@ -2185,12 +2247,48 @@ function dismissAnnouncement(){
   try{ if(STATE.announceDismissKey) localStorage.setItem(STATE.announceDismissKey, '1'); }catch(e){}
 }
 
+/* ===================== APP DOWNLOAD (settings/site.appUrl) ===================== */
+const IN_APP = /MoviLoverApp/i.test(navigator.userAgent);
+function appDlSupported(){ return !IN_APP && !/iPhone|iPad|iPod/i.test(navigator.userAgent); }
+function refreshAppButton(){
+  const b = document.getElementById('app-dl-btn'); if(!b) return;
+  b.style.display = (STATE.appUrl && STATE.appEnabled !== false && appDlSupported()) ? 'flex' : 'none';
+}
+function openAppSheet(){
+  if(!STATE.appUrl) return;
+  const el = document.getElementById('app-sheet');
+  el.classList.add('show'); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('in')));
+  try{ clickSnd(); }catch(e){}
+}
+function closeAppSheet(){
+  const el = document.getElementById('app-sheet');
+  el.classList.remove('in'); setTimeout(()=>el.classList.remove('show'), 320);
+}
+function downloadApp(){
+  if(!STATE.appUrl) return;
+  openExternal(STATE.appUrl);   // টেলিগ্রামের ভেতরে হলে বাইরের ব্রাউজারে খুলে ডাউনলোড শুরু হয়
+  closeAppSheet();
+}
+/* অ্যাপের (Android খোলস) ব্যাক বাটন: পপআপ বন্ধ → অন্য পেজ থেকে হোমে → না পারলে অ্যাপ নিজে বের হবে */
+window.__appBack = function(){
+  const open = id => { const e = document.getElementById(id); return !!(e && (e.classList.contains('open') || e.classList.contains('show'))); };
+  if(open('app-sheet')){ closeAppSheet(); return true; }
+  if(open('announcement-banner')){ dismissAnnouncement(); return true; }
+  if(open('player-modal')){ closePlayer(); return true; }
+  if(open('search-modal')){ closeSearch(); return true; }
+  if(open('notif-modal')){ closeNotif(); return true; }
+  if(open('avatar-modal')){ closeAvatarPicker(); return true; }
+  if(STATE.currentPage && STATE.currentPage !== 'home'){ showPage('home'); return true; }
+  return false;
+};
+
 async function loadSettings(){
   const s=await fbGetDoc('settings','site');
   if(s && s.name){ STATE.siteName = s.name; document.getElementById('pdp-site').innerHTML = `<span class="material-icons-round">verified</span>${escHtml(s.name)}`; }
   if(s && s.adminContactUrl){ STATE.adminContactUrl = s.adminContactUrl; }
   if(s && s.officialChannelUrl){ STATE.officialChannelUrl = s.officialChannelUrl; }
   if(s && s.shortsUrl){ STATE.shortsUrl = s.shortsUrl; }
+  if(s){ STATE.appUrl = s.appUrl || ''; STATE.appEnabled = s.appEnabled !== false; refreshAppButton(); }
 }
 
 function showBannerAd(){
