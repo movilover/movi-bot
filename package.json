@@ -1,11 +1,12 @@
 {
-  "name": "movi-lover-bot",
+  "name": "movielover-stream",
   "version": "1.0.0",
-  "private": true,
-  "main": "bot.js",
-  "scripts": { "start": "node bot.js" },
+  "description": "Movie Lover Telegram video stream server",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
   "dependencies": {
-    "firebase-admin": "^12.0.0",
-    "telegraf": "^4.16.3"
+    "big-integer": "^1.6.52",
+    "telegram": "^2.26.8"
   }
 }
