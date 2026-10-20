@@ -1925,6 +1925,12 @@ function checkExpiries(){
   let changed = false;
   Object.keys(STATE.unlockExpiry).forEach(id=>{
     if(STATE.unlockExpiry[id] <= now){
+      if(isInApp() && STATE.currentVideo && STATE.currentVideo.id===id && document.getElementById('player-modal').classList.contains('open')){
+        // watching right now: keep this session unlocked (all parts) while the player is open
+        STATE.unlockExpiry[id] = now + UNLOCK_WINDOW_MS;
+        localStorage.setItem('ml_unlock_expiry', JSON.stringify(STATE.unlockExpiry));
+        return;
+      }
       delete STATE.unlockExpiry[id];
       const idx = STATE.unlocked.indexOf(id);
       if(idx>-1){ STATE.unlocked.splice(idx,1); changed = true; }
@@ -2248,7 +2254,7 @@ function dismissAnnouncement(){
 }
 
 /* ===================== APP DOWNLOAD (settings/site.appUrl) ===================== */
-const IN_APP = /MoviLoverApp/i.test(navigator.userAgent);
+const IN_APP = isInApp();
 function appDlSupported(){ return !IN_APP && !/iPhone|iPad|iPod/i.test(navigator.userAgent); }
 function refreshAppButton(){
   const b = document.getElementById('app-dl-btn'); if(!b) return;
@@ -2464,7 +2470,12 @@ function renderVideos(videos){
   }
 }
 function cssEscape(s){ return String(s).replace(/["\\]/g,'\\$&'); }
-function adsReq(v){ return Math.max(1, parseInt(v.adsRequired)||3); }
+/* ===================== APP MODE (Movie Lover APK) =====================
+   The Android shell adds "MoviLoverApp/x.y" to the user-agent and exposes window.AndroidApp.
+   Inside the app: no landing pages / direct links — exactly 3 ads, then the in-app player.
+   Telegram bot / Mini App / normal browser: everything works exactly as before. */
+function isInApp(){ return /MoviLoverApp/i.test(navigator.userAgent) || typeof window.AndroidApp !== 'undefined'; }
+function adsReq(v){ if(isInApp()) return 3; return Math.max(1, parseInt(v.adsRequired)||3); }
 function videoParts(v){ return (v.parts && v.parts.length) ? v.parts : [{url:v.url}]; }
 function getTaskStep(id){ return STATE.taskStepByVideo[id]||0; }
 function setTaskStep(id, step){ STATE.taskStepByVideo[id]=step; localStorage.setItem('ml_task_step', JSON.stringify(STATE.taskStepByVideo)); }
@@ -2629,6 +2640,7 @@ function moreVideosMarkup(){
 function openWatchNow(id){
   const v = findVideo(id);
   if(!v) return;
+  if(isInApp()){ openInAppPlayer(v, 0); return; }
   const parts = videoParts(v);
   const tgParts = parts.filter(p=>p.tgFileId);
   const url = (parts[0] && parts[0].url) || v.url;
@@ -2793,7 +2805,7 @@ function runAdStep(){
   const v = STATE.currentVideo;
   const stepNum = STATE.taskStep + 1;
   // new per-step network sets, or an old single directLinks[step] (auto-wrapped) -> landing page flow
-  if(stepLinkSet(v, stepNum)){
+  if(!isInApp() && stepLinkSet(v, stepNum)){
     runLandingUnlockStep(v, stepNum);
     return;
   }
@@ -2842,6 +2854,15 @@ function onSingleAdWatched(){
   STATE.taskStep++;
   if(v) setTaskStep(v.id, STATE.taskStep);
   stepDoneSnd();
+  if(isInApp() && STATE.taskStep < STATE.taskAdsRequired){
+    // app: keep the counter open and start the next ad by itself
+    STATE.verifyModalOpen = true;
+    resetAdModalToPlayingState();
+    const t = document.getElementById('verify-timer-text');
+    if(t) t.textContent = '✅ ' + STATE.taskStep + '/' + STATE.taskAdsRequired + ' সম্পন্ন — পরের বিজ্ঞাপন আসছে...';
+    setTimeout(()=>{ if(STATE.verifyModalOpen && !STATE.verifyActive) runAdStep(); }, 1100);
+    return;
+  }
   STATE.verifyModalOpen = false;
   document.getElementById('verify-modal').classList.remove('open');
   renderVideos(STATE.filteredVideos);
@@ -2876,6 +2897,7 @@ function finishUnlock(){
 
   STATE.taskStep = 0;
   renderVideos(STATE.filteredVideos); renderPinnedRow(); updateProfileStats();
+  if(isInApp()) setTimeout(()=>openInAppPlayer(v, 0), 1000);
 }
 
 /* ===================== LANDING-PAGE UNLOCK STEP =====================
@@ -3060,10 +3082,79 @@ function switchPart(idx){
   const parts = STATE.currentParts;
   if(!parts || !parts[idx]) return;
   STATE.currentPartIdx = idx;
-  renderPlayerMedia(parts[idx].url);
   document.querySelectorAll('.part-btn').forEach((b,i)=>b.classList.toggle('active', i===idx));
   const baseTitle = (STATE.currentVideo && STATE.currentVideo.title) || 'ভিডিও';
   document.getElementById('player-title-text').textContent = baseTitle + ' - পার্ট ' + (idx+1);
+  loadPart(idx);          // no new ads: the video is already unlocked for this session
+}
+
+/* ===================== IN-APP PLAYER (Blogger / YouTube / direct / Telegram bot file) =====================
+   - part.url  -> Blogger video.g / YouTube iframe, or a normal <video> for direct links
+   - part.tgFileId -> Bot API getFile -> https://api.telegram.org/file/bot.../path streamed in <video>
+     (Telegram Bot API only serves files up to 20 MB — bigger ones need a Blogger/direct link) */
+async function resolvePartUrl(part){
+  if(part.url) return part.url;
+  if(part.tgFileId){
+    if(part._tgUrl && Date.now() - part._tgAt < 50*60*1000) return part._tgUrl;
+    if(!STATE.videoBot || !STATE.videoBot.token) throw new Error('no-bot');
+    const r = await tgBot('getFile', { file_id: part.tgFileId });
+    if(!r || !r.ok || !r.result || !r.result.file_path) throw new Error('tg-too-big');
+    part._tgUrl = 'https://api.telegram.org/file/bot' + STATE.videoBot.token + '/' + r.result.file_path;
+    part._tgAt = Date.now();
+    return part._tgUrl;
+  }
+  throw new Error('no-source');
+}
+function playerMessage(html){
+  const wrap = document.getElementById('player-video-wrap');
+  if(wrap) wrap.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#e9e4fb;text-align:center;padding:16px;font-size:14px;line-height:1.5;">${html}</div>`;
+}
+async function loadPart(idx, isRetry){
+  const v = STATE.currentVideo; if(!v) return;
+  const parts = videoParts(v), part = parts[idx]; if(!part) return;
+  const my = window._playerReq = (window._playerReq||0) + 1;
+  playerMessage('<span class="material-icons-round" style="font-size:36px;opacity:.8;">hourglass_top</span><span>ভিডিও লোড হচ্ছে...</span>');
+  let url;
+  try{ url = await resolvePartUrl(part); }
+  catch(e){
+    if(my !== window._playerReq) return;
+    const msg = e.message === 'tg-too-big' ? 'এই ভিডিওটি অ্যাপে চালানো যাচ্ছে না (ফাইল বড়)।'
+              : e.message === 'no-source' ? 'এই পার্টের ভিডিও লিংক পাওয়া যায়নি।'
+              : 'ভিডিও লোড করা যায়নি।';
+    playerMessage(`<span class="material-icons-round" style="font-size:36px;color:#f87171;">error_outline</span><span>${msg}</span><button class="part-btn active ripple" onclick="loadPart(${idx})">আবার চেষ্টা করুন</button>`);
+    return;
+  }
+  if(my !== window._playerReq) return;       // user switched part / closed meanwhile
+  renderPlayerMedia(url);
+  const mv = document.getElementById('main-video');
+  if(mv){
+    mv.onended = ()=>{ const n = idx + 1; if(parts[n]){ toast('▶️ পরের পার্ট চালু হচ্ছে...'); switchPart(n); } };
+    mv.onerror = ()=>{                       // expired Telegram link etc. -> one automatic retry
+      if(isRetry || !part.tgFileId || part.url || my !== window._playerReq) { playerMessage(`<span class="material-icons-round" style="font-size:36px;color:#f87171;">error_outline</span><span>ভিডিও চালানো যাচ্ছে না।</span><button class="part-btn active ripple" onclick="loadPart(${idx})">আবার চেষ্টা করুন</button>`); return; }
+      part._tgUrl = null; loadPart(idx, true);
+    };
+  }
+}
+function openInAppPlayer(v, idx){
+  if(!v) return;
+  const parts = videoParts(v);
+  if(!parts.some(p=>p.url || p.tgFileId)){ toast('⚠️ এই ভিডিওর লিংক পাওয়া যায়নি।'); return; }
+  STATE.currentVideo = v;
+  idx = Math.min(Math.max(0, idx||0), parts.length-1);
+  registerWatch(v);
+  document.getElementById('player-title-text').textContent = (v.title||'ভিডিও') + (parts.length>1 ? ' - পার্ট ' + (idx+1) : '');
+  document.getElementById('pdp-title').textContent = v.title || 'ভিডিও';
+  document.getElementById('pdp-desc').textContent = v.description || 'কোনো বিবরণ নেই।';
+  document.getElementById('pdp-views').textContent = fmtNum((v.views||0)+1) + ' ভিউ';
+  document.getElementById('pdp-likes').textContent = fmtNum(v.likes||0);
+  document.getElementById('pdp-time').textContent = timeAgo(v.createdAt);
+  document.getElementById('pdp-cat').textContent = String(v.category||'ALL').toUpperCase();
+  document.getElementById('pdp-fav-btn').style.display = '';
+  document.getElementById('pdp-like-item').style.display = '';
+  updateFavBtn(); updateLikeBtn();
+  renderPartSelector(v, idx);
+  document.getElementById('player-modal').classList.add('open');
+  loadPart(idx);
 }
 
 function updateFavBtn(){
@@ -3091,6 +3182,7 @@ function toggleLike(){
   try{ fbUpdate('videos',v.id,{likes:v.likes}); }catch(e){}
 }
 function closePlayer(){
+  window._playerReq = (window._playerReq||0) + 1;
   document.getElementById('player-modal').classList.remove('open');
   const vid = document.getElementById('main-video');
   if(vid){ try{ vid.pause(); }catch(e){} }
