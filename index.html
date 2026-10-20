@@ -6,11 +6,13 @@
 <title>Movi Lover</title>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin/><link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+<script>
+/* Firebase dynamic import() দিয়ে — পেজের load ইভেন্ট আটকায় না, তাই অ্যাপের উপরের লাল লোডিং-বার তাড়াতাড়ি শেষ হয় */
+(async function(){
+  const mods = await Promise.all([import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"),import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"),import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js")]);
+  const { initializeApp } = mods[0];
+  const { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, getDoc, setDoc, serverTimestamp } = mods[1];
+  const { getAuth, signInAnonymously, onAuthStateChanged } = mods[2];
 
   const firebaseConfig = {
     apiKey: "AIzaSyDse8sC_hsrHrLx92zUobO7PezW0SUChHQ",
@@ -24,7 +26,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const storage = getStorage(app);
+  const storage = null;
   const auth = getAuth(app);
 
   window._db = db;
@@ -47,7 +49,9 @@
   window._serverTimestamp = serverTimestamp;
   window._deleteDoc = deleteDoc;
 
-  window.dispatchEvent(new Event('firebaseReady'));
+  const fire = ()=>window.dispatchEvent(new Event('firebaseReady'));
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fire); else fire();
+})().catch(e=>console.error("firebase load failed",e));
 </script>
 
 <script>
@@ -1717,14 +1721,15 @@ window.addEventListener('firebaseReady', async()=>{
     safe(loadCategories), safe(loadTutorialVideo), safe(loadChannels)
   ]);
   subscribeVideos();            // ভিডিও লিস্ট সবচেয়ে আগে শুরু
-  await ensureUserDoc();
+  const userDocP = ensureUserDoc();   // ব্যাকগ্রাউন্ডে — স্প্ল্যাশ আটকায় না
   hideSplash();                 // স্প্ল্যাশ আর ওয়ালেট/নোটিফিকেশনের জন্য আটকে থাকে না
+  await userDocP;
   loadAnnouncement();
   await safe(loadNotifications);
   await safe(loadTasksAndLedger);
   initProfile();
 });
-setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },4500);
+setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },3000);
 
 function hideSplash(){
   const s=document.getElementById('loading-screen');
@@ -2872,6 +2877,9 @@ function findVideo(id){ return STATE.allVideos.find(x=>x.id===id); }
 function startUnlockFromCard(id){
   const v = findVideo(id);
   if(!v) return;
+  if(window.event && window.event.isTrusted === false) return;          // শুধু ইউজারের নিজের ট্যাপে
+  if(STATE.verifyModalOpen || STATE.verifyActive) return;               // একটি বিজ্ঞাপন চলাকালীন আরেকটি নয়
+  if(Date.now() < (STATE._stepLockUntil||0)) return;                    // টাস্ক-সম্পন্ন পপআপ চলাকালীন নয়
   STATE.currentVideo = v;
   const req = adsReq(v);
   STATE.taskAdsRequired = req;
@@ -2887,9 +2895,8 @@ function resetAdModalToPlayingState(){
   const step = STATE.taskStep+1, total = STATE.taskAdsRequired;
   const dotsEl = document.getElementById('verify-dots');
   dotsEl.innerHTML='';
-  for(let i=1;i<=total;i++){ dotsEl.innerHTML += `<div class="verify-step-dot ${i<=STATE.taskStep?'on':''}"></div>`; }
-  document.getElementById('verify-title').textContent = total>1 ? `বিজ্ঞাপন চলছে (${step}/${total})` : 'বিজ্ঞাপন চলছে';
-  document.getElementById('verify-sub').textContent = 'দেখা শেষ হলেই এই ধাপটি সম্পন্ন হবে';
+  document.getElementById('verify-title').textContent = total>1 ? `টাস্ক ${bn(step)} — বিজ্ঞাপন চলছে` : 'বিজ্ঞাপন চলছে';
+  document.getElementById('verify-sub').textContent = 'শুধু এই একটি বিজ্ঞাপন দেখলেই টাস্ক সম্পন্ন হবে';
   const crossBtn = document.getElementById('verify-close-btn');
   if(crossBtn) crossBtn.classList.remove('show');
   const timerText = document.getElementById('verify-timer-text');
@@ -2999,6 +3006,7 @@ function onSingleAdWatched(){
   STATE.taskStep++;
   if(v) setTaskStep(v.id, STATE.taskStep);
   stepDoneSnd();
+  STATE._stepLockUntil = Date.now() + 2600;
   // বিজ্ঞাপনের ক্রস চাপলে: মোডাল বন্ধ → হোম → "টাস্ক সম্পন্ন" পপআপ → ভিডিওর কার্ড (প্রতিবার একটি করে টাস্ক)
   STATE.verifyModalOpen = false;
   document.getElementById('verify-modal').classList.remove('open');
