@@ -2362,18 +2362,19 @@ function detectEmbedType(url){
   const u = String(url||'');
   if(/youtube\.com|youtu\.be/i.test(u) && extractYouTubeId(u)) return 'youtube';
   if(/blogger\.com\/video\.g/i.test(u)) return 'blogger';
+  if(/drive\.google\.com\/file\/d\/[^/]+\/(view|preview)/i.test(u) || /player\.vimeo\.com\/video\//i.test(u) || /dailymotion\.com\/embed\//i.test(u)) return 'iframe';
   return 'direct';
 }
-function renderPlayerMedia(url){
+function renderPlayerMedia(url, forceType){
   const wrap = document.getElementById('player-video-wrap');
   if(!wrap || !url) return;
-  const type = detectEmbedType(url);
+  const type = forceType || detectEmbedType(url);
   if(type==='youtube'){
     const id = extractYouTubeId(url);
     wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:0;display:block;"></iframe>`;
     return;
   }
-  if(type==='blogger'){
+  if(type==='blogger' || type==='iframe'){
     wrap.innerHTML = `<iframe src="${escHtml(url)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:0;display:block;"></iframe>`;
     return;
   }
@@ -2599,7 +2600,11 @@ function openVideoById(id){ const v = findVideo(id); if(v) openVideo(v); }
 async function loadVideoBotConfig(){
   try{
     const p = await fbGetDoc('settings','videobot');
-    if(p) STATE.videoBot = { token:p.token||'', botUsername:p.botUsername||'', retentionMinutes:p.retentionMinutes||15 };
+    if(p){
+      STATE.videoBot = { token:p.token||'', botUsername:p.botUsername||'', retentionMinutes:p.retentionMinutes||15, streamUrl:String(p.streamUrl||'').trim().replace(/\/+$/,'') };
+      // free hosts sleep when idle: wake the stream server up early so the first video starts fast
+      if(STATE.videoBot.streamUrl && isInApp()){ try{ fetch(STATE.videoBot.streamUrl + '/health', { mode:'no-cors' }).catch(()=>{}); }catch(e){} }
+    }
   }catch(e){}
   // সাইট লিংক সেটিং (সবার জন্য পাবলিক): মেইন বটের ইউজারনেম ও মিনি অ্যাপ নাম
   try{
@@ -3092,12 +3097,75 @@ function switchPart(idx){
    - part.url  -> Blogger video.g / YouTube iframe, or a normal <video> for direct links
    - part.tgFileId -> Bot API getFile -> https://api.telegram.org/file/bot.../path streamed in <video>
      (Telegram Bot API only serves files up to 20 MB — bigger ones need a Blogger/direct link) */
+/* ---- Blogger: the ORIGINAL post link (https://xxx.blogspot.com/2026/10/post.html) -> embedded video ----
+   A post URL is a web page, so we read the post through Blogger's public JSON feed (JSONP, no CORS problem),
+   find the video inside the post (blogger.com/video.g iframe, YouTube, <video>, .mp4 link ...) and play THAT. */
+function isBloggerPost(u){
+  u = String(u||'');
+  if(!/^https?:\/\//i.test(u)) return false;
+  if(/blogger\.com\/video\.g|youtube\.com|youtu\.be/i.test(u)) return false;
+  if(/\.(mp4|webm|m3u8|mov|mkv)(\?|#|$)/i.test(u)) return false;
+  return /\/\d{4}\/\d{2}\/[^\/?#]+\.html/i.test(u);          // Blogger permalink shape: /YYYY/MM/slug.html
+}
+function jsonpFetch(url, ms){
+  return new Promise((resolve, reject)=>{
+    const cb = '__bl' + Date.now().toString(36) + Math.floor(Math.random()*1e6);
+    const s = document.createElement('script');
+    let done = false, timer = null;
+    const clean = ()=>{ done = true; clearTimeout(timer); try{ delete window[cb]; }catch(e){ window[cb] = undefined; } s.remove(); };
+    timer = setTimeout(()=>{ if(!done){ clean(); reject(new Error('blogger-timeout')); } }, ms || 12000);
+    window[cb] = d=>{ if(!done){ clean(); resolve(d); } };
+    s.onerror = ()=>{ if(!done){ clean(); reject(new Error('blogger-net')); } };
+    s.src = url + (url.indexOf('?')>-1 ? '&' : '?') + 'callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+function normalizeEmbedSrc(s){
+  s = String(s||'').trim().replace(/&amp;/g, '&');
+  if(s.startsWith('//')) s = 'https:' + s;
+  return s.replace(/^http:\/\//i, 'https://');
+}
+function extractVideosFromHtml(html){
+  const doc = new DOMParser().parseFromString(String(html||''), 'text/html');
+  const out = [];
+  const add = (u, kind)=>{ u = normalizeEmbedSrc(u); if(u && !out.some(x=>x.url===u)) out.push({ url:u, kind:kind }); };
+  const iframes = Array.from(doc.querySelectorAll('iframe')).map(f=>f.getAttribute('src') || f.getAttribute('data-src') || '').filter(Boolean);
+  iframes.filter(u=>/blogger\.com\/video\.g/i.test(u)).forEach(u=>add(u, 'blogger'));
+  iframes.filter(u=>/youtube\.com|youtu\.be/i.test(u) && extractYouTubeId(u)).forEach(u=>add(u, 'youtube'));
+  doc.querySelectorAll('video[src], video source[src]').forEach(v=>add(v.getAttribute('src'), 'direct'));
+  doc.querySelectorAll('a[href]').forEach(a=>{ const h = a.getAttribute('href'); if(/\.(mp4|webm|m3u8)(\?|#|$)/i.test(h)) add(h, 'direct'); });
+  iframes.filter(u=>!out.some(x=>x.url===normalizeEmbedSrc(u))).forEach(u=>add(u, 'iframe'));
+  return out;
+}
+async function resolveBloggerPost(part){
+  if(part._bList && Date.now() - part._bAt < 30*60*1000) return part._bList;
+  const u = new URL(part.url);
+  const path = decodeURI(u.pathname);
+  const feed = 'https://' + u.host + '/feeds/posts/default?alt=json-in-script&path=' + encodeURI(path);
+  const d = await jsonpFetch(feed, 12000);
+  const entries = (d && d.feed && d.feed.entry) || [];
+  // Blogger returns the whole latest-posts feed if the path is wrong — accept only the entry whose permalink matches
+  const entry = entries.find(e=>(e.link||[]).some(l=>{ if(l.rel!=='alternate') return false; try{ return decodeURI(new URL(l.href).pathname) === path; }catch(x){ return false; } }));
+  if(!entry) throw new Error('blogger-nopost');
+  const html = (entry.content && entry.content.$t) || (entry.summary && entry.summary.$t) || '';
+  const list = extractVideosFromHtml(html);
+  if(!list.length) throw new Error('blogger-novideo');
+  part._bList = list; part._bAt = Date.now();
+  return list;
+}
 async function resolvePartUrl(part){
-  if(part.url) return part.url;
+  if(part.url){
+    if(isBloggerPost(part.url)){ const list = await resolveBloggerPost(part); part._kind = list[0].kind; return list[0].url; }
+    part._kind = null;
+    return part.url;
+  }
   if(part.tgFileId){
+    part._kind = null;
+    const su = STATE.videoBot && STATE.videoBot.streamUrl;
+    if(su && part.tgMessageId) return su + '/stream?m=' + encodeURIComponent(part.tgMessageId);   // any size, with seeking
     if(part._tgUrl && Date.now() - part._tgAt < 50*60*1000) return part._tgUrl;
     if(!STATE.videoBot || !STATE.videoBot.token) throw new Error('no-bot');
-    const r = await tgBot('getFile', { file_id: part.tgFileId });
+    const r = await tgBot('getFile', { file_id: part.tgFileId });      // Bot API: files up to 20 MB only
     if(!r || !r.ok || !r.result || !r.result.file_path) throw new Error('tg-too-big');
     part._tgUrl = 'https://api.telegram.org/file/bot' + STATE.videoBot.token + '/' + r.result.file_path;
     part._tgAt = Date.now();
@@ -3118,14 +3186,24 @@ async function loadPart(idx, isRetry){
   try{ url = await resolvePartUrl(part); }
   catch(e){
     if(my !== window._playerReq) return;
-    const msg = e.message === 'tg-too-big' ? 'এই ভিডিওটি অ্যাপে চালানো যাচ্ছে না (ফাইল বড়)।'
+    const msg = e.message === 'tg-too-big' ? 'এই ভিডিওটি ২০MB-এর বেশি — স্ট্রিম সার্ভার চালু না থাকলে অ্যাপে চলবে না।'
               : e.message === 'no-source' ? 'এই পার্টের ভিডিও লিংক পাওয়া যায়নি।'
+              : e.message === 'blogger-nopost' ? 'Blogger পোস্টটি পাওয়া যায়নি — লিংকটি ঠিক আছে কিনা দেখুন।'
+              : e.message === 'blogger-novideo' ? 'এই Blogger পোস্টে কোনো ভিডিও পাওয়া যায়নি।'
+              : (e.message === 'blogger-timeout' || e.message === 'blogger-net') ? 'Blogger থেকে ভিডিও আনা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন।'
               : 'ভিডিও লোড করা যায়নি।';
     playerMessage(`<span class="material-icons-round" style="font-size:36px;color:#f87171;">error_outline</span><span>${msg}</span><button class="part-btn active ripple" onclick="loadPart(${idx})">আবার চেষ্টা করুন</button>`);
     return;
   }
   if(my !== window._playerReq) return;       // user switched part / closed meanwhile
-  renderPlayerMedia(url);
+  // one Blogger post holding several videos and only one part set in admin -> make real parts automatically
+  if(parts.length === 1 && part._bList && part._bList.length > 1 && !v._autoParts){
+    v._autoParts = true;
+    v.parts = part._bList.map(x=>({ url:x.url, _kind:x.kind }));
+    renderPartSelector(v, 0);
+    document.getElementById('player-title-text').textContent = (v.title||'ভিডিও') + ' - পার্ট 1';
+  }
+  renderPlayerMedia(url, part._kind === 'iframe' ? 'iframe' : undefined);
   const mv = document.getElementById('main-video');
   if(mv){
     mv.onended = ()=>{ const n = idx + 1; if(parts[n]){ toast('▶️ পরের পার্ট চালু হচ্ছে...'); switchPart(n); } };
