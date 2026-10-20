@@ -12,12 +12,21 @@
  *   BOT_TOKEN          — ভিডিও বটের টোকেন (যে বট চ্যানেলে ভিডিও পাঠায়)
  *   STORAGE_CHAT_ID    — স্টোরেজ চ্যানেলের ID, যেমন -1001234567890
  *   PORT               — হোস্টিং নিজেই দেয়
+ *   ALLOWED_ORIGINS    — (ঐচ্ছিক) কমা দিয়ে আলাদা ডোমেইন, যেমন: mysite.com,t.me — দিলে অন্য সাইট থেকে হটলিংক বন্ধ
  */
 "use strict";
 const http = require("http");
 
 const CHUNK = 512 * 1024;            // 512KB — টেলিগ্রামের নিয়ম (৪০৯৬-এর গুণিতক, ১MB সীমা পার হয় না)
 const CACHE_MS = 20 * 60 * 1000;     // মেসেজ/ফাইল রেফারেন্স ক্যাশ
+const ALLOWED = String(process.env.ALLOWED_ORIGINS || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+function originAllowed(req) {
+  if (!ALLOWED.length) return true;
+  const h = req.headers.origin || req.headers.referer || "";
+  if (!h) return true;                       // অ্যাপের ওয়েবভিউ/প্লেয়ার অনেক সময় হেডার পাঠায় না
+  try { const host = new URL(h).hostname.toLowerCase(); return ALLOWED.some((a) => host === a || host.endsWith("." + a)); }
+  catch (_) { return false; }
+}
 
 /* ---------- HTTP অংশ (টেলিগ্রাম থেকে আলাদা, তাই পরীক্ষা করা যায়) ---------- */
 function parseRange(header, size) {
@@ -55,6 +64,7 @@ function createApp({ getFileInfo, openChunks, isReady, waitReady }) {
       if (url.pathname === "/" || url.pathname === "/health") return json(res, 200, { ok: true, ready: !!isReady() });
       if (url.pathname !== "/stream" || (req.method !== "GET" && req.method !== "HEAD")) return json(res, 404, { ok: false, error: "not found" });
 
+      if (!originAllowed(req)) return json(res, 403, { ok: false, error: "forbidden" });
       const msgId = parseInt(url.searchParams.get("m") || "", 10);
       if (!msgId || msgId < 1) return json(res, 400, { ok: false, error: "m (message id) দিন" });
 
@@ -78,6 +88,8 @@ function createApp({ getFileInfo, openChunks, isReady, waitReady }) {
         "Accept-Ranges": "bytes",
         "Content-Length": String(end - start + 1),
         "Cache-Control": "private, max-age=3600",
+        "Content-Disposition": "inline",
+        "X-Content-Type-Options": "nosniff",
       }, cors);
       if (range) headers["Content-Range"] = `bytes ${start}-${end}/${size}`;
       res.writeHead(range ? 206 : 200, headers);
