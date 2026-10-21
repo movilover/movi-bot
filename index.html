@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Movi Lover</title>
-<link rel="preconnect" href="https://www.gstatic.com" crossorigin/><link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/><link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin/><link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin/>
 <!-- Firebase -->
 <script>
 /* Firebase dynamic import() দিয়ে — পেজের load ইভেন্ট আটকায় না, তাই অ্যাপের উপরের লাল লোডিং-বার তাড়াতাড়ি শেষ হয় */
@@ -56,7 +56,7 @@ if(window.__mlBooted) return; window.__mlBooted = true;
 })().catch(e=>console.error("firebase load failed",e));
 };
 /* পেজ-লোড শেষ হলে তবেই Firebase শুরু: তাহলে লোডিং-বারে কোনো নেটওয়ার্ক রিকোয়েস্ট বাকি থাকে না, উপরের লাল দাগ সঙ্গে সঙ্গে মিলিয়ে যায়। স্প্ল্যাশ স্ক্রিন এর মধ্যে নিজেই ঘুরতে থাকে। */
-(function(){ var go=function(){ setTimeout(window.__mlBootFirebase,0); }; if(document.readyState==="complete") go(); else window.addEventListener("load",go); setTimeout(window.__mlBootFirebase,2500); })();
+(function(){ var go=function(){ setTimeout(window.__mlBootFirebase,0); }; if(document.readyState==="complete") go(); else window.addEventListener("load",go); setTimeout(window.__mlBootFirebase,1500); })();
 </script>
 
 <script>
@@ -1223,6 +1223,156 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#110b1c 100%) !important; borde
 .upd-btn:active{transform:scale(.97)}.upd-btn .material-icons-round{font-size:22px}
 .upd-later{margin-top:10px;padding:10px;font-size:13.5px;font-weight:600;color:#a79fc7;cursor:pointer}
 </style>
+<style id="premium-v5">
+/* =========================================================
+   PREMIUM v5 — চিকন ব্যানার, কমপ্যাক্ট ক্যাটাগরি, ছোট পিন কার্ড,
+   দুই কলামের ভিডিও গ্রিড, গাঢ় প্রিমিয়াম রং, দ্রুত স্প্ল্যাশ
+   ========================================================= */
+:root{
+  --bg:#05040a; --bg-2:#0b0813; --surface:#0f0b19; --surface-2:#161022;
+  --border:rgba(176,150,255,.13); --text:#f4f0ff; --text-muted:#9a92b4;
+}
+body{ background:
+  radial-gradient(900px 420px at 50% -10%, rgba(124,77,255,.14), transparent 62%),
+  radial-gradient(640px 380px at 100% 0%, rgba(242,184,48,.06), transparent 60%), var(--bg); }
+#loading-screen{ transition:opacity .22s; }
+#app{ transition:opacity .22s; }
+
+/* ---- হেডার (চিকন) ---- */
+header{ height:56px !important; padding:0 14px !important; }
+.header-logo{ font-size:21px !important; }
+.header-logo .film-strip{ width:24px !important; height:24px !important; }
+.icon-btn{ width:36px !important; height:36px !important; border-color:rgba(176,150,255,.22) !important; }
+.icon-btn .material-icons-round{ font-size:19px !important; }
+.header-actions{ gap:8px !important; }
+.notif-badge{ top:5px !important; right:6px !important; }
+
+/* ---- হিরো ব্যানার (চিকন, ছোট, প্রফেশনাল) ---- */
+.hero{ margin:2px 14px 0; border-radius:16px; border:1px solid rgba(176,150,255,.26); box-shadow:0 8px 22px rgba(60,30,140,.28); }
+.hero-slide{ min-height:128px; padding:14px 16px 30px; }
+.hero-slide::before{ background:linear-gradient(90deg,rgba(5,4,10,.9) 0%,rgba(5,4,10,.5) 52%,rgba(5,4,10,.05) 100%), linear-gradient(0deg,rgba(5,4,10,.55),transparent 55%); }
+.hero-crown{ width:17px; height:17px; margin-bottom:2px; filter:drop-shadow(0 0 5px rgba(242,184,48,.4)); }
+.hero-h{ font-size:16px; font-weight:700; letter-spacing:.7px; }
+.hero-sub{ display:none; }
+.hero-name{ font-size:11.5px; margin-top:3px; max-width:62%; font-weight:500; }
+.hero-btn{ margin-top:9px; padding:6px 13px 6px 10px; border-radius:10px; font-size:12.5px; gap:5px; font-weight:700;
+  box-shadow:0 4px 12px rgba(109,40,217,.45), inset 0 1px 0 rgba(255,255,255,.2); }
+.hero-btn svg{ width:14px; height:14px; }
+.hero-dots{ left:16px; bottom:10px; gap:5px; }
+.hero-dots i{ width:5px; height:5px; }
+.hero-dots i.on{ width:15px; box-shadow:0 0 6px rgba(168,85,247,.6); }
+.hero-next{ right:10px; bottom:8px; width:26px; height:26px; }
+.hero-next svg{ width:13px; height:13px; stroke-width:2; }
+.hero-sk{ min-height:128px; }
+
+/* ---- ক্যাটাগরি (ছোট, নাম সুন্দর, আপলোড করা ছবি পুরো বক্সে) ---- */
+.cat-tiles{ margin:10px 14px 0; padding:7px; border-radius:18px; gap:6px; }
+.cat-tile{ min-width:62px; max-width:92px; gap:5px; padding:8px 5px 7px; border-radius:13px; }
+.cat-tile .ct-ico{ width:34px; height:34px; border-radius:11px; font-size:19px; }
+.cat-tile .ct-ico svg{ width:19px; height:19px; stroke-width:1.5; }
+.cat-tile .ct-name{ font-size:11px; font-weight:600; line-height:1.2; letter-spacing:.1px; width:100%;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.cat-tile.active{ background:linear-gradient(180deg,#9468ff 0%,#6a31d8 58%,#4c1d95 100%); box-shadow:0 0 16px rgba(139,92,246,.5), inset 0 1px 0 rgba(255,255,255,.28); }
+.sk-tile{ min-width:62px; min-height:76px; }
+
+/* ---- সেকশন হেডার ---- */
+.sec-head{ padding:16px 16px 6px; gap:7px; }
+.sec-head .sh-ico{ font-size:16px; }
+.sec-head .sh-ico svg{ width:18px; height:18px; }
+.sec-head h3{ font-size:16px; font-weight:700; letter-spacing:.2px; }
+.sec-head .sh-all{ font-size:12.5px; padding:4px 0 4px 8px; color:#b9a4ff; }
+.sec-head .sh-all svg{ width:14px; height:14px; stroke-width:2.2; }
+.section-title{ font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:700; letter-spacing:.3px; text-transform:none; color:#fff; padding:14px 16px 6px; gap:9px; }
+.section-title::before{ content:''; width:3px; height:15px; border-radius:2px; background:linear-gradient(180deg,#ffd36a,#e8aa1c); flex-shrink:0; }
+.section-title::after{ background:linear-gradient(90deg,rgba(176,150,255,.25),transparent); }
+
+/* ---- পিন করা / কন্টিনিউ কার্ড (ছোট) ---- */
+.hv-row{ gap:9px; padding:3px 14px 4px; }
+.hv-card{ flex:0 0 118px; border-radius:12px; box-shadow:0 5px 14px rgba(0,0,0,.35); }
+.hv-play{ width:28px; height:28px; }
+.hv-play svg{ width:13px; height:13px; margin-left:1px; }
+.hv-badge{ top:5px; right:5px; padding:1px 6px; border-radius:7px; font-size:9.5px; }
+.hv-lock{ top:5px; left:5px; width:18px; height:18px; border-radius:6px; }
+.hv-lock .material-icons-round{ font-size:11px; }
+.hv-body{ padding:6px 7px 8px; }
+.hv-title{ font-size:12px; }
+.hv-meta{ margin-top:4px; font-size:10px; gap:5px; }
+.hv-meta .mi{ width:15px; height:15px; border-radius:5px; }
+.hv-meta .mi .material-icons-round{ font-size:10px; }
+.hv-prog{ left:6px; right:6px; bottom:5px; height:3px; }
+.hv-card.sk-card{ min-height:110px; }
+
+/* ---- ট্রেন্ডিং কার্ড (ছোট, পাশে পরের কার্ডের ঝলক দেখা যায়) ---- */
+.tr-row{ gap:10px; padding:3px 14px 4px; }
+.tr-card{ flex:0 0 86%; scroll-snap-align:start; min-height:92px; border-radius:14px; }
+.tr-thumb{ flex:0 0 38%; min-height:92px; }
+.tr-thumb .hv-play{ width:30px; height:30px; }
+.tr-thumb .hv-play svg{ width:13px; height:13px; }
+.tr-body{ padding:9px 11px; gap:4px; }
+.tr-badge{ top:8px; right:8px; padding:2px 8px; border-radius:8px; font-size:10.5px; }
+.tr-title{ font-size:14px; line-height:1.25; padding-right:46px; }
+.tr-views{ font-size:11px; gap:5px; }
+.tr-views .material-icons-round{ font-size:14px; }
+.tr-desc{ display:none; }
+
+/* ---- ক্যাটাগরি / ভিউ-অল হেডার ---- */
+.vw-head{ padding:14px 16px 2px; gap:10px; }
+.vw-ico{ width:34px; height:34px; border-radius:11px; font-size:19px; }
+.vw-ico svg{ width:20px; height:20px; }
+.vw-title{ font-size:17px; }
+.vw-count{ font-size:11.5px; }
+.vw-back{ width:34px; height:34px; }
+.vw-back svg{ width:17px; height:17px; }
+.sub-row{ gap:11px; padding:9px 16px 6px; }
+.sub-chip{ width:70px; gap:5px; font-size:11px; }
+.sub-logo{ width:50px; height:50px; border-width:1.5px; font-size:21px; }
+.sub-chip .nm{ max-width:70px; }
+
+/* ---- ভিডিও গ্রিড: পাশাপাশি দুইটা, ছোট প্রফেশনাল কার্ড ---- */
+.video-grid{ display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:6px 14px 18px; }
+.video-grid > div[style*="text-align:center"]{ grid-column:1/-1; }
+.video-card{ display:flex; flex-direction:column; border-radius:14px; background:linear-gradient(180deg,#14101f,#0c0814);
+  border:1px solid rgba(176,150,255,.14); box-shadow:0 6px 16px rgba(0,0,0,.38);
+  content-visibility:auto; contain-intrinsic-size:auto 250px; }
+.video-card::before{ height:1px; opacity:.55; }
+.video-thumb-wrap{ padding:5px 5px 0; }
+.video-thumb{ aspect-ratio:16/10; border-radius:10px; font-size:24px; }
+.thumb-play .material-icons-round{ font-size:30px; }
+.badge-new{ top:5px; left:5px; font-size:8.5px; padding:2px 6px; border-radius:6px; }
+.badge-parts{ bottom:5px; left:5px; font-size:9px; padding:2px 6px; border-radius:6px; }
+.badge-parts .material-icons-round{ font-size:10px; }
+.badge-premium{ top:5px; right:34px; font-size:9px; padding:2px 6px; border-radius:6px; }
+.fav-icon-card{ top:5px; right:5px; width:24px; height:24px; }
+.fav-icon-card .material-icons-round{ font-size:14px !important; }
+.copy-icon-card, .share-icon-card{ display:none; }
+.video-info{ padding:8px 9px 10px; display:flex; flex-direction:column; flex:1; }
+.video-site{ display:none; }
+.video-title{ font-size:12.5px; font-weight:600; line-height:1.3; margin-bottom:5px; min-height:2.6em;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.video-meta{ gap:8px; margin-bottom:7px; }
+.video-stat{ font-size:10px; gap:2px; }
+.video-stat .material-icons-round{ font-size:12px; }
+.perf-divider, .video-hint, .card-share-row{ display:none; }
+.unlock-progress-row{ gap:3px; margin-bottom:7px; }
+.unlock-dot{ width:28px; height:28px; border-radius:8px; }
+.unlock-dot .num{ font-size:11px; }
+.unlock-dot .lbl{ display:none; }
+.unlock-dot.active .material-icons-round{ font-size:13px; }
+.unlock-dot.done::after{ font-size:12px; border-radius:7px; }
+.unlock-connector{ width:7px; }
+.unlock-btn{ padding:8px 6px; font-size:11.5px; letter-spacing:.2px; border-radius:10px; gap:4px; line-height:1.2; margin-top:auto; flex-wrap:wrap; text-align:center; }
+.unlock-btn .material-icons-round{ font-size:15px; }
+.unlock-btn .cnt{ padding:1px 6px; font-size:10.5px; }
+.stamp-row{ gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+.stamp{ font-size:9px; padding:3px 6px; letter-spacing:.8px; }
+.expiry-text2{ font-size:10px; }
+.expiry-bar-track{ height:3px; margin-bottom:8px; }
+.watch-now-btn, .unlock-btn.play-btn{ padding:8px; font-size:12.5px; border-radius:10px; gap:4px; margin-top:auto; }
+.watch-now-btn .material-icons-round{ font-size:16px; }
+
+/* ---- নিচের নেভিগেশন ---- */
+nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border-top:1px solid rgba(176,150,255,.16) !important; }
+</style>
 </head>
 <body>
 
@@ -1963,28 +2113,31 @@ function ensureAuth(){
 window.addEventListener('firebaseReady', async()=>{
   checkExpiries();
   await ensureAuth();
-  // স্বাধীন কনফিগ/ডাটা একসাথে (আগে একটার পর একটা — ওয়াটারফল — ছিল, তাই ধীর লাগত)
+  // সব কনফিগ একসাথে শুরু — কিন্তু স্ক্রিন এগুলোর জন্য আটকে থাকে না
   const safe = f => { try{ return Promise.resolve(f()).catch(()=>{}); }catch(e){ return Promise.resolve(); } };
-  await Promise.all([
+  const cfgP = Promise.all([
     safe(async()=>{ await loadSettings(); loadThumbStyle(); }),
     safe(loadAdNetworkConfig), safe(loadVideoBotConfig), safe(loadLandingConfig), safe(loadVideoRewardConfig),
     safe(loadCategories), safe(loadTutorialVideo), safe(loadChannels)
   ]);
-  subscribeVideos();            // ভিডিও লিস্ট সবচেয়ে আগে শুরু
-  const userDocP = ensureUserDoc();   // ব্যাকগ্রাউন্ডে — স্প্ল্যাশ আটকায় না
-  hideSplash();                 // স্প্ল্যাশ আর ওয়ালেট/নোটিফিকেশনের জন্য আটকে থাকে না
+  subscribeVideos();            // ভিডিও লিস্ট সঙ্গে সঙ্গে শুরু; প্রথম ডাটা এলেই স্প্ল্যাশ সরে যায়
+  const userDocP = cfgP.then(()=>ensureUserDoc());
+  setTimeout(hideSplash, 900);  // ডাটা দেরি করলেও সর্বোচ্চ ০.৯ সেকেন্ডে স্ক্রিন দেখা যাবে
+  await cfgP;
   await userDocP;
   loadAnnouncement();
   await safe(loadNotifications);
   await safe(loadTasksAndLedger);
   initProfile();
 });
-setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },3000);
+setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },1600);
 
+let _splashGone=false;
 function hideSplash(){
+  if(_splashGone) return; _splashGone=true;
   const s=document.getElementById('loading-screen');
   s.style.opacity='0';
-  setTimeout(()=>s.style.display='none',500);
+  setTimeout(()=>s.style.display='none',240);
   document.getElementById('app').classList.add('visible');
 }
 
@@ -2312,6 +2465,7 @@ function subscribeVideos(){
       applyCategoryFilter(false);
       renderVideos(STATE.filteredVideos);
       renderPinnedRow(); renderHomeExtras();
+      hideSplash();
       maybeJumpToSharedVideo();
     }, ()=>loadVideosFallback());
   } catch(e) { loadVideosFallback(); }
@@ -2323,6 +2477,7 @@ async function loadVideosFallback(){
   applyCategoryFilter(false);
   renderVideos(STATE.filteredVideos);
   renderPinnedRow(); renderHomeExtras();
+  hideSplash();
   maybeJumpToSharedVideo();
 }
 
@@ -2808,6 +2963,7 @@ async function loadCategories(){
     STATE.categories = list;
   }catch(e){ STATE.categories = []; }
   renderCategoryBar();
+  if(STATE.videosLoaded){ try{ applyCategoryFilter(false); renderPinnedRow(); renderHomeExtras(); }catch(e){} }
 }
 
 /* ===== ক্যাটাগরি আইকন সেট (ডুয়োটোন লাইন আইকন) ===== */
@@ -3067,12 +3223,21 @@ function renderPinnedRow(){
 
 /* ---------- ট্রেন্ডিং ---------- */
 function trendingVideos(n){
-  const l = [...STATE.allVideos].sort((a,b)=>(b.views||0)-(a.views||0));
+  /* এডমিন প্যানেল → ট্রেন্ডিং থেকে বাছাই করা ভিডিও, এডমিনের ঠিক করা ক্রমে */
+  const l = STATE.allVideos.filter(v=>v.trending).sort((a,b)=>(a.trendOrder||0)-(b.trendOrder||0));
   return l.slice(0, n);
+}
+/* ট্রেন্ডিং ভিডিওতে ট্যাপ → ওই ভিডিওর ক্যাটাগরির সব ভিডিও দুই কলামে খোলে */
+function openTrending(id){
+  const v = findVideo(id); if(!v) return;
+  if(!v.category || v.category === 'all' || !catOf(v.category)){ openVideoById(id); return; }
+  STATE.activeCat = v.category; STATE.activeSub = ''; STATE.viewAll = null;
+  renderCategoryBar(); applyCategoryFilter(true);
+  const p = $h('page-home'); if(p) p.scrollTo({top:0});
 }
 function renderTrending(){
   const sec = $h('trending-section'), row = $h('trending-row'); if(!sec) return;
-  const list = trendingVideos(5);
+  const list = trendingVideos(10);
   if(!list.length){ sec.style.display = 'none'; row.innerHTML = ''; return; }
   sec.style.display = '';
   row.innerHTML = list.map(v=>{
@@ -3080,7 +3245,7 @@ function renderTrending(){
     const c = catOf(v.category);
     const badge = v.duration || (parts > 1 ? parts + ' পার্ট' : (c ? c.label : ''));
     return `
-    <div class="tr-card ripple" onclick="openVideoById('${v.id}')">
+    <div class="tr-card ripple" onclick="openTrending('${v.id}')">
       <div class="hv-thumb tr-thumb">${hvThumb(v)}<div class="hv-play">${SVG_PLAY}</div></div>
       <div class="tr-body">
         ${badge ? `<div class="tr-badge">${escHtml(badge)}</div>` : ''}
@@ -3152,7 +3317,7 @@ function refreshLocks(){
 function cacheSave(){
   try{
     if(!STATE.videosLoaded || !STATE.allVideos.length) return;
-    localStorage.setItem('ml_cache_v', JSON.stringify({ v: STATE.allVideos.slice(0,60), c: STATE.categories || [], t: Date.now() }));
+    localStorage.setItem('ml_cache_v', JSON.stringify({ v: STATE.allVideos.filter((v,i)=>i<40||v.pinned||v.trending||v.hero), c: STATE.categories || [], t: Date.now() }));
   }catch(e){}
 }
 function renderHomeExtras(){
@@ -3169,7 +3334,7 @@ function renderVideosCore(videos){
   grid.innerHTML='';
   if(!STATE.videosLoaded){ renderSkeletons(); return; }
   if(!videos.length){ grid.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted);">কোনো ভিডিও নেই</div>'; return; }
-  videos.forEach((v,i)=>{ const el=buildVideoCard(v); el.style.animationDelay=(i*0.04)+'s'; grid.appendChild(el); });
+  videos.forEach((v,i)=>{ const el=buildVideoCard(v); el.style.animationDelay=(Math.min(i,8)*0.03)+'s'; grid.appendChild(el); });
   if(STATE.sharedVideoId){
     const el = grid.querySelector(`.video-card[data-vid="${cssEscape(STATE.sharedVideoId)}"]`);
     if(el) el.classList.add('shared-highlight');
@@ -3229,7 +3394,7 @@ function buildVideoCard(v){
     pinnedRibbon = `<div class="badge-parts" style="left:auto;right:8px;bottom:auto;top:8px;background:rgba(240,180,41,0.85);color:#2a1c05;"><span class="material-icons-round" style="font-size:12px;">push_pin</span>PINNED</div>`;
   }
 
-  const btnHtml = unlocked ? '' : `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">local_movies</span> ${req>1?`বিজ্ঞাপন দেখুন <span class="cnt">${doneSteps}/${req}</span>`:'বিজ্ঞাপন দেখে আনলক করুন'}</button>`;
+  const btnHtml = unlocked ? '' : `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">local_movies</span> ${req>1?`বিজ্ঞাপন দেখুন <span class="cnt">${doneSteps}/${req}</span>`:'বিজ্ঞাপন দেখে আনলক'}</button>`;
 
   card.innerHTML=`
     <div class="video-thumb-wrap">
