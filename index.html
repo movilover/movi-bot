@@ -56,7 +56,7 @@ if(window.__mlBooted) return; window.__mlBooted = true;
 })().catch(e=>console.error("firebase load failed",e));
 };
 /* পেজ-লোড শেষ হলে তবেই Firebase শুরু: তাহলে লোডিং-বারে কোনো নেটওয়ার্ক রিকোয়েস্ট বাকি থাকে না, উপরের লাল দাগ সঙ্গে সঙ্গে মিলিয়ে যায়। স্প্ল্যাশ স্ক্রিন এর মধ্যে নিজেই ঘুরতে থাকে। */
-(function(){ var go=function(){ setTimeout(window.__mlBootFirebase,0); }; if(document.readyState==="complete") go(); else window.addEventListener("load",go); setTimeout(window.__mlBootFirebase,1500); })();
+(function(){ var go=function(){ window.__mlBootFirebase(); }; if(document.readyState!=="loading") go(); else document.addEventListener("DOMContentLoaded",go); setTimeout(window.__mlBootFirebase,600); })();
 </script>
 
 <script>
@@ -64,7 +64,7 @@ if(window.__mlBooted) return; window.__mlBooted = true;
 (function(){
   var H=["https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap", "https://fonts.googleapis.com/icon?family=Material+Icons+Round"], done=false;
   function go(){ if(done) return; done=true; H.forEach(function(h){ var l=document.createElement('link'); l.rel='stylesheet'; l.href=h; document.head.appendChild(l); }); }
-  window.addEventListener('load', go); setTimeout(go, 3500);
+  if(document.readyState!=='loading') go(); else document.addEventListener('DOMContentLoaded', go); setTimeout(go, 1200);
 })();
 </script>
 <script>
@@ -1373,6 +1373,20 @@ header{ height:56px !important; padding:0 14px !important; }
 /* ---- নিচের নেভিগেশন ---- */
 nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border-top:1px solid rgba(176,150,255,.16) !important; }
 </style>
+<style id="final-v6">
+/* ---- অ্যাপ ডাউনলোড বাটন: ছোট, চিকন, প্রফেশনাল ---- */
+.app-dl-btn{height:28px !important;padding:0 10px 0 7px !important;gap:4px !important;border-radius:14px !important;font-size:11.5px !important;font-weight:700 !important;letter-spacing:.2px !important;
+  color:#ffd98a !important;background:rgba(242,184,48,.1) !important;border:1px solid rgba(242,184,48,.42) !important;box-shadow:none !important}
+.app-dl-btn .material-icons-round{font-size:15px !important;color:#f2b830}
+.app-dl-btn::after{opacity:.35}
+.header-logo{min-width:0}
+@media (max-width:380px){ .header-logo{font-size:18px !important} .header-actions{gap:6px !important} .app-dl-btn{padding:0 8px 0 6px !important} }
+/* ---- ক্যাটাগরি: আপলোড করা ছবি পুরো আইকন বক্স ভরে ---- */
+.cat-tile .ct-ico img{width:100%;height:100%;object-fit:cover}
+/* ---- ভিডিও গ্রিড: পাশাপাশি ২টি, প্রিমিয়াম লুক ---- */
+.video-card{border:1px solid rgba(242,184,48,.14)}
+.video-card:active{transform:scale(.98)}
+</style>
 </head>
 <body>
 
@@ -1396,7 +1410,7 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
       <span class="logo-movi">Movi</span>&nbsp;<span class="logo-lover">Lover</span>
     </div>
     <div class="header-actions">
-      <div class="app-dl-btn" id="app-dl-btn" onclick="openAppSheet()"><span class="material-icons-round">android</span>অ্যাপ ডাউনলোড</div>
+      <div class="app-dl-btn" id="app-dl-btn" onclick="openAppSheet()"><span class="material-icons-round">android</span>অ্যাপ</div>
       <div class="icon-btn ripple" onclick="openSearch()"><span class="material-icons-round">search</span></div>
       <div class="icon-btn ripple" onclick="openNotif()">
         <span class="material-icons-round">notifications</span>
@@ -2122,7 +2136,7 @@ window.addEventListener('firebaseReady', async()=>{
   ]);
   subscribeVideos();            // ভিডিও লিস্ট সঙ্গে সঙ্গে শুরু; প্রথম ডাটা এলেই স্প্ল্যাশ সরে যায়
   const userDocP = cfgP.then(()=>ensureUserDoc());
-  setTimeout(hideSplash, 900);  // ডাটা দেরি করলেও সর্বোচ্চ ০.৯ সেকেন্ডে স্ক্রিন দেখা যাবে
+  setTimeout(hideSplash, 500);  // ডাটা দেরি করলেও সর্বোচ্চ ০.৯ সেকেন্ডে স্ক্রিন দেখা যাবে
   await cfgP;
   await userDocP;
   loadAnnouncement();
@@ -2130,7 +2144,7 @@ window.addEventListener('firebaseReady', async()=>{
   await safe(loadTasksAndLedger);
   initProfile();
 });
-setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },1600);
+setTimeout(()=>{ if(!document.getElementById('app').classList.contains('visible')) hideSplash(); },1000);
 
 let _splashGone=false;
 function hideSplash(){
@@ -2840,15 +2854,7 @@ function tutorialAsVideo(){
 function openTutorial(){
   const t = STATE.tutorialVideo; if(!t) return;
   const v = tutorialAsVideo();
-  if(v && STATE.videoBot && STATE.videoBot.token){
-    if(!STATE.tgUserId){
-      toast('⚠️ ভিডিও দেখতে টেলিগ্রাম অ্যাপের ভিতর থেকে সাইটটি খুলুন।');
-      if(STATE.videoBot.botUsername) openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername);
-      return;
-    }
-    deliverVideoToTelegram(v);
-    return;
-  }
+  if(v && !t.url && t.tgFileId){ openInAppPlayer(v, 0); return; }
   if(t.url) playTutorialVideo(t.url); else toast('⚠️ টিউটোরিয়াল ভিডিও এখনো পাওয়া যায়নি।');
 }
 function renderTutorialVideo(){
@@ -3515,32 +3521,14 @@ function moreVideosMarkup(){
    open-link behaviour. */
 /* ভিডিও কি সরাসরি পেজের প্লেয়ারে চালানো যাবে?  (Blogger / YouTube / ডাইরেক্ট লিংক, অথবা টেলিগ্রাম ফাইল + স্ট্রিম সার্ভার) */
 function canPlayInline(v){
-  const parts = videoParts(v);
-  if(!parts.length) return false;
-  const su = STATE.videoBot && STATE.videoBot.streamUrl;
-  return parts.every(p => p.url || (p.tgFileId && su && p.tgMessageId));
+  return videoParts(v).some(p => p.url || p.tgFileId);
 }
 function openWatchNow(id){
   const v = findVideo(id);
   if(!v) return;
-  if(isInApp() || canPlayInline(v)){ openInAppPlayer(v, 0); return; }
-  const parts = videoParts(v);
-  const tgParts = parts.filter(p=>p.tgFileId);
-  const url = (parts[0] && parts[0].url) || v.url;
-
-  if(tgParts.length && STATE.videoBot.token){
-    registerWatch(v);
-    if(!STATE.tgUserId){
-      toast('⚠️ ভিডিও দেখতে টেলিগ্রাম অ্যাপের ভিতর থেকে সাইটটি খুলুন।');
-      if(STATE.videoBot.botUsername) openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername);
-      return;
-    }
-    deliverVideoToTelegram(v);
-    return;
-  }
-  if(!url){ toast('⚠️ এই ভিডিওর লিংক পাওয়া যায়নি।'); return; }
-  registerWatch(v);
-  window.open(url, '_blank');
+  /* সব ভিডিও (Blogger / লিংক / টেলিগ্রাম বট-চ্যানেল) সাইটের ভেতরের প্লেয়ারেই চলবে — বটে পাঠানো হবে না */
+  if(videoParts(v).some(p=>p.url || p.tgFileId)){ openInAppPlayer(v, 0); return; }
+  toast('⚠️ এই ভিডিওর লিংক পাওয়া যায়নি।');
 }
 function registerWatch(v){
   try{ fbUpdate('videos', v.id, {views:(v.views||0)+1}); }catch(e){}
@@ -4082,7 +4070,7 @@ async function resolvePartUrl(part){
   if(part.tgFileId){
     part._kind = null;
     const su = STATE.videoBot && STATE.videoBot.streamUrl;
-    if(su && part.tgMessageId) return su + '/stream?m=' + encodeURIComponent(part.tgMessageId);   // any size, with seeking
+    if(su && (part.tgMessageId || part.tgFileId)) return su + '/stream?m=' + encodeURIComponent(part.tgMessageId||'') + '&f=' + encodeURIComponent(part.tgFileId);   // any size, with seeking
     if(part._tgUrl && Date.now() - part._tgAt < 50*60*1000) return part._tgUrl;
     if(!STATE.videoBot || !STATE.videoBot.token) throw new Error('no-bot');
     const r = await tgBot('getFile', { file_id: part.tgFileId });      // Bot API: files up to 20 MB only
