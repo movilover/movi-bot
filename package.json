@@ -1,12 +1,13 @@
 {
-  "name": "movielover-stream",
+  "name": "movi-stream-proxy",
   "version": "1.0.0",
-  "description": "Movie Lover Telegram video stream server",
+  "private": true,
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" },
+  "scripts": { "start": "node server.js" },
   "dependencies": {
     "big-integer": "^1.6.52",
-    "telegram": "^2.26.8"
+    "express": "^4.19.2",
+    "telegram": "^2.26.0"
   }
 }
