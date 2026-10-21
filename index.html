@@ -1387,16 +1387,29 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
 .video-card{border:1px solid rgba(242,184,48,.14)}
 .video-card:active{transform:scale(.98)}
 </style>
-<style id="align-v7">
+<style id="align-v8">
+/* একই বাঁ-ডান গ্যাপ (--gut) সবখানে: ক্যাটাগরি বক্স, নোটিশ, পিনড, ট্রেন্ডিং, সকল ভিডিও */
 #page-home{--gut:14px}
-#page-home > .only-all,#page-home > .only-cat,#page-home > .only-view,#page-home > .pinned-section,#page-home > .section-title,#page-home > .video-grid,#page-home > .notice{
+#page-home > .only-all,#page-home > .only-cat,#page-home > .only-view,#page-home > .pinned-section,#page-home > .section-title,#page-home > .video-grid,#page-home > .notice,#page-home > .cat-tiles{
   width:100%;max-width:560px;margin-left:auto;margin-right:auto;box-sizing:border-box}
-#page-home .hv-row,#page-home .tr-row{padding-left:var(--gut) !important;padding-right:var(--gut) !important;scroll-padding-left:var(--gut);scroll-padding-right:var(--gut);scroll-snap-type:x proximity}
-#page-home .tr-card{scroll-snap-align:start}
-#page-home .video-grid{max-width:560px !important;padding-left:var(--gut) !important;padding-right:var(--gut) !important;margin-left:auto;margin-right:auto}
-#page-home .sec-head,#page-home .section-title,#page-home .vw-head,#page-home .sub-row{padding-left:var(--gut) !important;padding-right:var(--gut) !important}
-#page-home .tr-card{flex:0 0 calc(100% - 2*var(--gut) - 28px)}
-#page-home .hv-card{flex:0 0 calc((100% - 2*var(--gut) - 10px)/2)}
+#page-home > .notice,#page-home > .cat-tiles{width:calc(100% - 2*var(--gut))}
+/* স্ক্রল-সারি: padding নয়, margin — কার্ড ঠিক গ্যাপ-লাইনেই শুরু ও শেষ হয়; স্ন্যাপ বন্ধ (স্ন্যাপই কার্ড কিনারায় ঠেলে দিচ্ছিল) */
+#page-home .hv-row,#page-home .tr-row{
+  margin-left:var(--gut);margin-right:var(--gut);width:auto;
+  padding-left:0 !important;padding-right:0 !important;
+  scroll-snap-type:none !important;overscroll-behavior-x:contain}
+#page-home .hv-card,#page-home .tr-card{scroll-snap-align:none}
+#page-home .hv-card{flex:0 0 calc((100% - 18px)/2.3) !important}
+#page-home .tr-card{flex:0 0 calc(100% - 26px) !important}
+#page-home .video-grid{padding-left:var(--gut) !important;padding-right:var(--gut) !important}
+#page-home .sec-head,#page-home .section-title,#page-home .vw-head,#page-home .sub-row{padding-left:calc(var(--gut) + 2px) !important;padding-right:calc(var(--gut) + 2px) !important}
+/* নোটিশ: লেখা আর আইকন আলাদা, লেখা ভেঙে যাবে না */
+.notice{align-items:flex-start}
+.notice .notice-txt{flex:1;min-width:0;display:block;line-height:1.55}
+.notice .notice-txt b{display:inline;white-space:nowrap}
+/* ক্যাটাগরির নাম: সর্বোচ্চ ২ লাইন, কখনো বাইরে উপচে পড়বে না */
+.cat-tile{overflow:hidden}
+.cat-tile .ct-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;word-break:normal;overflow-wrap:break-word;line-height:1.25;min-height:2.5em}
 </style>
 </head>
 <body>
@@ -1527,7 +1540,7 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
         <div class="vw-count" id="view-count"></div>
       </div>
 
-      <div class="notice only-all"><span class="material-icons-round">local_activity</span>প্রতিটি ভিডিও একটি বিজ্ঞাপন দেখে আনলক করা যায় — আনলকের পর <b>৩ মিনিট</b> খোলা থাকে।</div>
+      <div class="notice only-all"><span class="material-icons-round">local_activity</span><span class="notice-txt">প্রতিটি ভিডিও একটি বিজ্ঞাপন দেখে আনলক করা যায় — আনলকের পর <b>৩ মিনিট</b> খোলা থাকে।</span></div>
 
       <div class="only-all" id="home-sk"><div class="hv-row"><div class="hv-card sk-card sk"></div><div class="hv-card sk-card sk"></div><div class="hv-card sk-card sk"></div></div></div>
 
