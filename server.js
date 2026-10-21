@@ -1,223 +1,227 @@
 /**
- * Movie Lover — Telegram ভিডিও স্ট্রিম সার্ভার
+ * Movi Lover — Telegram Stream Proxy
+ *  GET /stream?m=<messageId>[&f=<file_id>]   (ফ্রন্টএন্ড এটাই ডাকে)
+ *  GET /stream/:file_id
+ *  GET /download?m=...  |  /download/:file_id[?name=film.mp4]
+ *  GET /health
  *
- * কাজ: টেলিগ্রাম স্টোরেজ চ্যানেলে রাখা ভিডিও (২০–৫০MB বা আরও বড়) সাইট/অ্যাপের প্লেয়ারে চালানো।
- * (টেলিগ্রাম বট API ২০MB-এর বেশি ফাইল ওয়েবসাইটকে দেয় না — তাই এই সার্ভার MTProto দিয়ে সরাসরি নামায়।)
- *
- * ব্যবহার:  GET /stream?m=<মেসেজ ID>      (Range/সিক সাপোর্টসহ)
- *           GET /health
- *
- * দরকারি Environment Variables:
- *   API_ID, API_HASH   — my.telegram.org থেকে
- *   BOT_TOKEN          — ভিডিও বটের টোকেন (যে বট চ্যানেলে ভিডিও পাঠায়)
- *   STORAGE_CHAT_ID    — স্টোরেজ চ্যানেলের ID, যেমন -1001234567890
- *   PORT               — হোস্টিং নিজেই দেয়
- *   ALLOWED_ORIGINS    — (ঐচ্ছিক) কমা দিয়ে আলাদা ডোমেইন, যেমন: mysite.com,t.me — দিলে অন্য সাইট থেকে হটলিংক বন্ধ
+ * দুই মোড:
+ *  1) MTProto (API_ID+API_HASH+CHAT_ID সেট থাকলে) — যেকোনো সাইজ, চ্যানেল-মেসেজ থেকে সরাসরি
+ *  2) Bot API getFile — ২০MB পর্যন্ত (Local Bot API সার্ভার দিলে যেকোনো সাইজ)
+ * দুই মোডেই HTTP Range (206) সাপোর্ট করে — সিক/ফাস্ট-ফরোয়ার্ড কাজ করে।
  */
-"use strict";
-const http = require("http");
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const { once } = require('events');
+const { Readable } = require('stream');
 
-const CHUNK = 512 * 1024;            // 512KB — টেলিগ্রামের নিয়ম (৪০৯৬-এর গুণিতক, ১MB সীমা পার হয় না)
-const CACHE_MS = 20 * 60 * 1000;     // মেসেজ/ফাইল রেফারেন্স ক্যাশ
-const ALLOWED = String(process.env.ALLOWED_ORIGINS || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
-function originAllowed(req) {
-  if (!ALLOWED.length) return true;
-  const h = req.headers.origin || req.headers.referer || "";
-  if (!h) return true;                       // অ্যাপের ওয়েবভিউ/প্লেয়ার অনেক সময় হেডার পাঠায় না
-  try { const host = new URL(h).hostname.toLowerCase(); return ALLOWED.some((a) => host === a || host.endsWith("." + a)); }
-  catch (_) { return false; }
-}
+const TOKEN = (process.env.BOT_TOKEN || '').trim();
+const API_BASE = (process.env.BOT_API_BASE || 'https://api.telegram.org').replace(/\/+$/, '');
+const API_ID = parseInt(process.env.API_ID || '0', 10);
+const API_HASH = process.env.API_HASH || '';
+const CHAT_ID = (process.env.CHAT_ID || '').trim();
+const PORT = process.env.PORT || 3000;
+const ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const MT_ENABLED = !!(API_ID && API_HASH && CHAT_ID);
+const REQ = 512 * 1024; // MTProto chunk (4096 এর গুণিতক, ১MB এর কম)
 
-/* ---------- HTTP অংশ (টেলিগ্রাম থেকে আলাদা, তাই পরীক্ষা করা যায়) ---------- */
-function parseRange(header, size) {
-  if (!header) return null;
-  const m = /^bytes=(\d*)-(\d*)$/i.exec(String(header).trim());
-  if (!m || (m[1] === "" && m[2] === "")) return "bad";
+if (!TOKEN) { console.error('BOT_TOKEN সেট করুন (.env)'); process.exit(1); }
+
+const app = express();
+app.disable('x-powered-by');
+
+/* ---------- CORS ---------- */
+app.use((req, res, next) => {
+  const o = req.headers.origin;
+  if (!ORIGINS.length) res.setHeader('Access-Control-Allow-Origin', '*');
+  else if (o && ORIGINS.includes(o)) { res.setHeader('Access-Control-Allow-Origin', o); res.setHeader('Vary', 'Origin'); }
+  res.setHeader('Access-Control-Allow-Headers', 'Range');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length, Content-Disposition');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+app.get('/health', (req, res) => res.json({ ok: true, mtproto: MT_ENABLED }));
+
+/* ---------- Range পার্সার ---------- */
+function parseRange(h, size) {
+  if (!h) return null;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(String(h).trim());
+  if (!m || (m[1] === '' && m[2] === '')) return 'bad';
   let start, end;
-  if (m[1] === "") {                           // bytes=-N  (শেষের N বাইট)
-    const n = parseInt(m[2], 10);
-    if (!n) return "bad";
-    start = Math.max(0, size - n); end = size - 1;
-  } else {
-    start = parseInt(m[1], 10);
-    end = m[2] === "" ? size - 1 : Math.min(parseInt(m[2], 10), size - 1);
-  }
-  if (start > end || start >= size) return "bad";
+  if (m[1] === '') { const n = parseInt(m[2], 10); start = Math.max(0, size - n); end = size - 1; }
+  else { start = parseInt(m[1], 10); end = m[2] === '' ? size - 1 : Math.min(parseInt(m[2], 10), size - 1); }
+  if (isNaN(start) || start > end || start >= size) return 'bad';
   return { start, end };
 }
 
-function createApp({ getFileInfo, openChunks, isReady, waitReady }) {
-  const cors = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Range",
-    "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
-  };
-  const json = (res, code, obj) => {
-    res.writeHead(code, Object.assign({ "Content-Type": "application/json; charset=utf-8" }, cors));
-    res.end(JSON.stringify(obj));
-  };
+const MIME = { '.mp4': 'video/mp4', '.m4v': 'video/mp4', '.mkv': 'video/x-matroska', '.webm': 'video/webm', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo' };
+const mimeOf = (name, fallback) => MIME[path.extname(name || '').toLowerCase()] || fallback || 'video/mp4';
+const safeName = n => String(n || 'video.mp4').replace(/[\r\n"\\/:*?<>|]+/g, '_').slice(0, 120) || 'video.mp4';
 
-  return http.createServer(async (req, res) => {
-    try {
-      const url = new URL(req.url, "http://x");
-      if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
-      if (url.pathname === "/" || url.pathname === "/health") return json(res, 200, { ok: true, ready: !!isReady() });
-      if (url.pathname !== "/stream" || (req.method !== "GET" && req.method !== "HEAD")) return json(res, 404, { ok: false, error: "not found" });
-
-      if (!originAllowed(req)) return json(res, 403, { ok: false, error: "forbidden" });
-      const msgId = parseInt(url.searchParams.get("m") || "", 10);
-      if (!msgId || msgId < 1) return json(res, 400, { ok: false, error: "m (message id) দিন" });
-
-      if (!isReady()) { await waitReady(40000); if (!isReady()) return json(res, 503, { ok: false, error: "সার্ভার চালু হচ্ছে, একটু পর আবার চেষ্টা করুন" }); }
-
-      let info;
-      try { info = await getFileInfo(msgId); }
-      catch (e) { return json(res, 502, { ok: false, error: "টেলিগ্রাম থেকে ফাইল আনা যায়নি: " + (e.message || e) }); }
-      if (!info) return json(res, 404, { ok: false, error: "এই মেসেজে ভিডিও নেই" });
-
-      const size = info.size;
-      const range = parseRange(req.headers.range, size);
-      if (range === "bad") {
-        res.writeHead(416, Object.assign({ "Content-Range": "bytes */" + size }, cors));
-        return res.end();
-      }
-      const start = range ? range.start : 0;
-      const end = range ? range.end : size - 1;
-      const headers = Object.assign({
-        "Content-Type": info.mime || "video/mp4",
-        "Accept-Ranges": "bytes",
-        "Content-Length": String(end - start + 1),
-        "Cache-Control": "private, max-age=3600",
-        "Content-Disposition": "inline",
-        "X-Content-Type-Options": "nosniff",
-      }, cors);
-      if (range) headers["Content-Range"] = `bytes ${start}-${end}/${size}`;
-      res.writeHead(range ? 206 : 200, headers);
-      if (req.method === "HEAD") return res.end();
-
-      let closed = false;
-      req.on("close", () => { closed = true; });
-      const aligned = start - (start % CHUNK);
-      const count = Math.ceil((end + 1 - aligned) / CHUNK);
-      let pos = aligned;
-      try {
-        for await (const buf of openChunks(info, aligned, count)) {
-          if (closed) break;
-          const from = Math.max(start - pos, 0);
-          const to = Math.min(end + 1 - pos, buf.length);
-          if (to > from) {
-            if (!res.write(buf.subarray(from, to))) {
-              await new Promise((r) => { res.once("drain", r); res.once("close", r); });
-            }
-          }
-          pos += buf.length;
-          if (pos > end) break;
-        }
-        res.end();
-      } catch (e) {
-        console.error("stream error:", e && e.message);
-        res.destroy();
-      }
-    } catch (e) {
-      console.error("request error:", e && e.message);
-      try { json(res, 500, { ok: false, error: "সার্ভার ত্রুটি" }); } catch (_) { /* ignore */ }
-    }
-  });
+/* =====================================================================
+   সোর্স ১: Bot API getFile  → { size, mime, name, read(start,end,signal) }
+   ===================================================================== */
+const fileCache = new Map(); // file_id -> { info, at }
+async function botGetFile(fileId) {
+  const c = fileCache.get(fileId);
+  if (c && Date.now() - c.at < 45 * 60 * 1000) return c.info;
+  const r = await fetch(`${API_BASE}/bot${TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`);
+  const j = await r.json().catch(() => ({}));
+  if (!j.ok || !j.result || !j.result.file_path) {
+    const err = new Error(j.description || 'getFile failed');
+    err.code = /too big/i.test(j.description || '') ? 'TOO_BIG' : 'NOT_FOUND';
+    throw err;
+  }
+  const info = { file_path: j.result.file_path, file_size: j.result.file_size };
+  fileCache.set(fileId, { info, at: Date.now() });
+  return info;
 }
-
-/* ---------- টেলিগ্রাম অংশ (GramJS) ---------- */
-function createTelegramBackend() {
-  const { TelegramClient, Api } = require("telegram");
-  const { StringSession } = require("telegram/sessions");
-  const { LogLevel } = require("telegram/extensions/Logger");
-  const bigInt = require("big-integer");
-
-  const API_ID = parseInt(process.env.API_ID || "", 10);
-  const API_HASH = process.env.API_HASH || "";
-  const BOT_TOKEN = process.env.BOT_TOKEN || "";
-  const CHAT = String(process.env.STORAGE_CHAT_ID || "").trim();
-  if (!API_ID || !API_HASH || !BOT_TOKEN || !CHAT) {
-    throw new Error("API_ID, API_HASH, BOT_TOKEN, STORAGE_CHAT_ID — চারটাই Environment Variables-এ দিন");
+async function botSource(fileId) {
+  const { file_path, file_size } = await botGetFile(fileId);
+  const name = path.basename(file_path);
+  // Local Bot API: file_path হলো ডিস্কের পুরো পথ
+  if (path.isAbsolute(file_path) && fs.existsSync(file_path)) {
+    const size = fs.statSync(file_path).size;
+    return { size, name, mime: mimeOf(name), read: (s, e) => fs.createReadStream(file_path, { start: s, end: e }) };
   }
-  // -1001234567890 -> channelId 1234567890
-  const channelId = CHAT.replace(/^-100/, "").replace(/^-/, "");
-  const peer = new Api.PeerChannel({ channelId: bigInt(channelId) });
-
-  const client = new TelegramClient(new StringSession(""), API_ID, API_HASH, { connectionRetries: 10 });
-  client.setLogLevel(LogLevel.ERROR);
-
-  let ready = false;
-  let readyResolvers = [];
-  async function connect() {
-    for (let attempt = 1; ; attempt++) {
-      try {
-        await client.start({ botAuthToken: BOT_TOKEN });
-        ready = true;
-        readyResolvers.forEach((r) => r());
-        readyResolvers = [];
-        console.log("Telegram সংযুক্ত ✅");
-        return;
-      } catch (e) {
-        console.error("Telegram সংযোগ ব্যর্থ (চেষ্টা " + attempt + "):", e && e.message);
-        await new Promise((r) => setTimeout(r, Math.min(30000, attempt * 3000)));
-      }
-    }
+  const url = path.isAbsolute(file_path) ? null : `${API_BASE}/file/bot${TOKEN}/${file_path}`;
+  if (!url) { const e = new Error('local file missing'); e.code = 'NOT_FOUND'; throw e; }
+  let size = file_size;
+  if (!size) { // size জানা না থাকলে HEAD
+    const h = await fetch(url, { method: 'HEAD' });
+    size = parseInt(h.headers.get('content-length') || '0', 10);
   }
-
-  const cache = new Map();           // msgId -> { at, info } | { at, promise }
-  async function getFileInfo(msgId) {
-    const hit = cache.get(msgId);
-    if (hit && Date.now() - hit.at < CACHE_MS) return hit.promise ? hit.promise : hit.info;
-    const promise = (async () => {
-      const msgs = await client.getMessages(peer, { ids: [msgId] });
-      const msg = msgs && msgs[0];
-      const media = msg && msg.media;
-      const doc = media && media.document;
-      if (!doc || !doc.size) return null;
-      return { media, size: Number(doc.size.toString()), mime: doc.mimeType || "video/mp4" };
-    })();
-    cache.set(msgId, { at: Date.now(), promise });
-    try {
-      const info = await promise;
-      if (info) cache.set(msgId, { at: Date.now(), info }); else cache.delete(msgId);
-      return info;
-    } catch (e) { cache.delete(msgId); throw e; }
-  }
-
-  async function* openChunks(info, offset, count) {
-    for await (const chunk of client.iterDownload({
-      file: info.media,
-      offset: bigInt(offset),
-      requestSize: CHUNK,
-      chunkSize: CHUNK,
-      stride: CHUNK,
-      limit: count,
-      fileSize: bigInt(info.size),
-    })) {
-      yield chunk;
-    }
-  }
-
+  if (!size) { const e = new Error('unknown size'); e.code = 'NOT_FOUND'; throw e; }
   return {
-    connect,
-    getFileInfo,
-    openChunks,
-    isReady: () => ready,
-    waitReady: (ms) => new Promise((resolve) => {
-      if (ready) return resolve();
-      const t = setTimeout(resolve, ms);
-      readyResolvers.push(() => { clearTimeout(t); resolve(); });
-    }),
+    size, name, mime: mimeOf(name),
+    read: async (s, e, signal) => {
+      const up = await fetch(url, { headers: { Range: `bytes=${s}-${e}` }, signal });
+      if (!up.ok && up.status !== 206) throw new Error('upstream ' + up.status);
+      let stream = Readable.fromWeb(up.body);
+      if (up.status === 200 && s > 0) { // আপস্ট্রিম Range না মানলে নিজে কেটে নিই
+        let skip = s; let left = e - s + 1;
+        stream = stream.pipe(new (require('stream').Transform)({
+          transform(chunk, _, cb) {
+            if (skip >= chunk.length) { skip -= chunk.length; return cb(); }
+            if (skip > 0) { chunk = chunk.subarray(skip); skip = 0; }
+            if (left <= 0) return cb();
+            if (chunk.length > left) chunk = chunk.subarray(0, left);
+            left -= chunk.length; cb(null, chunk);
+          }
+        }));
+      }
+      return stream;
+    }
   };
 }
 
-module.exports = { createApp, parseRange, CHUNK };
-
-if (require.main === module) {
-  const backend = createTelegramBackend();
-  const app = createApp(backend);
-  const port = parseInt(process.env.PORT || "3000", 10);
-  app.listen(port, "0.0.0.0", () => console.log("স্ট্রিম সার্ভার চালু, পোর্ট " + port));
-  backend.connect();
-  process.on("unhandledRejection", (e) => console.error("unhandledRejection:", e && e.message));
+/* =====================================================================
+   সোর্স ২: MTProto (GramJS) — চ্যানেল মেসেজ থেকে, যেকোনো সাইজ
+   ===================================================================== */
+let mtClientP = null;
+function mtClient() {
+  if (!mtClientP) {
+    mtClientP = (async () => {
+      const { TelegramClient } = require('telegram');
+      const { StringSession } = require('telegram/sessions');
+      const c = new TelegramClient(new StringSession(process.env.SESSION || ''), API_ID, API_HASH, { connectionRetries: 5 });
+      await c.start({ botAuthToken: TOKEN });
+      try { await c.getEntity(/^-?\d+$/.test(CHAT_ID) ? Number(CHAT_ID) : CHAT_ID); } catch (e) { console.warn('চ্যানেল এন্টিটি রিসলভ হয়নি:', e.message); }
+      console.log('MTProto সংযুক্ত');
+      return c;
+    })().catch(e => { mtClientP = null; throw e; });
+  }
+  return mtClientP;
 }
+const msgCache = new Map(); // id -> { msg, at }
+async function mtSource(msgId) {
+  const bigInt = require('big-integer');
+  const client = await mtClient();
+  let hit = msgCache.get(msgId);
+  if (!hit || Date.now() - hit.at > 20 * 60 * 1000) {
+    const chat = /^-?\d+$/.test(CHAT_ID) ? Number(CHAT_ID) : CHAT_ID;
+    const list = await client.getMessages(chat, { ids: [Number(msgId)] });
+    const msg = list && list[0];
+    if (!msg || !msg.media || !msg.media.document) { const e = new Error('message/video not found'); e.code = 'NOT_FOUND'; throw e; }
+    hit = { msg, at: Date.now() }; msgCache.set(msgId, hit);
+  }
+  const doc = hit.msg.media.document;
+  const size = Number(doc.size);
+  const nameAttr = (doc.attributes || []).find(a => a.fileName);
+  const name = (nameAttr && nameAttr.fileName) || `video_${msgId}.mp4`;
+  return {
+    size, name, mime: doc.mimeType && doc.mimeType.startsWith('video/') ? doc.mimeType : mimeOf(name),
+    read: async function* (s, e, signal) {
+      const aligned = s - (s % REQ);
+      let pos = aligned;
+      for await (const chunk of client.iterDownload({ file: hit.msg.media, offset: bigInt(aligned), requestSize: REQ })) {
+        if (signal && signal.aborted) return;
+        let buf = Buffer.from(chunk);
+        const cs = pos, ce = pos + buf.length - 1;
+        pos += buf.length;
+        if (ce < s) continue;
+        const from = Math.max(0, s - cs), to = Math.min(buf.length, e - cs + 1);
+        yield buf.subarray(from, to);
+        if (ce >= e) return;
+      }
+    }
+  };
+}
+
+/* ---------- রিকোয়েস্ট থেকে সোর্স বাছাই ---------- */
+async function pickSource(req) {
+  const fileId = req.params.file_id || req.query.f;
+  const m = req.query.m;
+  if (m && MT_ENABLED) return mtSource(String(m).replace(/\D/g, ''));
+  if (fileId) return botSource(String(fileId));
+  if (m && !MT_ENABLED) { const e = new Error('MTProto চালু নেই (API_ID/API_HASH/CHAT_ID দিন) অথবা &f=<file_id> দিন'); e.code = 'NO_MT'; throw e; }
+  const e = new Error('file_id বা m দিন'); e.code = 'BAD'; throw e;
+}
+
+/* ---------- মূল হ্যান্ডলার (206 Partial Content) ---------- */
+async function serve(req, res, download) {
+  const ac = new AbortController();
+  res.on('close', () => ac.abort());
+  let src;
+  try { src = await pickSource(req); }
+  catch (e) {
+    const code = e.code === 'TOO_BIG' ? 413 : e.code === 'NOT_FOUND' ? 404 : e.code === 'NO_MT' || e.code === 'BAD' ? 400 : 502;
+    return res.status(code).json({ error: e.code === 'TOO_BIG' ? 'ফাইল ২০MB-এর বেশি — MTProto (API_ID/API_HASH/CHAT_ID) বা Local Bot API লাগবে' : e.message });
+  }
+  const { size } = src;
+  const range = parseRange(req.headers.range, size);
+  if (range === 'bad') { res.setHeader('Content-Range', `bytes */${size}`); return res.sendStatus(416); }
+
+  const start = range ? range.start : 0, end = range ? range.end : size - 1;
+  res.status(range ? 206 : 200);
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Content-Type', download ? 'application/octet-stream' : src.mime);
+  res.setHeader('Content-Length', end - start + 1);
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  if (range) res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+  if (download) {
+    const fname = safeName(req.query.name || src.name);
+    res.setHeader('Content-Disposition', `attachment; filename="${fname.replace(/[^\x20-\x7e]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(fname)}`);
+  }
+  if (req.method === 'HEAD') return res.end();
+
+  try {
+    const stream = await src.read(start, end, ac.signal);
+    for await (const chunk of stream) {
+      if (ac.signal.aborted) break;
+      if (!res.write(chunk)) await once(res, 'drain');
+    }
+    res.end();
+  } catch (e) {
+    if (!ac.signal.aborted) console.error('stream error:', e.message);
+    res.destroy();
+  }
+}
+
+app.get(['/stream', '/stream/:file_id'], (req, res) => serve(req, res, false));
+app.head(['/stream', '/stream/:file_id'], (req, res) => serve(req, res, false));
+app.get(['/download', '/download/:file_id'], (req, res) => serve(req, res, true));
+
+app.listen(PORT, () => console.log(`Stream proxy চলছে :${PORT} — MTProto: ${MT_ENABLED ? 'চালু' : 'বন্ধ (শুধু Bot API)'}`));
