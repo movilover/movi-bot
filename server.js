@@ -23,7 +23,8 @@ const API_HASH = process.env.API_HASH || '';
 const CHAT_ID = (process.env.CHAT_ID || '').trim();
 const PORT = process.env.PORT || 3000;
 const ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-const MT_ENABLED = !!(API_ID && API_HASH && CHAT_ID);
+const MT_ENABLED = !!(API_ID && API_HASH && (CHAT_ID || process.env.ALLOWED_CHATS));
+const ALLOWED_CHATS = (process.env.ALLOWED_CHATS || '').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
 const REQ = 512 * 1024; // MTProto chunk (4096 এর গুণিতক, ১MB এর কম)
 
 if (!TOKEN) { console.error('BOT_TOKEN সেট করুন (.env)'); process.exit(1); }
@@ -136,16 +137,22 @@ function mtClient() {
   return mtClientP;
 }
 const msgCache = new Map(); // id -> { msg, at }
-async function mtSource(msgId) {
+async function mtSource(msgId, chatParam) {
   const bigInt = require('big-integer');
   const client = await mtClient();
-  let hit = msgCache.get(msgId);
+  const chatRaw = (chatParam || CHAT_ID || '').trim();
+  if (!chatRaw) { const e = new Error('CHAT_ID দিন'); e.code = 'BAD'; throw e; }
+  if (chatParam && chatParam.toLowerCase() !== CHAT_ID.toLowerCase() && ALLOWED_CHATS.length && !ALLOWED_CHATS.includes(chatParam.toLowerCase())) {
+    const e = new Error('এই চ্যানেল অনুমোদিত নয়'); e.code = 'BAD'; throw e;
+  }
+  const cacheKey = chatRaw + ':' + msgId;
+  let hit = msgCache.get(cacheKey);
   if (!hit || Date.now() - hit.at > 20 * 60 * 1000) {
-    const chat = /^-?\d+$/.test(CHAT_ID) ? Number(CHAT_ID) : CHAT_ID;
+    const chat = /^-?\d+$/.test(chatRaw) ? Number(chatRaw) : chatRaw;
     const list = await client.getMessages(chat, { ids: [Number(msgId)] });
     const msg = list && list[0];
     if (!msg || !msg.media || !msg.media.document) { const e = new Error('message/video not found'); e.code = 'NOT_FOUND'; throw e; }
-    hit = { msg, at: Date.now() }; msgCache.set(msgId, hit);
+    hit = { msg, at: Date.now() }; msgCache.set(cacheKey, hit);
   }
   const doc = hit.msg.media.document;
   const size = Number(doc.size);
@@ -174,7 +181,7 @@ async function mtSource(msgId) {
 async function pickSource(req) {
   const fileId = req.params.file_id || req.query.f;
   const m = req.query.m;
-  if (m && MT_ENABLED) return mtSource(String(m).replace(/\D/g, ''));
+  if (m && MT_ENABLED) return mtSource(String(m).replace(/\D/g, ''), req.query.c ? String(req.query.c) : '');
   if (fileId) return botSource(String(fileId));
   if (m && !MT_ENABLED) { const e = new Error('MTProto চালু নেই (API_ID/API_HASH/CHAT_ID দিন) অথবা &f=<file_id> দিন'); e.code = 'NO_MT'; throw e; }
   const e = new Error('file_id বা m দিন'); e.code = 'BAD'; throw e;
