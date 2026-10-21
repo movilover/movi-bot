@@ -1387,6 +1387,17 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
 .video-card{border:1px solid rgba(242,184,48,.14)}
 .video-card:active{transform:scale(.98)}
 </style>
+<style id="align-v7">
+#page-home{--gut:14px}
+#page-home > .only-all,#page-home > .only-cat,#page-home > .only-view,#page-home > .pinned-section,#page-home > .section-title,#page-home > .video-grid,#page-home > .notice{
+  width:100%;max-width:560px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+#page-home .hv-row,#page-home .tr-row{padding-left:var(--gut) !important;padding-right:var(--gut) !important;scroll-padding-left:var(--gut);scroll-padding-right:var(--gut);scroll-snap-type:x proximity}
+#page-home .tr-card{scroll-snap-align:start}
+#page-home .video-grid{max-width:560px !important;padding-left:var(--gut) !important;padding-right:var(--gut) !important;margin-left:auto;margin-right:auto}
+#page-home .sec-head,#page-home .section-title,#page-home .vw-head,#page-home .sub-row{padding-left:var(--gut) !important;padding-right:var(--gut) !important}
+#page-home .tr-card{flex:0 0 calc(100% - 2*var(--gut) - 28px)}
+#page-home .hv-card{flex:0 0 calc((100% - 2*var(--gut) - 10px)/2)}
+</style>
 </head>
 <body>
 
@@ -3087,10 +3098,12 @@ function viewAllList(k){
   if(k === 'continue') return continueItems(60).map(x=>x.v);
   return STATE.allVideos;
 }
+function homeHiddenCat(key){ const c=(STATE.categories||[]).find(x=>x.key===key); return !!(c && c.homeHidden); }
 function applyCategoryFilter(render){
   const c = STATE.activeCat || 'all', s = STATE.activeSub || '';
   let list = STATE.allVideos;
   if(STATE.viewAll) list = viewAllList(STATE.viewAll);
+  else if(c === 'all') list = list.filter(v=>!homeHiddenCat(v.category));   // Series/Movie/Natok ইত্যাদি হোমে আসবে না
   else if(c !== 'all'){
     list = list.filter(v=>v.category === c);
     if(s) list = list.filter(v=>v.subcategory === s);
@@ -4061,7 +4074,20 @@ async function resolveBloggerPost(part){
   part._bList = list; part._bAt = Date.now();
   return list;
 }
+function parseTgPostLink(u){
+  const m = /^https?:\/\/(?:www\.)?(?:t|telegram)\.me\/(c\/)?([A-Za-z0-9_]+)\/(?:\d+\/)?(\d+)(?:[?#].*)?$/i.exec(String(u||'').trim());
+  if(!m) return null;
+  if(!m[1] && /^(s|joinchat|addstickers|share|proxy|socks|login)$/i.test(m[2])) return null;
+  return { chat: m[1] ? '-100' + m[2] : '@' + m[2], id: m[3] };
+}
 async function resolvePartUrl(part){
+  const _tg = part.url ? parseTgPostLink(part.url) : null;
+  if(_tg){
+    part._kind = null;
+    const su = STATE.videoBot && STATE.videoBot.streamUrl;
+    if(!su) throw new Error('no-stream');
+    return su + '/stream?m=' + _tg.id + '&c=' + encodeURIComponent(_tg.chat);
+  }
   if(part.url){
     if(isBloggerPost(part.url)){ const list = await resolveBloggerPost(part); part._kind = list[0].kind; return list[0].url; }
     part._kind = null;
@@ -4094,7 +4120,8 @@ async function loadPart(idx, isRetry){
   try{ url = await resolvePartUrl(part); }
   catch(e){
     if(my !== window._playerReq) return;
-    const msg = e.message === 'tg-too-big' ? 'এই ভিডিওটি ২০MB-এর বেশি — স্ট্রিম সার্ভার চালু না থাকলে অ্যাপে চলবে না।'
+    const msg = e.message === 'no-stream' ? 'টেলিগ্রাম লিংকের ভিডিও চালাতে অ্যাডমিন → ভিডিও বট পেজে স্ট্রিম সার্ভার লিংক দিতে হবে।'
+              : e.message === 'tg-too-big' ? 'এই ভিডিওটি ২০MB-এর বেশি — স্ট্রিম সার্ভার চালু না থাকলে অ্যাপে চলবে না।'
               : e.message === 'no-source' ? 'এই পার্টের ভিডিও লিংক পাওয়া যায়নি।'
               : e.message === 'blogger-nopost' ? 'Blogger পোস্টটি পাওয়া যায়নি — লিংকটি ঠিক আছে কিনা দেখুন।'
               : e.message === 'blogger-novideo' ? 'এই Blogger পোস্টে কোনো ভিডিও পাওয়া যায়নি।'
@@ -4117,7 +4144,7 @@ async function loadPart(idx, isRetry){
     attachProgress(v, idx, mv);
     mv.onended = ()=>{ const n = idx + 1; if(parts[n]){ toast('▶️ পরের পার্ট চালু হচ্ছে...'); switchPart(n); } };
     mv.onerror = ()=>{                       // expired Telegram link etc. -> one automatic retry
-      if(isRetry || !part.tgFileId || part.url || my !== window._playerReq) { playerMessage(`<span class="material-icons-round" style="font-size:36px;color:#f87171;">error_outline</span><span>ভিডিও চালানো যাচ্ছে না।</span><button class="part-btn active ripple" onclick="loadPart(${idx})">আবার চেষ্টা করুন</button>`); return; }
+      if(isRetry || !(part.tgFileId || parseTgPostLink(part.url)) || my !== window._playerReq) { playerMessage(`<span class="material-icons-round" style="font-size:36px;color:#f87171;">error_outline</span><span>ভিডিও চালানো যাচ্ছে না।</span><button class="part-btn active ripple" onclick="loadPart(${idx})">আবার চেষ্টা করুন</button>`); return; }
       part._tgUrl = null; loadPart(idx, true);
     };
   }
