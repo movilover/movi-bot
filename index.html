@@ -1189,6 +1189,40 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#110b1c 100%) !important; borde
 
 @media (prefers-reduced-motion: reduce){ .hero-dots i, .cat-tile { transition:none; } }
 </style>
+
+<style id="upd-v1">
+.upd-sheet{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(6,4,14,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .3s}
+.upd-sheet.show{display:flex}.upd-sheet.in{opacity:1}
+.upd-card{position:relative;width:100%;max-width:370px;max-height:92vh;overflow-y:auto;padding:26px 20px 18px;border-radius:26px;text-align:center;scrollbar-width:none;
+  background:linear-gradient(180deg,#1b1330 0%,#110c1f 100%);border:1px solid rgba(167,139,250,.35);box-shadow:0 0 0 1px rgba(242,184,48,.12),0 24px 60px rgba(0,0,0,.6),0 0 50px rgba(124,58,237,.28);
+  transform:translateY(24px) scale(.96);transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}
+.upd-card::-webkit-scrollbar{display:none}
+.upd-sheet.in .upd-card{transform:none}
+.upd-card::before{content:'';position:absolute;top:0;left:22px;right:22px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#f2b830,#a855f7,transparent)}
+.upd-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#cfc8ea;background:rgba(255,255,255,.06);border:1px solid rgba(167,139,250,.25)}
+.upd-x .material-icons-round{font-size:18px}
+.upd-logo{width:84px;height:84px;margin:0 auto 12px;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(124,58,237,.5);position:relative}
+.upd-logo svg{width:100%;height:100%;display:block}
+.upd-logo::after{content:'';position:absolute;top:0;bottom:0;width:36%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:updShine 3s ease-in-out infinite}
+@keyframes updShine{0%,55%{left:-60%}100%{left:130%}}
+.upd-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;color:#ffd36a;background:rgba(242,184,48,.12);border:1px solid rgba(242,184,48,.35);margin-bottom:10px}
+.upd-pill .material-icons-round{font-size:15px}
+.upd-title{font-family:'Hind Siliguri','Rajdhani',sans-serif;font-size:22px;font-weight:800;color:#fff;line-height:1.25}
+.upd-ver{margin:8px auto 0;display:inline-flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;color:#cfc8ea}
+.upd-ver b{color:#ffd36a}.upd-ver .material-icons-round{font-size:16px;color:#a78bfa}
+.upd-msg{margin-top:10px;font-size:13px;line-height:1.55;color:#cfc8ea}
+.upd-warn{display:flex;gap:11px;align-items:flex-start;text-align:left;margin-top:16px;padding:12px 13px;border-radius:16px;background:linear-gradient(180deg,rgba(245,158,11,.14),rgba(245,158,11,.06));border:1px solid rgba(245,158,11,.4)}
+.upd-warn>.material-icons-round{font-size:24px;color:#fbbf24;flex-shrink:0;margin-top:1px}
+.upd-warn b{display:block;font-size:14px;color:#fde68a;margin-bottom:2px}
+.upd-warn span:not(.material-icons-round){display:block;font-size:12.5px;line-height:1.5;color:#e7dcc0}
+.upd-steps{list-style:none;margin:14px 0 0;padding:0;text-align:left;counter-reset:s}
+.upd-steps li{counter-increment:s;position:relative;padding:8px 8px 8px 40px;font-size:13px;line-height:1.5;color:#d9d2f0}
+.upd-steps li::before{content:counter(s);position:absolute;left:4px;top:8px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(180deg,#8b5cf6,#5b21b6);box-shadow:0 4px 10px rgba(109,40,217,.5)}
+.upd-btn{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:16px;padding:14px;border-radius:17px;cursor:pointer;font-family:'Hind Siliguri','Rajdhani',sans-serif;font-weight:800;font-size:16.5px;color:#fff;
+  background:linear-gradient(180deg,#8b5cf6 0%,#6d28d9 55%,#5b21b6 100%);border:1px solid rgba(196,181,253,.55);box-shadow:0 10px 26px rgba(109,40,217,.55),inset 0 1px 0 rgba(255,255,255,.28)}
+.upd-btn:active{transform:scale(.97)}.upd-btn .material-icons-round{font-size:22px}
+.upd-later{margin-top:10px;padding:10px;font-size:13.5px;font-weight:600;color:#a79fc7;cursor:pointer}
+</style>
 </head>
 <body>
 
@@ -1238,6 +1272,21 @@ nav { background:linear-gradient(0deg,#0a0710 0%,#110b1c 100%) !important; borde
           <a class="announce-cta" id="announce-cta" href="#" onclick="return announceCta(event)"><span class="material-icons-round">send</span><span id="announce-cta-txt">যোগ দিন</span></a>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="upd-sheet" class="upd-sheet" role="dialog" aria-modal="true">
+    <div class="upd-card">
+      <div class="upd-x" id="upd-x" onclick="closeUpdSheet()"><span class="material-icons-round">close</span></div>
+      <div class="upd-logo" id="upd-logo"></div>
+      <div class="upd-pill"><span class="material-icons-round">new_releases</span>নতুন আপডেট এসেছে</div>
+      <h3 class="upd-title">অ্যাপটি আপডেট করুন</h3>
+      <div class="upd-ver"><span id="upd-cur"></span><span class="material-icons-round">arrow_forward</span><b id="upd-new"></b></div>
+      <div class="upd-msg" id="upd-msg" style="display:none;"></div>
+      <div class="upd-warn" id="upd-warn"><span class="material-icons-round">delete_forever</span><div><b>আগে পুরোনো অ্যাপটি ডিলিট করুন</b><span>অ্যাপটি আপডেট করতে গেলে ফোন থেকে আগের Movi Lover অ্যাপটি অবশ্যই ডিলিট (আনইনস্টল) করতে হবে।</span></div></div>
+      <ol class="upd-steps" id="upd-steps"></ol>
+      <div class="upd-btn ripple" onclick="downloadUpdate()"><span class="material-icons-round">download</span>ডাউনলোড করুন</div>
+      <div class="upd-later" id="upd-later" onclick="closeUpdSheet()">পরে করব</div>
     </div>
   </div>
 
@@ -2542,9 +2591,57 @@ function downloadApp(){
   openExternal(STATE.appUrl);   // টেলিগ্রামের ভেতরে হলে বাইরের ব্রাউজারে খুলে ডাউনলোড শুরু হয়
   closeAppSheet();
 }
+
+/* ===================== APP UPDATE NOTICE (অ্যাপের ভেতরে পুরোনো ভার্সনে নোটিশ) =====================
+   অ্যাডমিন > সেটিংসে "সর্বশেষ অ্যাপ ভার্সন" দিলে, তার চেয়ে পুরোনো অ্যাপে ইউজার ঢুকলেই এই নোটিশ আসে।
+   অ্যাপ নিজের ভার্সন User-Agent-এ (MoviLoverApp/x.y) জানায়। */
+function appVersionNow(){ const m = /MoviLoverApp\/([\w.\-]+)/i.exec(navigator.userAgent); return m ? m[1] : ''; }
+function verTuple(v){ return (String(v||'').match(/\d+/g) || []).map(Number); }
+function verLess(a, b){
+  const x = verTuple(a), y = verTuple(b); if(!y.length) return false;
+  for(let i = 0; i < Math.max(x.length, y.length); i++){ const p = x[i]||0, q = y[i]||0; if(p !== q) return p < q; }
+  return false;
+}
+function checkAppUpdate(){
+  if(!isInApp() || !STATE.appLatest || !STATE.appUrl) return;
+  const cur = appVersionNow();
+  if(!verLess(cur, STATE.appLatest)) return;
+  if(!STATE.appForce){ try{ if(sessionStorage.getItem('ml_upd_skip') === STATE.appLatest) return; }catch(e){} }
+  const logo = document.querySelector('#app-sheet .app-logo');
+  if(logo) document.getElementById('upd-logo').innerHTML = logo.innerHTML;
+  document.getElementById('upd-cur').textContent = 'আপনার ভার্সন ' + (cur ? 'v' + cur : 'পুরোনো');
+  document.getElementById('upd-new').textContent = 'নতুন v' + STATE.appLatest;
+  const msg = document.getElementById('upd-msg');
+  msg.style.display = STATE.appUpdateMsg ? '' : 'none'; msg.textContent = STATE.appUpdateMsg || '';
+  const un = STATE.appUninstallNote !== false;
+  document.getElementById('upd-warn').style.display = un ? '' : 'none';
+  const steps = [];
+  if(un) steps.push('ফোন থেকে <b>আগের Movi Lover অ্যাপটি ডিলিট (আনইনস্টল)</b> করুন।');
+  steps.push('নিচের <b>"ডাউনলোড করুন"</b> বাটন চাপুন — Google Chrome-এ নতুন অ্যাপটি নামতে শুরু করবে।');
+  steps.push('ডাউনলোড শেষে ফাইলটি খুলে <b>ইনস্টল</b> করুন (প্রয়োজনে "এই উৎস থেকে ইনস্টলের অনুমতি" চালু করুন)।');
+  document.getElementById('upd-steps').innerHTML = steps.map(t => '<li>' + t + '</li>').join('');
+  document.getElementById('upd-x').style.display = STATE.appForce ? 'none' : '';
+  document.getElementById('upd-later').style.display = STATE.appForce ? 'none' : '';
+  const el = document.getElementById('upd-sheet');
+  el.classList.add('show'); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('in')));
+}
+function closeUpdSheet(){
+  if(STATE.appForce) return;
+  try{ sessionStorage.setItem('ml_upd_skip', STATE.appLatest); }catch(e){}
+  const el = document.getElementById('upd-sheet');
+  el.classList.remove('in'); setTimeout(()=>el.classList.remove('show'), 320);
+}
+function downloadUpdate(){
+  if(!STATE.appUrl) return;
+  try{ trackAppDownloadClick(); }catch(e){}
+  // নতুন অ্যাপে সরাসরি বাইরের ব্রাউজারে (Chrome) খোলে; পুরোনো অ্যাপে window.open দিয়ে
+  try{ if(window.AndroidApp && typeof window.AndroidApp.openUrl === 'function'){ window.AndroidApp.openUrl(STATE.appUrl); return; } }catch(e){}
+  openExternal(STATE.appUrl);
+}
 /* অ্যাপের (Android খোলস) ব্যাক বাটন: পপআপ বন্ধ → অন্য পেজ থেকে হোমে → না পারলে অ্যাপ নিজে বের হবে */
 window.__appBack = function(){
   const open = id => { const e = document.getElementById(id); return !!(e && (e.classList.contains('open') || e.classList.contains('show'))); };
+  if(open('upd-sheet')){ if(STATE.appForce) return false; closeUpdSheet(); return true; }
   if(open('app-sheet')){ closeAppSheet(); return true; }
   if(open('announcement-banner')){ dismissAnnouncement(); return true; }
   if(open('player-modal')){ closePlayer(); return true; }
@@ -2561,7 +2658,9 @@ async function loadSettings(){
   if(s && s.adminContactUrl){ STATE.adminContactUrl = s.adminContactUrl; }
   if(s && s.officialChannelUrl){ STATE.officialChannelUrl = s.officialChannelUrl; }
   if(s && s.shortsUrl){ STATE.shortsUrl = s.shortsUrl; }
-  if(s){ STATE.appUrl = s.appUrl || ''; STATE.appEnabled = s.appEnabled !== false; refreshAppButton(); }
+  if(s){ STATE.appUrl = s.appUrl || ''; STATE.appEnabled = s.appEnabled !== false; refreshAppButton();
+    STATE.appLatest = String(s.appLatest || '').trim(); STATE.appForce = s.appForce === true; STATE.appUninstallNote = s.appUninstallNote !== false; STATE.appUpdateMsg = s.appUpdateMsg || '';
+    try{ checkAppUpdate(); }catch(e){ console.error(e); } }
 }
 
 function showBannerAd(){
