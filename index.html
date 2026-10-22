@@ -2851,6 +2851,7 @@ async function loadSettings(){
   if(s && s.adminContactUrl){ STATE.adminContactUrl = s.adminContactUrl; }
   if(s && s.officialChannelUrl){ STATE.officialChannelUrl = s.officialChannelUrl; }
   if(s && s.shortsUrl){ STATE.shortsUrl = s.shortsUrl; }
+  if(s){ STATE.dmcaEmail = String(s.dmcaEmail || '').trim(); STATE.dmcaNotice = String(s.dmcaNotice || '').trim(); }
   if(s){ STATE.appUrl = s.appUrl || ''; STATE.appEnabled = s.appEnabled !== false; refreshAppButton();
     STATE.appLatest = String(s.appLatest || '').trim(); STATE.appForce = s.appForce === true; STATE.appUninstallNote = s.appUninstallNote !== false; STATE.appUpdateMsg = s.appUpdateMsg || '';
     try{ checkAppUpdate(); }catch(e){ console.error(e); } }
@@ -5158,6 +5159,57 @@ askBotWriteAccess();
     hideSplash();
   }catch(e){ console.error('cache', e); }
 })();
+</script>
+<style id="dmca-v1">
+.legal-foot{text-align:center;padding:22px 16px 10px;margin-top:6px}
+.legal-foot span{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:rgba(255,255,255,.5);letter-spacing:.3px;cursor:pointer;padding:6px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.08)}
+.legal-foot span:active{opacity:.7}
+.legal-foot .material-icons-round{font-size:14px}
+#dmca-ov{position:fixed;inset:0;z-index:100000;background:rgba(5,4,12,.78);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center}
+#dmca-ov.open{display:flex}
+.dmca-box{width:100%;max-width:520px;max-height:86vh;overflow:auto;background:linear-gradient(180deg,#1b1630,#120f22);border:1px solid rgba(242,184,48,.25);border-radius:22px 22px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom,0px));color:#e9e6f5;font-size:13.5px;line-height:1.65}
+.dmca-box h3{margin:0 0 4px;font-size:17px;color:#ffd98a;display:flex;align-items:center;gap:8px}
+.dmca-box h4{margin:14px 0 4px;font-size:13px;color:#c4b0ff}
+.dmca-box ul{margin:4px 0 0;padding-left:18px}
+.dmca-mail{margin:14px 0 4px;padding:12px;border-radius:14px;background:rgba(242,184,48,.09);border:1px solid rgba(242,184,48,.32);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dmca-mail a{color:#ffd98a;font-weight:700;word-break:break-all;text-decoration:none}
+.dmca-mail button,.dmca-close{border:none;border-radius:12px;padding:8px 14px;font-weight:700;font-size:12.5px;cursor:pointer}
+.dmca-mail button{background:rgba(255,255,255,.1);color:#fff}
+.dmca-close{width:100%;margin-top:14px;background:linear-gradient(135deg,#f2b830,#e09a12);color:#1a1200;padding:11px}
+</style>
+<script>
+function openDmca(){
+  var em = (typeof STATE!=='undefined' && STATE.dmcaEmail) || '';
+  var note = (typeof STATE!=='undefined' && STATE.dmcaNotice) || '';
+  var ov = document.getElementById('dmca-ov');
+  if(!ov){ ov = document.createElement('div'); ov.id = 'dmca-ov'; ov.onclick = function(e){ if(e.target === ov) closeDmca(); }; document.body.appendChild(ov); }
+  var safe = function(t){ return String(t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var mail = em && /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(em)
+    ? '<div class="dmca-mail"><span class="material-icons-round" style="color:#f2b830">mail</span><a href="mailto:' + safe(em) + '?subject=' + encodeURIComponent('Copyright / DMCA Notice') + '">' + safe(em) + '</a><button onclick="copyDmcaEmail()">কপি</button></div>'
+    : '<div class="dmca-mail">যোগাযোগের ইমেইল শিগগিরই যোগ করা হবে।</div>';
+  ov.innerHTML = '<div class="dmca-box"><h3><span class="material-icons-round">gavel</span>DMCA / Copyright Notice</h3>' +
+    '<div style="opacity:.75;font-size:12px">কপিরাইট নোটিশ</div>' +
+    '<p>আমরা অন্যের মেধাস্বত্বকে সম্মান করি। আপনি যদি মনে করেন এই সাইট বা অ্যাপের কোনো কনটেন্ট আপনার কপিরাইট লঙ্ঘন করছে, তাহলে নিচের ইমেইলে জানান। যাচাই শেষে প্রমাণিত হলে আমরা দ্রুত কনটেন্টটি সরিয়ে দেব।</p>' +
+    (note ? '<p>' + safe(note) + '</p>' : '') + mail +
+    '<h4>অভিযোগে যা থাকা দরকার</h4><ul><li>আপনার কপিরাইট করা কাজের বিবরণ ও মালিকানার প্রমাণ</li><li>আমাদের সাইট/অ্যাপে যে ভিডিওটি আছে তার নাম বা লিংক</li><li>আপনার নাম, ঠিকানা ও যোগাযোগের ইমেইল/ফোন</li><li>"আমি সরল বিশ্বাসে বলছি যে এই ব্যবহার অনুমোদিত নয়" — এই মর্মে একটি বিবৃতি</li><li>আপনি কপিরাইট মালিক বা তাঁর পক্ষে কাজ করতে অনুমোদিত — এই মর্মে ঘোষণা</li></ul>' +
+    '<p style="font-size:11.5px;opacity:.6;margin-top:12px">We respond to valid copyright notices and remove infringing content promptly. Please include the information above in your email.</p>' +
+    '<button class="dmca-close" onclick="closeDmca()">বন্ধ করুন</button></div>';
+  ov.classList.add('open');
+}
+function closeDmca(){ var ov = document.getElementById('dmca-ov'); if(ov) ov.classList.remove('open'); }
+function copyDmcaEmail(){
+  var em = (typeof STATE!=='undefined' && STATE.dmcaEmail) || '';
+  try{ navigator.clipboard.writeText(em).then(function(){ if(window.toast) toast('✅ ইমেইল কপি হয়েছে।'); }); }
+  catch(e){ var t = document.createElement('textarea'); t.value = em; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); }catch(_){} t.remove(); if(window.toast) toast('✅ ইমেইল কপি হয়েছে।'); }
+}
+document.addEventListener('DOMContentLoaded', function(){
+  ['page-home','page-profile'].forEach(function(id){
+    var p = document.getElementById(id); if(!p || p.querySelector('.legal-foot')) return;
+    var d = document.createElement('div'); d.className = 'legal-foot';
+    d.innerHTML = '<span onclick="openDmca()"><span class="material-icons-round" style="font-size:14px;border:0;padding:0;cursor:inherit">gavel</span>DMCA / Copyright Notice</span>';
+    p.appendChild(d);
+  });
+});
 </script>
 </body>
 </html>
