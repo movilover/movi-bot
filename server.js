@@ -2,7 +2,7 @@
  * Movi Lover — Telegram Stream Proxy
  *  GET /stream?m=<messageId>[&f=<file_id>]   (ফ্রন্টএন্ড এটাই ডাকে)
  *  GET /stream/:file_id
- *  GET /download?m=...  |  /download/:file_id[?name=film.mp4]
+ *  /download — ওয়েব/বট থেকে সম্পূর্ণ বন্ধ (403)। শুধু অফিশিয়াল অ্যাপ, যে X-App-Key হেডার পাঠাবে (APP_DOWNLOAD_KEY মিললে)
  *  GET /health
  *
  * দুই মোড:
@@ -229,6 +229,14 @@ async function serve(req, res, download) {
 
 app.get(['/stream', '/stream/:file_id'], (req, res) => serve(req, res, false));
 app.head(['/stream', '/stream/:file_id'], (req, res) => serve(req, res, false));
-app.get(['/download', '/download/:file_id'], (req, res) => serve(req, res, true));
+/* ডাউনলোড: ডিফল্টে সম্পূর্ণ বন্ধ। শুধু .env-এ APP_DOWNLOAD_KEY দিলে এবং অফিশিয়াল অ্যান্ড্রয়েড অ্যাপ
+   X-App-Key হেডারে সেই কী পাঠালে চালু হয়। ওয়েব পেজের JS-এ এই কী কখনো রাখবেন না। */
+const APP_KEY = process.env.APP_DOWNLOAD_KEY || '';
+app.all(['/download', '/download/:file_id'], (req, res) => {
+  const k = String(req.headers['x-app-key'] || '');
+  const ok = APP_KEY && k.length === APP_KEY.length && require('crypto').timingSafeEqual(Buffer.from(k), Buffer.from(APP_KEY));
+  if (!ok) return res.status(403).json({ error: 'ডাউনলোড শুধু অফিশিয়াল অ্যাপে চালু আছে।' });
+  return serve(req, res, true);
+});
 
 app.listen(PORT, () => console.log(`Stream proxy চলছে :${PORT} — MTProto: ${MT_ENABLED ? 'চালু' : 'বন্ধ (শুধু Bot API)'}`));
