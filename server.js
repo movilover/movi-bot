@@ -129,6 +129,7 @@ function mtClient() {
       const { StringSession } = require('telegram/sessions');
       const c = new TelegramClient(new StringSession(process.env.SESSION || ''), API_ID, API_HASH, { connectionRetries: 5 });
       await c.start({ botAuthToken: TOKEN });
+      if (!process.env.SESSION) { try { console.log('একবার এটা Environment-এ SESSION নামে বসিয়ে দিন (বারবার লগইন এড়াতে):\nSESSION=' + c.session.save()); } catch (e) {} }
       try { await c.getEntity(/^-?\d+$/.test(CHAT_ID) ? Number(CHAT_ID) : CHAT_ID); } catch (e) { console.warn('চ্যানেল এন্টিটি রিসলভ হয়নি:', e.message); }
       console.log('MTProto সংযুক্ত');
       return c;
@@ -137,6 +138,26 @@ function mtClient() {
   return mtClientP;
 }
 const msgCache = new Map(); // id -> { msg, at }
+const peerCache = new Map();
+async function resolvePeer(client, chatRaw) {
+  if (peerCache.has(chatRaw)) return peerCache.get(chatRaw);
+  const { Api } = require('telegram');
+  const bigInt = require('big-integer');
+  let peer;
+  if (/^-?\d+$/.test(chatRaw)) {
+    const n = Number(chatRaw);
+    try { peer = await client.getInputEntity(n); }
+    catch (e) {
+      // প্রাইভেট চ্যানেল: -100xxxxxxxxxx থেকে channelId বের করে সরাসরি চেষ্টা
+      const cid = String(chatRaw).replace(/^-100/, '').replace(/^-/, '');
+      peer = new Api.InputPeerChannel({ channelId: bigInt(cid), accessHash: bigInt(0) });
+    }
+  } else {
+    peer = await client.getInputEntity(chatRaw.replace(/^@/, ''));
+  }
+  peerCache.set(chatRaw, peer);
+  return peer;
+}
 async function mtSource(msgId, chatParam) {
   const bigInt = require('big-integer');
   const client = await mtClient();
@@ -148,8 +169,8 @@ async function mtSource(msgId, chatParam) {
   const cacheKey = chatRaw + ':' + msgId;
   let hit = msgCache.get(cacheKey);
   if (!hit || Date.now() - hit.at > 20 * 60 * 1000) {
-    const chat = /^-?\d+$/.test(chatRaw) ? Number(chatRaw) : chatRaw;
-    const list = await client.getMessages(chat, { ids: [Number(msgId)] });
+    const peer = await resolvePeer(client, chatRaw);
+    const list = await client.getMessages(peer, { ids: [Number(msgId)] });
     const msg = list && list[0];
     if (!msg || !msg.media || !msg.media.document) { const e = new Error('message/video not found'); e.code = 'NOT_FOUND'; throw e; }
     hit = { msg, at: Date.now() }; msgCache.set(cacheKey, hit);
@@ -163,7 +184,7 @@ async function mtSource(msgId, chatParam) {
     read: async function* (s, e, signal) {
       const aligned = s - (s % REQ);
       let pos = aligned;
-      for await (const chunk of client.iterDownload({ file: hit.msg.media, offset: bigInt(aligned), requestSize: REQ })) {
+      for await (const chunk of client.iterDownload({ file: hit.msg.media.document, offset: bigInt(aligned), requestSize: REQ })) {
         if (signal && signal.aborted) return;
         let buf = Buffer.from(chunk);
         const cs = pos, ce = pos + buf.length - 1;
@@ -177,11 +198,23 @@ async function mtSource(msgId, chatParam) {
   };
 }
 
+/* ---------- সাহায্যকারী ---------- */
+let mtDownUntil = 0;
+const withTimeout = (p, ms, label) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(label + ' timeout')), ms))]);
+
 /* ---------- রিকোয়েস্ট থেকে সোর্স বাছাই ---------- */
 async function pickSource(req) {
   const fileId = req.params.file_id || req.query.f;
   const m = req.query.m;
-  if (m && MT_ENABLED) return mtSource(String(m).replace(/\D/g, ''), req.query.c ? String(req.query.c) : '');
+  if (m && MT_ENABLED && !(fileId && Date.now() < mtDownUntil)) {
+    try { return await withTimeout(mtSource(String(m).replace(/\D/g, ''), req.query.c ? String(req.query.c) : ''), fileId ? 10000 : 25000, 'MTProto'); }
+    catch (err) {
+      console.warn('MTProto ব্যর্থ:', err.message);
+      if (fileId) mtDownUntil = Date.now() + 60000;   // ১ মিনিট MTProto বাদ দিয়ে সরাসরি Bot API (ছোট ভিডিও দ্রুত চলবে)
+      if (!fileId) { const e = new Error('MTProto ব্যর্থ: ' + err.message + ' — /diag?m=' + m + ' দিয়ে কারণ দেখুন'); e.code = 'MT_FAIL'; throw e; }
+      // file_id থাকলে (ছোট ভিডিও) Bot API দিয়ে চালিয়ে দেওয়া
+    }
+  }
   if (fileId) return botSource(String(fileId));
   if (m && !MT_ENABLED) { const e = new Error('MTProto চালু নেই (API_ID/API_HASH/CHAT_ID দিন) অথবা &f=<file_id> দিন'); e.code = 'NO_MT'; throw e; }
   const e = new Error('file_id বা m দিন'); e.code = 'BAD'; throw e;
@@ -195,6 +228,7 @@ async function serve(req, res, download) {
   try { src = await pickSource(req); }
   catch (e) {
     const code = e.code === 'TOO_BIG' ? 413 : e.code === 'NOT_FOUND' ? 404 : e.code === 'NO_MT' || e.code === 'BAD' ? 400 : 502;
+    console.warn('stream request ব্যর্থ:', e.code || '', e.message);
     return res.status(code).json({ error: e.code === 'TOO_BIG' ? 'ফাইল ২০MB-এর বেশি — MTProto (API_ID/API_HASH/CHAT_ID) বা Local Bot API লাগবে' : e.message });
   }
   const { size } = src;
@@ -226,6 +260,34 @@ async function serve(req, res, download) {
     res.destroy();
   }
 }
+
+/* /diag?m=<মেসেজ নম্বর>&c=<চ্যানেল>[&f=<file_id>] — ধাপে ধাপে দেখায় কোথায় আটকাচ্ছে */
+app.get('/diag', async (req, res) => {
+  if (process.env.DIAG_KEY && req.query.k !== process.env.DIAG_KEY) return res.status(403).json({ error: 'DIAG_KEY লাগবে (?k=...)' });
+  const out = { mtprotoEnabled: MT_ENABLED, chatDefault: CHAT_ID || null, steps: [] };
+  const step = (n, ok, info) => out.steps.push({ step: n, ok, info });
+  try {
+    const me = await (await fetch(`${API_BASE}/bot${TOKEN}/getMe`)).json();
+    step('বট টোকেন (getMe)', !!me.ok, me.ok ? '@' + me.result.username : me.description);
+  } catch (e) { step('বট টোকেন (getMe)', false, e.message); }
+  if (MT_ENABLED && req.query.m) {
+    try {
+      const chat = (req.query.c ? String(req.query.c) : CHAT_ID);
+      const client = await withTimeout(mtClient(), 20000, 'MTProto connect'); step('MTProto সংযোগ', true, 'ঠিক আছে');
+      const peer = await withTimeout(resolvePeer(client, chat), 15000, 'peer'); step('চ্যানেল চেনা (' + chat + ')', true, peer.className);
+      const list = await withTimeout(client.getMessages(peer, { ids: [Number(req.query.m)] }), 15000, 'getMessages');
+      const msg = list && list[0];
+      step('মেসেজ #' + req.query.m, !!msg, msg ? 'পাওয়া গেছে' : 'মেসেজ নেই — নম্বর/চ্যানেল মেলান');
+      const doc = msg && msg.media && msg.media.document;
+      step('ভিডিও ফাইল আছে?', !!doc, doc ? ('সাইজ ' + Math.round(Number(doc.size) / 1048576) + ' MB, ধরন ' + doc.mimeType) : 'মেসেজে ভিডিও/ডকুমেন্ট নেই');
+    } catch (e) { step('MTProto', false, e.message); }
+  } else if (!MT_ENABLED) step('MTProto', false, 'বন্ধ — API_ID, API_HASH, CHAT_ID সেট করুন (২০MB-এর বেশি ভিডিওর জন্য আবশ্যক)');
+  if (req.query.f) {
+    try { const r = await botGetFile(String(req.query.f)); step('Bot API getFile', true, 'file_size ' + r.file_size); }
+    catch (e) { step('Bot API getFile', false, e.code === 'TOO_BIG' ? 'ফাইল ২০MB-এর বেশি' : e.message); }
+  }
+  res.json(out);
+});
 
 app.get(['/stream', '/stream/:file_id'], (req, res) => serve(req, res, false));
 app.head(['/stream', '/stream/:file_id'], (req, res) => serve(req, res, false));
