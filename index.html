@@ -4222,7 +4222,8 @@ function openInAppPlayer(v, idx){
   document.getElementById('pdp-views').textContent = fmtNum((v.views||0)+1) + ' ভিউ';
   document.getElementById('pdp-likes').textContent = fmtNum(v.likes||0);
   document.getElementById('pdp-time').textContent = timeAgo(v.createdAt);
-  document.getElementById('pdp-cat').textContent = String(v.category||'ALL').toUpperCase();
+  { const _c = catOf(v.category);
+    document.getElementById('pdp-cat').textContent = _c ? (_c.label || _c.key) : (/^cat_/i.test(String(v.category||'')) ? 'ভিডিও' : String(v.category||'ALL').toUpperCase()); }
   document.getElementById('pdp-fav-btn').style.display = '';
   document.getElementById('pdp-like-item').style.display = '';
   updateFavBtn(); updateLikeBtn();
