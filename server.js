@@ -128,8 +128,15 @@ function mtClient() {
       const { TelegramClient } = require('telegram');
       const { StringSession } = require('telegram/sessions');
       const c = new TelegramClient(new StringSession(process.env.SESSION || ''), API_ID, API_HASH, { connectionRetries: 5 });
+      console.log('MTProto সংযোগ হচ্ছে...' + (process.env.SESSION ? ' (সেভ করা SESSION ব্যবহার হচ্ছে)' : ''));
       await c.start({ botAuthToken: TOKEN });
-      if (!process.env.SESSION) { try { console.log('একবার এটা Environment-এ SESSION নামে বসিয়ে দিন (বারবার লগইন এড়াতে):\nSESSION=' + c.session.save()); } catch (e) {} }
+      if (!process.env.SESSION) {
+        try {
+          const str = c.session.save();
+          console.log('\n================ SESSION STRING ================\n' + str + '\n================================================\n' +
+            'উপরের লম্বা লেখাটা কপি করে Railway → Variables-এ SESSION নামে বসান (লোড হলে আর লগইন লাগবে না)। এটা গোপন রাখুন।\n');
+        } catch (e) { console.warn('SESSION ছাপা যায়নি:', e.message); }
+      }
       try { await c.getEntity(/^-?\d+$/.test(CHAT_ID) ? Number(CHAT_ID) : CHAT_ID); } catch (e) { console.warn('চ্যানেল এন্টিটি রিসলভ হয়নি:', e.message); }
       console.log('MTProto সংযুক্ত');
       return c;
@@ -301,4 +308,13 @@ app.all(['/download', '/download/:file_id'], (req, res) => {
   return serve(req, res, true);
 });
 
-app.listen(PORT, () => console.log(`Stream proxy চলছে :${PORT} — MTProto: ${MT_ENABLED ? 'চালু' : 'বন্ধ (শুধু Bot API)'}`));
+app.listen(PORT, () => {
+  console.log(`Stream proxy চলছে :${PORT} — MTProto: ${MT_ENABLED ? 'চালু' : 'বন্ধ (শুধু Bot API)'}`);
+  if (!MT_ENABLED) {
+    const miss = [!API_ID && 'API_ID', !API_HASH && 'API_HASH', !(CHAT_ID || process.env.ALLOWED_CHATS) && 'CHAT_ID'].filter(Boolean);
+    console.log('MTProto বন্ধ কারণ এই ভেরিয়েবল নেই/খালি: ' + (miss.join(', ') || '—') + ' (Railway Variables দেখুন, নাম হুবহু বড় হাতের হতে হবে)');
+    return;
+  }
+  // স্টার্টেই সংযোগ করি, যাতে SESSION লগে এখনই আসে (প্রথম ভিডিও চাপার অপেক্ষা না করে)
+  mtClient().then(() => console.log('MTProto প্রস্তুত')).catch(e => console.error('MTProto সংযোগ ব্যর্থ:', e.message, '— API_ID/API_HASH ঠিক আছে কিনা দেখুন'));
+});
