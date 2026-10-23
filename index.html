@@ -4121,6 +4121,36 @@ async function resolvePartUrl(part){
   }
   throw new Error('no-source');
 }
+/* ভিডিও না চললে আসল কারণ খুঁজে প্লেয়ারে দেখায় */
+async function explainPlayFail(url, part, idx, mv){
+  const code = mv && mv.error ? mv.error.code : 0;
+  let reason = '', canOpenExt = false;
+  const isStream = /\/stream\?/.test(url);
+  if(isStream){
+    try{
+      const ctl = new AbortController(); const tm = setTimeout(()=>ctl.abort(), 9000);
+      const r = await fetch(url, { headers:{ Range:'bytes=0-0' }, signal: ctl.signal }); clearTimeout(tm);
+      if(!r.ok){
+        let j = null; try{ j = await r.json(); }catch(e){}
+        reason = 'স্ট্রিম সার্ভার বলছে (' + r.status + '): ' + ((j && j.error) ? j.error : 'অজানা সমস্যা');
+      } else {
+        reason = 'সার্ভার ফাইল দিচ্ছে, কিন্তু ফোন/ব্রাউজার এই ফরম্যাট চালাতে পারছে না। ভিডিও H.264 + AAC (.mp4) হতে হবে — .mkv বা AV1 অনেক ফোনে চলে না।';
+      }
+    }catch(e){
+      reason = 'স্ট্রিম সার্ভারে পৌঁছানো যাচ্ছে না — সার্ভার বন্ধ/ঘুমন্ত (Render ফ্রি হলে ৩০–৬০ সেকেন্ড পর আবার চেষ্টা করুন) অথবা অ্যাডমিনে স্ট্রিম লিংক ভুল।';
+    }
+  } else if(part && part.url){
+    reason = code === 4 ? 'এই লিংকটি সরাসরি ভিডিও ফাইল নয় বা ফরম্যাট সাপোর্ট করে না।' : code === 3 ? 'ভিডিওটি নষ্ট বা ফোন এই কোডেক চালাতে পারছে না।' : code === 2 ? 'নেটওয়ার্ক সমস্যা — ইন্টারনেট দেখে আবার চেষ্টা করুন।' : 'লিংকটি চালানো যাচ্ছে না।';
+    canOpenExt = true;
+  } else {
+    reason = 'ভিডিওটি চালানো যাচ্ছে না।';
+  }
+  if(!window._playerReq || !document.getElementById('player-modal').classList.contains('open')) return;
+  const esc = (t)=>String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  playerMessage('<span class="material-icons-round" style="font-size:36px;color:#f87171;">error_outline</span><span style="max-width:300px">' + esc(reason) + '</span>' +
+    '<button class="part-btn active ripple" onclick="loadPart(' + idx + ')">আবার চেষ্টা করুন</button>' +
+    (canOpenExt ? '<button class="part-btn ripple" onclick="window.open(' + esc(JSON.stringify(part.url)) + ',\'_blank\')">নতুন ট্যাবে খুলুন</button>' : ''));
+}
 function playerMessage(html){
   const wrap = document.getElementById('player-video-wrap');
   if(wrap) wrap.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#e9e4fb;text-align:center;padding:16px;font-size:14px;line-height:1.5;">${html}</div>`;
@@ -4158,8 +4188,10 @@ async function loadPart(idx, isRetry){
     attachProgress(v, idx, mv);
     mv.onended = ()=>{ const n = idx + 1; if(parts[n]){ toast('▶️ পরের পার্ট চালু হচ্ছে...'); switchPart(n); } };
     mv.onerror = ()=>{                       // expired Telegram link etc. -> one automatic retry
-      if(isRetry || !(part.tgFileId || parseTgPostLink(part.url)) || my !== window._playerReq) { playerMessage(`<span class="material-icons-round" style="font-size:36px;color:#f87171;">error_outline</span><span>ভিডিও চালানো যাচ্ছে না।</span><button class="part-btn active ripple" onclick="loadPart(${idx})">আবার চেষ্টা করুন</button>`); return; }
-      part._tgUrl = null; loadPart(idx, true);
+      if(my !== window._playerReq) return;   // ইউজার অন্য পার্টে চলে গেছে
+      const isTg = !!(part.tgFileId || parseTgPostLink(part.url));
+      if(!isRetry && isTg){ part._tgUrl = null; loadPart(idx, true); return; }
+      explainPlayFail(url, part, idx, mv);
     };
   }
 }
