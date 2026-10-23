@@ -24,13 +24,21 @@ const CHAT_ID = (process.env.CHAT_ID || '').trim();
 const PORT = process.env.PORT || 3000;
 const ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 const MT_ENABLED = !!(API_ID && API_HASH && (CHAT_ID || process.env.ALLOWED_CHATS));
-const ALLOWED_CHATS = (process.env.ALLOWED_CHATS || '').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+const ALLOWED_CHATS_RAW = (process.env.ALLOWED_CHATS || '').split(',').map(x=>x.trim()).filter(Boolean);
+const ALLOWED_CHATS = ALLOWED_CHATS_RAW.map(x=>x.toLowerCase());
 const REQ = 512 * 1024; // MTProto chunk (4096 এর গুণিতক, ১MB এর কম)
 
 if (!TOKEN) { console.error('BOT_TOKEN সেট করুন (.env)'); process.exit(1); }
 
+/* GramJS ব্যাকগ্রাউন্ডে মাঝে মাঝে TIMEOUT ইত্যাদি এরর ছোড়ে — এগুলো সার্ভার ক্র্যাশ করালে Railway-তে সব ভিডিও একসাথে 502 হয়ে যায় */
+process.on('unhandledRejection', (e) => console.warn('unhandledRejection:', e && e.message ? e.message : e));
+process.on('uncaughtException', (e) => console.warn('uncaughtException:', e && e.message ? e.message : e));
+
 const app = express();
+app.set('trust proxy', true);
 app.disable('x-powered-by');
+/* অ্যাডমিনে লিংকের শেষে / থাকলে //stream হয়ে যায় — বাড়তি স্ল্যাশ সরিয়ে দিই */
+app.use((req, res, next) => { req.url = req.url.replace(/^\/{2,}/, '/'); next(); });
 
 /* ---------- CORS ---------- */
 app.use((req, res, next) => {
@@ -39,6 +47,7 @@ app.use((req, res, next) => {
   else if (o && ORIGINS.includes(o)) { res.setHeader('Access-Control-Allow-Origin', o); res.setHeader('Vary', 'Origin'); }
   res.setHeader('Access-Control-Allow-Headers', 'Range');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length, Content-Disposition');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
@@ -129,6 +138,7 @@ function mtClient() {
       const { StringSession } = require('telegram/sessions');
       const c = new TelegramClient(new StringSession(process.env.SESSION || ''), API_ID, API_HASH, { connectionRetries: 5 });
       console.log('MTProto সংযোগ হচ্ছে...' + (process.env.SESSION ? ' (সেভ করা SESSION ব্যবহার হচ্ছে)' : ''));
+      try { c.setLogLevel('error'); } catch (e) {}
       await c.start({ botAuthToken: TOKEN });
       if (!process.env.SESSION) {
         try {
@@ -187,7 +197,7 @@ async function mtSource(msgId, chatParam) {
   const nameAttr = (doc.attributes || []).find(a => a.fileName);
   const name = (nameAttr && nameAttr.fileName) || `video_${msgId}.mp4`;
   return {
-    size, name, mime: doc.mimeType && doc.mimeType.startsWith('video/') ? doc.mimeType : mimeOf(name),
+    size, name, docId: String(doc.id), mime: doc.mimeType && doc.mimeType.startsWith('video/') ? doc.mimeType : mimeOf(name),
     read: async function* (s, e, signal) {
       const aligned = s - (s % REQ);
       let pos = aligned;
@@ -205,6 +215,40 @@ async function mtSource(msgId, chatParam) {
   };
 }
 
+/* Bot API file_id থেকে ডকুমেন্ট আইডি বের করা — একাধিক চ্যানেলে একই মেসেজ নম্বর থাকলে সঠিক ভিডিও চিনতে */
+function fileIdDocId(fid) {
+  try {
+    const raw = Buffer.from(String(fid).replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] === 0 && i + 1 < raw.length) { for (let k = 0; k < raw[i + 1]; k++) out.push(0); i++; } else out.push(raw[i]);
+    }
+    const d = Buffer.from(out);
+    const type = d.readInt32LE(0);
+    let pos = 8;
+    if (type & (1 << 25)) {                       // file reference (TL bytes)
+      let len = d[pos], head = 1;
+      if (len === 254) { len = d[pos + 1] | (d[pos + 2] << 8) | (d[pos + 3] << 16); head = 4; }
+      pos += head + len; while ((pos - 8) % 4 !== 0) pos++;
+    }
+    return d.readBigInt64LE(pos).toString();
+  } catch (e) { return null; }
+}
+async function mtSourceMulti(msgId, chatParam, fileId) {
+  const cands = chatParam ? [chatParam] : Array.from(new Set([CHAT_ID, ...ALLOWED_CHATS_RAW].filter(Boolean)));
+  const want = fileId ? fileIdDocId(fileId) : null;
+  let first = null, lastErr = null;
+  for (const chat of cands) {
+    try {
+      const src = await mtSource(msgId, chat);
+      if (!want || src.docId === want) return src;
+      if (!first) first = src;
+    } catch (e) { lastErr = e; }
+  }
+  if (first) { if (cands.length > 1) console.warn('file_id মেলেনি, প্রথম চ্যানেলের মেসেজ ব্যবহার হচ্ছে'); return first; }
+  throw lastErr || new Error('মেসেজ কোনো চ্যানেলে পাওয়া যায়নি');
+}
+
 /* ---------- সাহায্যকারী ---------- */
 let mtDownUntil = 0;
 const withTimeout = (p, ms, label) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(label + ' timeout')), ms))]);
@@ -214,7 +258,7 @@ async function pickSource(req) {
   const fileId = req.params.file_id || req.query.f;
   const m = req.query.m;
   if (m && MT_ENABLED && !(fileId && Date.now() < mtDownUntil)) {
-    try { return await withTimeout(mtSource(String(m).replace(/\D/g, ''), req.query.c ? String(req.query.c) : ''), fileId ? 10000 : 25000, 'MTProto'); }
+    try { return await withTimeout(mtSourceMulti(String(m).replace(/\D/g, ''), req.query.c ? String(req.query.c) : '', fileId ? String(fileId) : ''), fileId ? 10000 : 25000, 'MTProto'); }
     catch (err) {
       console.warn('MTProto ব্যর্থ:', err.message);
       if (fileId) mtDownUntil = Date.now() + 60000;   // ১ মিনিট MTProto বাদ দিয়ে সরাসরি Bot API (ছোট ভিডিও দ্রুত চলবে)
