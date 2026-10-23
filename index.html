@@ -4094,13 +4094,20 @@ function parseTgPostLink(u){
   if(!m[1] && /^(s|joinchat|addstickers|share|proxy|socks|login)$/i.test(m[2])) return null;
   return { chat: m[1] ? '-100' + m[2] : '@' + m[2], id: m[3] };
 }
+function streamBase(){ return String((STATE.videoBot && STATE.videoBot.streamUrl) || '').trim().replace(/\/+$/, ''); }
 async function resolvePartUrl(part){
   const _tg = part.url ? parseTgPostLink(part.url) : null;
   if(_tg){
     part._kind = null;
-    const su = STATE.videoBot && STATE.videoBot.streamUrl;
+    const su = streamBase();
     if(!su) throw new Error('no-stream');
     return su + '/stream?m=' + _tg.id + '&c=' + encodeURIComponent(_tg.chat);
+  }
+  /* পুরনো রেকর্ডে সরাসরি আগের সার্ভারের (Render ইত্যাদি) /stream লিংক থাকলে এখনকার সার্ভারে সরিয়ে দিই */
+  if(part.url){
+    const su0 = streamBase();
+    const lm = /^https?:\/\/[^\/]+(\/(?:stream|watch)(?:[\/?].*)?)$/i.exec(String(part.url).trim());
+    if(su0 && lm && String(part.url).indexOf(su0) !== 0){ part._kind = null; return su0 + lm[1].replace(/^\/watch/i, '/stream'); }
   }
   if(part.url){
     if(isBloggerPost(part.url)){ const list = await resolveBloggerPost(part); part._kind = list[0].kind; return list[0].url; }
@@ -4109,8 +4116,8 @@ async function resolvePartUrl(part){
   }
   if(part.tgFileId){
     part._kind = null;
-    const su = STATE.videoBot && STATE.videoBot.streamUrl;
-    if(su && (part.tgMessageId || part.tgFileId)) return su + '/stream?m=' + encodeURIComponent(part.tgMessageId||'') + '&f=' + encodeURIComponent(part.tgFileId);   // any size, with seeking
+    const su = streamBase();
+    if(su && (part.tgMessageId || part.tgFileId)) return su + '/stream?m=' + encodeURIComponent(part.tgMessageId||'') + '&f=' + encodeURIComponent(part.tgFileId) + (part.tgChatId ? '&c=' + encodeURIComponent(part.tgChatId) : '');   // any size, with seeking
     if(part._tgUrl && Date.now() - part._tgAt < 50*60*1000) return part._tgUrl;
     if(!STATE.videoBot || !STATE.videoBot.token) throw new Error('no-bot');
     const r = await tgBot('getFile', { file_id: part.tgFileId });      // Bot API: files up to 20 MB only
@@ -4127,6 +4134,7 @@ async function explainPlayFail(url, part, idx, mv){
   let reason = '', canOpenExt = false;
   const isStream = /\/stream\?/.test(url);
   if(isStream){
+    let host = ''; try{ host = new URL(url).host; }catch(e){}
     try{
       const ctl = new AbortController(); const tm = setTimeout(()=>ctl.abort(), 9000);
       const r = await fetch(url, { headers:{ Range:'bytes=0-0' }, signal: ctl.signal }); clearTimeout(tm);
@@ -4137,8 +4145,14 @@ async function explainPlayFail(url, part, idx, mv){
         reason = 'সার্ভার ফাইল দিচ্ছে, কিন্তু ফোন/ব্রাউজার এই ফরম্যাট চালাতে পারছে না। ভিডিও H.264 + AAC (.mp4) হতে হবে — .mkv বা AV1 অনেক ফোনে চলে না।';
       }
     }catch(e){
-      reason = 'স্ট্রিম সার্ভারে পৌঁছানো যাচ্ছে না — সার্ভার বন্ধ/ঘুমন্ত (Render ফ্রি হলে ৩০–৬০ সেকেন্ড পর আবার চেষ্টা করুন) অথবা অ্যাডমিনে স্ট্রিম লিংক ভুল।';
+      // স্ট্রিম রিকোয়েস্ট ধরা পড়েনি: সার্ভার আদৌ চালু কিনা /health দিয়ে আলাদা করে দেখি
+      let healthy = false;
+      try{ await fetch(streamBase() + '/health', { cache:'no-store', mode:'no-cors' }); healthy = true; }catch(e2){}   // no-cors: CORS আটকালেও সার্ভার চালু কিনা বোঝা যায়
+      reason = healthy
+        ? 'সার্ভার চালু আছে (/health ঠিক), কিন্তু ভিডিও রিকোয়েস্টে সংযোগ কেটে যাচ্ছে। সার্ভারের লগ দেখুন (ক্র্যাশ/রিস্টার্ট হচ্ছে কিনা) — আর ALLOWED_ORIGINS ঠিক আছে কিনা।'
+        : 'স্ট্রিম সার্ভারে পৌঁছানো যাচ্ছে না। অ্যাডমিনে দেওয়া স্ট্রিম লিংক ঠিক আছে কিনা, আর সার্ভার চালু কিনা দেখুন।';
     }
+    reason += (host ? ' [ব্যবহৃত সার্ভার: ' + host + ']' : '');
   } else if(part && part.url){
     reason = code === 4 ? 'এই লিংকটি সরাসরি ভিডিও ফাইল নয় বা ফরম্যাট সাপোর্ট করে না।' : code === 3 ? 'ভিডিওটি নষ্ট বা ফোন এই কোডেক চালাতে পারছে না।' : code === 2 ? 'নেটওয়ার্ক সমস্যা — ইন্টারনেট দেখে আবার চেষ্টা করুন।' : 'লিংকটি চালানো যাচ্ছে না।';
     canOpenExt = true;
