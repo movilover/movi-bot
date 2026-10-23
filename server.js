@@ -155,6 +155,28 @@ function mtClient() {
   return mtClientP;
 }
 const msgCache = new Map(); // id -> { msg, at }
+/* MTProto থেকে [s..e] বাইট পড়া। iterDownload-কে সরাসরি InputDocumentFileLocation + dcId + fileSize দিই
+   (খালি Document দিলে "Cannot cast Document to any kind of InputFileLocation" এরর হয়) */
+async function* mtReadRange(client, doc, s, e, signal, onFail) {
+  const { Api } = require('telegram');
+  const bigInt = require('big-integer');
+  const aligned = s - (s % REQ);
+  let pos = aligned;
+  const location = new Api.InputDocumentFileLocation({ id: doc.id, accessHash: doc.accessHash, fileReference: doc.fileReference, thumbSize: '' });
+  try {
+    for await (const chunk of client.iterDownload({ file: location, dcId: doc.dcId, fileSize: doc.size, offset: bigInt(aligned), requestSize: REQ })) {
+      if (signal && signal.aborted) return;
+      const buf = Buffer.from(chunk);
+      const cs = pos, ce = pos + buf.length - 1;
+      pos += buf.length;
+      if (ce < s) continue;
+      const from = Math.max(0, s - cs), to = Math.min(buf.length, e - cs + 1);
+      yield buf.subarray(from, to);
+      if (ce >= e) return;
+    }
+  } catch (err) { if (onFail) onFail(); throw err; }   // ব্যর্থ হলে ক্যাশ মুছি, পরের রিকোয়েস্টে মেসেজ নতুন করে আনা হবে
+}
+
 const peerCache = new Map();
 async function resolvePeer(client, chatRaw) {
   if (peerCache.has(chatRaw)) return peerCache.get(chatRaw);
@@ -198,20 +220,7 @@ async function mtSource(msgId, chatParam) {
   const name = (nameAttr && nameAttr.fileName) || `video_${msgId}.mp4`;
   return {
     size, name, docId: String(doc.id), mime: doc.mimeType && doc.mimeType.startsWith('video/') ? doc.mimeType : mimeOf(name),
-    read: async function* (s, e, signal) {
-      const aligned = s - (s % REQ);
-      let pos = aligned;
-      for await (const chunk of client.iterDownload({ file: hit.msg.media.document, offset: bigInt(aligned), requestSize: REQ })) {
-        if (signal && signal.aborted) return;
-        let buf = Buffer.from(chunk);
-        const cs = pos, ce = pos + buf.length - 1;
-        pos += buf.length;
-        if (ce < s) continue;
-        const from = Math.max(0, s - cs), to = Math.min(buf.length, e - cs + 1);
-        yield buf.subarray(from, to);
-        if (ce >= e) return;
-      }
-    }
+    read: (s, e, signal) => mtReadRange(client, doc, s, e, signal, () => msgCache.delete(cacheKey))
   };
 }
 
@@ -331,6 +340,15 @@ app.get('/diag', async (req, res) => {
       step('মেসেজ #' + req.query.m, !!msg, msg ? 'পাওয়া গেছে' : 'মেসেজ নেই — নম্বর/চ্যানেল মেলান');
       const doc = msg && msg.media && msg.media.document;
       step('ভিডিও ফাইল আছে?', !!doc, doc ? ('সাইজ ' + Math.round(Number(doc.size) / 1048576) + ' MB, ধরন ' + doc.mimeType) : 'মেসেজে ভিডিও/ডকুমেন্ট নেই');
+      if (doc) {   // আসল ডাউনলোড পরীক্ষা: শুরুর ১২৮KB আর মাঝখান থেকে ১২৮KB টেনে দেখি
+        try {
+          const t0 = Date.now(); let n = 0;
+          for await (const b of mtReadRange(client, doc, 0, 131071, null)) n += b.length;
+          const mid = Math.max(0, Math.floor(Number(doc.size) / 2) - 65536); let n2 = 0;
+          for await (const b of mtReadRange(client, doc, mid, mid + 131071, null)) n2 += b.length;
+          step('ডাউনলোড টেস্ট (শুরু + মাঝখান)', n > 0 && n2 > 0, n + ' + ' + n2 + ' bytes, ' + (Date.now() - t0) + ' ms');
+        } catch (e) { step('ডাউনলোড টেস্ট', false, e.message); }
+      }
     } catch (e) { step('MTProto', false, e.message); }
   } else if (!MT_ENABLED) step('MTProto', false, 'বন্ধ — API_ID, API_HASH, CHAT_ID সেট করুন (২০MB-এর বেশি ভিডিওর জন্য আবশ্যক)');
   if (req.query.f) {
@@ -352,7 +370,7 @@ app.all(['/download', '/download/:file_id'], (req, res) => {
   return serve(req, res, true);
 });
 
-app.listen(PORT, () => {
+if (require.main === module) app.listen(PORT, () => {
   console.log(`Stream proxy চলছে :${PORT} — MTProto: ${MT_ENABLED ? 'চালু' : 'বন্ধ (শুধু Bot API)'}`);
   if (!MT_ENABLED) {
     const miss = [!API_ID && 'API_ID', !API_HASH && 'API_HASH', !(CHAT_ID || process.env.ALLOWED_CHATS) && 'CHAT_ID'].filter(Boolean);
@@ -362,3 +380,5 @@ app.listen(PORT, () => {
   // স্টার্টেই সংযোগ করি, যাতে SESSION লগে এখনই আসে (প্রথম ভিডিও চাপার অপেক্ষা না করে)
   mtClient().then(() => console.log('MTProto প্রস্তুত')).catch(e => console.error('MTProto সংযোগ ব্যর্থ:', e.message, '— API_ID/API_HASH ঠিক আছে কিনা দেখুন'));
 });
+
+module.exports = { mtReadRange, fileIdDocId, parseRange, app, __setClient: (c) => { mtClientP = Promise.resolve(c); } };
