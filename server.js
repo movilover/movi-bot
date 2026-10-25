@@ -26,7 +26,7 @@ const ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()
 const MT_ENABLED = !!(API_ID && API_HASH && (CHAT_ID || process.env.ALLOWED_CHATS));
 const ALLOWED_CHATS_RAW = (process.env.ALLOWED_CHATS || '').split(',').map(x=>x.trim()).filter(Boolean);
 const ALLOWED_CHATS = ALLOWED_CHATS_RAW.map(x=>x.toLowerCase());
-const REQ = 512 * 1024; // MTProto chunk (4096 এর গুণিতক, ১MB এর কম)
+const REQ = 1024 * 1024; // MTProto chunk = ১MB (সর্বোচ্চ; কম রাউন্ড-ট্রিপ = বড় ভিডিও দ্রুত)
 
 if (!TOKEN) { console.error('BOT_TOKEN সেট করুন (.env)'); process.exit(1); }
 
@@ -203,7 +203,7 @@ async function mtSource(msgId, chatParam) {
   const chatRaw = (chatParam || CHAT_ID || '').trim();
   if (!chatRaw) { const e = new Error('CHAT_ID দিন'); e.code = 'BAD'; throw e; }
   if (chatParam && chatParam.toLowerCase() !== CHAT_ID.toLowerCase() && ALLOWED_CHATS.length && !ALLOWED_CHATS.includes(chatParam.toLowerCase())) {
-    const e = new Error('এই চ্যানেল অনুমোদিত নয়'); e.code = 'BAD'; throw e;
+    const e = new Error('এই চ্যানেল (' + chatParam + ') অনুমোদিত নয় — Railway Variables-এর ALLOWED_CHATS-এ যোগ করুন'); e.code = 'BAD'; throw e;
   }
   const cacheKey = chatRaw + ':' + msgId;
   let hit = msgCache.get(cacheKey);
@@ -308,15 +308,20 @@ async function serve(req, res, download) {
   }
   if (req.method === 'HEAD') return res.end();
 
+  const t0 = Date.now(); let sent = 0;
+  const tag = (req.query.m ? 'm=' + req.query.m + (req.query.c ? ' c=' + req.query.c : '') : 'f=' + String(req.params.file_id || req.query.f || '').slice(0, 12)) + ' ' + start + '-' + end + '/' + size;
   try {
+    res.flushHeaders();                       // হেডার আগেই পাঠাই — প্রক্সি (Railway) প্রথম বাইটের জন্য টাইমআউট করবে না
     const stream = await src.read(start, end, ac.signal);
     for await (const chunk of stream) {
       if (ac.signal.aborted) break;
+      sent += chunk.length;
       if (!res.write(chunk)) await once(res, 'drain');
     }
     res.end();
+    console.log('stream ' + (ac.signal.aborted ? 'বন্ধ(ক্লায়েন্ট)' : 'শেষ') + ' ' + tag + ' পাঠানো=' + Math.round(sent / 1024) + 'KB ' + (Date.now() - t0) + 'ms');
   } catch (e) {
-    if (!ac.signal.aborted) console.error('stream error:', e.message);
+    if (!ac.signal.aborted) console.error('stream error: ' + tag + ' — ' + e.message);
     res.destroy();
   }
 }
