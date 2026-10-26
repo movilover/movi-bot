@@ -42,9 +42,9 @@ app.use((req, res, next) => { req.url = req.url.replace(/^\/{2,}/, '/'); next();
 
 /* ---------- CORS ---------- */
 app.use((req, res, next) => {
-  const o = req.headers.origin;
-  if (!ORIGINS.length) res.setHeader('Access-Control-Allow-Origin', '*');
-  else if (o && ORIGINS.includes(o)) { res.setHeader('Access-Control-Allow-Origin', o); res.setHeader('Vary', 'Origin'); }
+  /* CORS শুধু ব্রাউজারের fetch() আটকায়, <video> ট্যাগ আটকায় না — তাই ALLOWED_ORIGINS দিয়ে ভিডিও সুরক্ষা হয় না।
+     প্লেয়ার যেন সার্ভারের এরর-বার্তা পড়তে পারে, সেজন্য সবসময় অনুমতি দিই। */
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Range');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length, Content-Disposition');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -296,32 +296,56 @@ async function serve(req, res, download) {
   if (range === 'bad') { res.setHeader('Content-Range', `bytes */${size}`); return res.sendStatus(416); }
 
   const start = range ? range.start : 0, end = range ? range.end : size - 1;
-  res.status(range ? 206 : 200);
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Content-Type', download ? 'application/octet-stream' : src.mime);
-  res.setHeader('Content-Length', end - start + 1);
-  res.setHeader('Cache-Control', 'private, max-age=3600');
-  if (range) res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
-  if (download) {
-    const fname = safeName(req.query.name || src.name);
-    res.setHeader('Content-Disposition', `attachment; filename="${fname.replace(/[^\x20-\x7e]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(fname)}`);
+  const tag = (req.query.m ? 'm=' + req.query.m + (req.query.c ? ' c=' + req.query.c : '') : 'f=' + String(req.params.file_id || req.query.f || '').slice(0, 12)) + ' ' + start + '-' + end + '/' + size;
+  const setHeaders = (source) => {
+    res.status(range ? 206 : 200);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Content-Type', download ? 'application/octet-stream' : source.mime);
+    res.setHeader('Content-Length', end - start + 1);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    if (range) res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+    if (download) {
+      const fname = safeName(req.query.name || source.name);
+      res.setHeader('Content-Disposition', `attachment; filename="${fname.replace(/[^\x20-\x7e]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(fname)}`);
+    }
+  };
+  if (req.method === 'HEAD') { setHeaders(src); return res.end(); }
+
+  console.log('stream অনুরোধ ' + tag);
+  /* প্রথম চাঙ্ক আগে আনি, তারপর হেডার পাঠাই: ডাউনলোড ব্যর্থ হলে "সংযোগ কেটে যাচ্ছে" নয়, আসল কারণসহ JSON এরর যাবে */
+  const open = async (source) => {
+    const stream = await source.read(start, end, ac.signal);
+    const it = stream[Symbol.asyncIterator]();
+    const first = await withTimeout(it.next(), 60000, 'প্রথম ডেটা আসতে দেরি');
+    return { it, first, source };
+  };
+  let opened;
+  try { opened = await open(src); }
+  catch (e1) {
+    console.warn('প্রথম চেষ্টা ব্যর্থ: ' + tag + ' — ' + e1.message + ' (আবার চেষ্টা হচ্ছে)');
+    try { opened = await open(await pickSource(req)); }
+    catch (e2) {
+      console.error('stream error: ' + tag + ' — ' + e2.message);
+      if (ac.signal.aborted) return;
+      return res.status(502).json({ error: 'ভিডিও ডাউনলোড ব্যর্থ: ' + e2.message });
+    }
   }
-  if (req.method === 'HEAD') return res.end();
 
   const t0 = Date.now(); let sent = 0;
-  const tag = (req.query.m ? 'm=' + req.query.m + (req.query.c ? ' c=' + req.query.c : '') : 'f=' + String(req.params.file_id || req.query.f || '').slice(0, 12)) + ' ' + start + '-' + end + '/' + size;
   try {
-    res.flushHeaders();                       // হেডার আগেই পাঠাই — প্রক্সি (Railway) প্রথম বাইটের জন্য টাইমআউট করবে না
-    const stream = await src.read(start, end, ac.signal);
-    for await (const chunk of stream) {
+    setHeaders(opened.source);
+    let cur = opened.first;
+    while (!cur.done) {
       if (ac.signal.aborted) break;
-      sent += chunk.length;
-      if (!res.write(chunk)) await once(res, 'drain');
+      sent += cur.value.length;
+      if (!res.write(cur.value)) await once(res, 'drain');
+      cur = await opened.it.next();
     }
+    if (ac.signal.aborted && opened.it.return) { try { await opened.it.return(); } catch (e) {} }
     res.end();
     console.log('stream ' + (ac.signal.aborted ? 'বন্ধ(ক্লায়েন্ট)' : 'শেষ') + ' ' + tag + ' পাঠানো=' + Math.round(sent / 1024) + 'KB ' + (Date.now() - t0) + 'ms');
   } catch (e) {
-    if (!ac.signal.aborted) console.error('stream error: ' + tag + ' — ' + e.message);
+    if (!ac.signal.aborted) console.error('stream error (মাঝপথে): ' + tag + ' — ' + e.message);
     res.destroy();
   }
 }
