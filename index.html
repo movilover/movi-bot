@@ -4136,7 +4136,7 @@ async function explainPlayFail(url, part, idx, mv){
   if(isStream){
     let host = ''; try{ host = new URL(url).host; }catch(e){}
     try{
-      const ctl = new AbortController(); const tm = setTimeout(()=>ctl.abort(), 9000);
+      const ctl = new AbortController(); const tm = setTimeout(()=>ctl.abort(), 30000);
       const r = await fetch(url, { headers:{ Range:'bytes=0-' }, signal: ctl.signal }); clearTimeout(tm);
       if(r.ok) ctl.abort();                 // শুধু হেডার দেখা দরকার, ভিডিও বডি টানার দরকার নেই
       if(!r.ok){
