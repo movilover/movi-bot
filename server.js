@@ -52,7 +52,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/health', (req, res) => res.json({ ok: true, mtproto: MT_ENABLED }));
+let mtReady = false;
+app.get('/health', (req, res) => res.json({ ok: true, mtproto: MT_ENABLED, mtReady, chat: CHAT_ID ? 'set' : 'missing', sessionSaved: !!process.env.SESSION }));
 
 /* ---------- Range পার্সার ---------- */
 function parseRange(h, size) {
@@ -148,7 +149,7 @@ function mtClient() {
         } catch (e) { console.warn('SESSION ছাপা যায়নি:', e.message); }
       }
       try { await c.getEntity(/^-?\d+$/.test(CHAT_ID) ? Number(CHAT_ID) : CHAT_ID); } catch (e) { console.warn('চ্যানেল এন্টিটি রিসলভ হয়নি:', e.message); }
-      console.log('MTProto সংযুক্ত');
+      console.log('MTProto সংযুক্ত'); mtReady = true;
       return c;
     })().catch(e => { mtClientP = null; throw e; });
   }
@@ -161,20 +162,48 @@ async function* mtReadRange(client, doc, s, e, signal, onFail) {
   const { Api } = require('telegram');
   const bigInt = require('big-integer');
   const aligned = s - (s % REQ);
-  let pos = aligned;
   const location = new Api.InputDocumentFileLocation({ id: doc.id, accessHash: doc.accessHash, fileReference: doc.fileReference, thumbSize: '' });
+  const total = Number(doc.size);
+  const lastNeeded = Math.min(e, total - 1);
+  /* বড় ভিডিওর জন্য: একসাথে কয়েকটা ১MB চাঙ্ক আগে থেকে আনি (read-ahead), না হলে প্রতিটা চাঙ্কে নেটওয়ার্ক-অপেক্ষায় ২০ মিনিটের ভিডিও আটকে আটকে চলে */
+  const AHEAD = 4;
+  const fetchChunk = async (off) => {
+    let lastErr;
+    for (let t = 0; t < 3; t++) {
+      if (signal && signal.aborted) return null;
+      try {
+        for await (const chunk of client.iterDownload({ file: location, dcId: doc.dcId, fileSize: doc.size, offset: bigInt(off), requestSize: REQ, limit: 1 })) {
+          return Buffer.from(chunk);
+        }
+        return Buffer.alloc(0);
+      } catch (err) {
+        lastErr = err;
+        if (/FLOOD_WAIT|FILE_REFERENCE/i.test(String(err && err.message))) break;
+        await new Promise(r => setTimeout(r, 400 * (t + 1)));
+      }
+    }
+    throw lastErr || new Error('chunk download failed');
+  };
   try {
-    for await (const chunk of client.iterDownload({ file: location, dcId: doc.dcId, fileSize: doc.size, offset: bigInt(aligned), requestSize: REQ })) {
+    const offsets = [];
+    for (let o = aligned; o <= lastNeeded; o += REQ) offsets.push(o);
+    const q = [];
+    let next = 0;
+    const push = () => { while (q.length < AHEAD && next < offsets.length) { const off = offsets[next++]; const pr = fetchChunk(off); pr.catch(() => {}); q.push({ off, pr }); } };
+    push();
+    while (q.length) {
       if (signal && signal.aborted) return;
-      const buf = Buffer.from(chunk);
-      const cs = pos, ce = pos + buf.length - 1;
-      pos += buf.length;
+      const { off, pr } = q.shift();
+      push();
+      const buf = await pr;
+      if (!buf || !buf.length) return;
+      const cs = off, ce = off + buf.length - 1;
       if (ce < s) continue;
       const from = Math.max(0, s - cs), to = Math.min(buf.length, e - cs + 1);
       yield buf.subarray(from, to);
       if (ce >= e) return;
     }
-  } catch (err) { if (onFail) onFail(); throw err; }   // ব্যর্থ হলে ক্যাশ মুছি, পরের রিকোয়েস্টে মেসেজ নতুন করে আনা হবে
+  } catch (err) { if (onFail) onFail(); throw err; }
 }
 
 const peerCache = new Map();
@@ -183,6 +212,7 @@ async function resolvePeer(client, chatRaw) {
   const { Api } = require('telegram');
   const bigInt = require('big-integer');
   let peer;
+  if (/^\d{9,}$/.test(chatRaw)) chatRaw = '-100' + chatRaw;   // t.me/c/3807244767 থেকে শুধু সংখ্যা এলে
   if (/^-?\d+$/.test(chatRaw)) {
     const n = Number(chatRaw);
     try { peer = await client.getInputEntity(n); }
@@ -398,6 +428,8 @@ app.all(['/download', '/download/:file_id'], (req, res) => {
   if (!ok) return res.status(403).json({ error: 'ডাউনলোড শুধু অফিশিয়াল অ্যাপে চালু আছে।' });
   return serve(req, res, true);
 });
+
+app.use((err, req, res, next) => { console.warn('express error:', err && err.message); if (!res.headersSent) res.status(500).json({ error: String(err && err.message || err) }); else res.destroy(); });
 
 if (require.main === module) app.listen(PORT, () => {
   console.log(`Stream proxy চলছে :${PORT} — MTProto: ${MT_ENABLED ? 'চালু' : 'বন্ধ (শুধু Bot API)'}`);
