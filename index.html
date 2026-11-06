@@ -2043,7 +2043,7 @@ const STATE = {
   announceDismissKey: null,
   videoBot: { token:'', botUsername:'', retentionMinutes:15 },
   pendingDeliveryId: null,
-  landingWait: 7,
+  landingWait: 5,
   unlockLandingUrl: '',
   deletingIds: {},
 };
@@ -3432,7 +3432,7 @@ function cssEscape(s){ return String(s).replace(/["\\]/g,'\\$&'); }
    Inside the app: no landing pages / direct links — exactly 3 ads, then the in-app player.
    Telegram bot / Mini App / normal browser: everything works exactly as before. */
 function isInApp(){ return /MoviLoverApp/i.test(navigator.userAgent) || typeof window.AndroidApp !== 'undefined'; }
-function adsReq(v){ if(isInApp()) return 3; return Math.max(1, parseInt(v.adsRequired)||3); }
+function adsReq(v){ if(isInApp()) return 3; return 2; } // ওয়েব/টেলিগ্রাম: প্রতিটি ভিডিওতে ২টি ধাপ (ল্যান্ডিং পেজ + ডাইরেক্ট লিংক)
 function videoParts(v){ return (v.parts && v.parts.length) ? v.parts : [{url:v.url}]; }
 function getTaskStep(id){ return STATE.taskStepByVideo[id]||0; }
 function setTaskStep(id, step){ STATE.taskStepByVideo[id]=step; localStorage.setItem('ml_task_step', JSON.stringify(STATE.taskStepByVideo)); }
@@ -3904,6 +3904,18 @@ function finishUnlock(quiet){
       least `unlockWaitSeconds` past the session start.
    4. This app listens for unlock_done/{token}. No doc = no unlock: coming
       back early just shows "open the landing page again". */
+/* ডাইরেক্ট লিংক পুল: ভিডিওর নিজস্ব directLinkSets না থাকলে এই ১০টি লিংক ঘুরে ঘুরে ব্যবহার হয়।
+   প্রতিবার ক্লিকে পরের লিংক আসে; ভিডিও ও ধাপ ভেদে শুরুর জায়গা আলাদা। (একই তালিকা landing.html এও আছে) */
+const DIRECT_LINK_POOL = ["https://omg10.com/4/11373797","https://omg10.com/4/11373801","https://omg10.com/4/11570379","https://omg10.com/4/11570373","https://omg10.com/4/11570372","https://omg10.com/4/11082374","https://omg10.com/4/11082373","https://omg10.com/4/11082372","https://omg10.com/4/11082371","https://omg10.com/4/11082370"];
+function poolHash(str){ let h = 0; for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; } return h; }
+function nextPoolIndex(videoId, stepNum){
+  let c = 0;
+  try{ c = parseInt(localStorage.getItem('ml_dl_rot')||'0') || 0; }catch(e){}
+  return (poolHash(String(videoId)) + (stepNum-1)*5 + c) % DIRECT_LINK_POOL.length;
+}
+function bumpPoolRotation(){
+  try{ localStorage.setItem('ml_dl_rot', String(((parseInt(localStorage.getItem('ml_dl_rot')||'0')||0) + 1) % 1000)); }catch(e){}
+}
 function stepLinkSet(v, stepNum){
   if(!v) return null;
   const sets = v.directLinkSets && v.directLinkSets[String(stepNum)];
@@ -3912,12 +3924,13 @@ function stepLinkSet(v, stepNum){
     if(ok.length) return ok;
   }
   const old = v.directLinks && v.directLinks[String(stepNum)];
-  return (old && /^https?:\/\//i.test(old)) ? [{ name:'Direct', url:old }] : null;
+  if(old && /^https?:\/\//i.test(old)) return [{ name:'Direct', url:old }];
+  return [{ name:'Pool', url: DIRECT_LINK_POOL[nextPoolIndex(v.id, stepNum)] }];
 }
 async function loadLandingConfig(){
   try{
     const c = await fbGetDoc('settings','landing');
-    if(c && c.unlockWaitSeconds) STATE.landingWait = Math.min(120, Math.max(5, parseInt(c.unlockWaitSeconds)||7));
+    if(c && c.unlockWaitSeconds) STATE.landingWait = Math.min(120, Math.max(5, parseInt(c.unlockWaitSeconds)||5));
   }catch(e){}
 }
 function randomAlnum(len){
@@ -3927,7 +3940,7 @@ function randomAlnum(len){
 }
 function reopenUnlockLanding(){ if(STATE.unlockLandingUrl) openExternal(STATE.unlockLandingUrl); }
 async function runLandingUnlockStep(v, stepNum){
-  const wait = STATE.landingWait || 7;
+  const wait = STATE.landingWait || 5;
   const token = randomAlnum(20);
   const titleEl = document.getElementById('verify-title');
   const subEl = document.getElementById('verify-sub');
@@ -3963,7 +3976,8 @@ async function runLandingUnlockStep(v, stepNum){
   }
 
   const base = new URL(LANDING_FILE, location.href); base.search = ''; base.hash = '';
-  STATE.unlockLandingUrl = base.toString() + '?v=' + encodeURIComponent(v.id) + '&s=' + stepNum + '&k=' + token;
+  const poolIdx = nextPoolIndex(v.id, stepNum); bumpPoolRotation();
+  STATE.unlockLandingUrl = base.toString() + '?v=' + encodeURIComponent(v.id) + '&s=' + stepNum + '&k=' + token + '&r=' + poolIdx;
   try{ localStorage.setItem('ml_pending_unlock', JSON.stringify({ token, videoId: v.id, step: stepNum, ts: Date.now() })); }catch(e){}
 
   let done = false, unsub = null, poll = null;
