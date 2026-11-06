@@ -218,6 +218,10 @@ const firebaseConfig = {
   appId: "1:343081500219:web:072eaec3f2d47a4c36661e"
 };
 const BOT_LINK = 'https://t.me/movilovervairal_bot/webapp';
+// ডাইরেক্ট লিংক পুল (index.html এর সাথে একই তালিকা) — ভিডিওতে নিজস্ব লিংক না থাকলে ব্যবহার হয়
+const DIRECT_LINK_POOL = ["https://omg10.com/4/11373797","https://omg10.com/4/11373801","https://omg10.com/4/11570379","https://omg10.com/4/11570373","https://omg10.com/4/11570372","https://omg10.com/4/11082374","https://omg10.com/4/11082373","https://omg10.com/4/11082372","https://omg10.com/4/11082371","https://omg10.com/4/11082370"];
+const poolRaw = parseInt(new URLSearchParams(location.search).get('r'));
+const poolIdx = (poolRaw >= 0 && poolRaw < DIRECT_LINK_POOL.length) ? poolRaw : Math.floor(Math.random() * DIRECT_LINK_POOL.length);
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
@@ -284,11 +288,12 @@ async function main(){
       const [vs, ls] = await Promise.all([getDoc(doc(db, 'videos', videoId)), getDoc(doc(db, 'settings', 'landing')).catch(() => null)]);
       if(!vs.exists()){ fail('ভিডিওটি পাওয়া যায়নি।'); return; }
       const v = vs.data();
-      const w = ls && ls.exists() ? parseInt(ls.data().unlockWaitSeconds) : 7;
+      const w = ls && ls.exists() ? parseInt(ls.data().unlockWaitSeconds) : 5;
       let links = wrapLinks(v.directLinkSets && v.directLinkSets[String(stepNo)]);
       if(!links.length && v.directLinks && v.directLinks[String(stepNo)]) links = wrapLinks([{ name:'Direct', url:v.directLinks[String(stepNo)] }]);
-      const total = Math.max(1, parseInt(v.adsRequired) || 3);
-      cfg = { icon:'🔓', title:v.title || 'ভিডিও', chip:'ধাপ ' + bn(stepNo) + ' / ' + bn(total), wait:Math.min(120, Math.max(5, w || 7)), links };
+      if(!links.length) links = [{ name:'Pool', url: DIRECT_LINK_POOL[poolIdx] }];
+      const total = 2;
+      cfg = { icon:'🔓', title:v.title || 'ভিডিও', chip:'ধাপ ' + bn(stepNo) + ' / ' + bn(total), wait:Math.min(120, Math.max(5, w || 5)), links };
     } else {
       const snap = await getDoc(doc(db, 'tasks', taskId));
       if(!snap.exists()){ fail('টাস্কটি পাওয়া যায়নি।'); return; }
