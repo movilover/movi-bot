@@ -1441,6 +1441,23 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
 .cat-tile{overflow:hidden}
 .cat-tile .ct-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;word-break:normal;overflow-wrap:break-word;line-height:1.25;min-height:2.5em}
 </style>
+<style id="bot-flow-css">
+/* BOT TASK FLOW — inline task status on video cards (non-app users only) */
+.bt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);text-align:left}
+.bt b{display:block;font-size:13.5px;font-weight:700;color:var(--text);line-height:1.25}
+.bt small{display:block;font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.3}
+.bt .material-icons-round{font-size:22px;flex-shrink:0}
+.bt-ok{border-color:rgba(47,208,138,.45);background:rgba(47,208,138,.09)}
+.bt-ok .material-icons-round,.bt-ok b{color:#2fd08a}
+.bt-info .material-icons-round{color:var(--gold-3,#e8aa1c)}
+.bt-spin{width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(242,184,48,.25);border-top-color:#f2b830;animation:btspin .9s linear infinite;flex-shrink:0}
+@keyframes btspin{to{transform:rotate(360deg)}}
+.bt-row{display:flex;align-items:center;gap:8px}
+.bt-row .unlock-btn{flex:1}
+.bt-link{background:none;border:0;color:var(--text-muted);font:600 12px inherit;text-decoration:underline;padding:8px;cursor:pointer}
+.bt-next{animation:stepBtn 1.1s ease-in-out 3}
+@media (prefers-reduced-motion:reduce){.bt-spin,.bt-next{animation:none}}
+</style>
 </head>
 <body>
 
@@ -2071,6 +2088,25 @@ const PROMO_POST = {
 };
 
 const UNLOCK_WINDOW_MS = 3*60*1000; // 3 minutes — after this the video re-locks and a new ad is required. Kept exactly as requested.
+/* ---- Unlock window per video ----
+   Normal videos: UNLOCK_WINDOW_MS (3 min). "Bachelor Point — Season 5" videos: 2 hours.
+   While the player is open the countdown is held (see checkExpiries); it only runs while the player is closed. */
+const LONG_UNLOCK_MS = 2*60*60*1000;
+const LONG_UNLOCK_CATEGORY_KEYS = [];   // optional: exact category/subcategory keys (Firestore) that always get 2 hours
+function isLongUnlockVideo(v){
+  if(!v) return false;
+  if(LONG_UNLOCK_CATEGORY_KEYS.includes(v.category) || LONG_UNLOCK_CATEGORY_KEYS.includes(v.subcategory)) return true;
+  const c = catOf(v.category), sub = subOf(v.category, v.subcategory);
+  const t = [c&&c.label, c&&c.key, sub&&sub.label, sub&&sub.key, v.category, v.subcategory].join(' ')
+    .toLowerCase().replace(/[০-৯]/g, d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)).replace(/\s+/g,' ');
+  return /ব্যাচেলার|ব্যাচেলর|ব্যাচেলোর|bachelor/.test(t) &&
+         /(সিজন|season)\s*[-_]?\s*(5|ফাইভ|five|পাঁচ)|(?:^|[^a-z])s0?5(?:[^0-9]|$)/.test(t);
+}
+function unlockWindowFor(v){ if(typeof v === 'string') v = findVideo(v); return isLongUnlockVideo(v) ? LONG_UNLOCK_MS : UNLOCK_WINDOW_MS; }
+function fmtRemain(ms){
+  const t = Math.max(0, Math.floor(ms/1000)), h = Math.floor(t/3600), m = Math.floor((t%3600)/60), sc = t%60;
+  return h > 0 ? h+':'+String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0') : m+':'+String(sc).padStart(2,'0');
+}
 
 /* ===================== TELEGRAM BOT / MINI APP CONFIG ===================== */
 /* এই দুটি মান এখন এডমিন প্যানেল → ভিডিও বট → "সাইট লিংক সেটিং" থেকে বদলানো যায় (settings/site)।
@@ -2493,11 +2529,23 @@ async function registerVideoUnlock(){
 function checkExpiries(){
   const now = Date.now();
   let changed = false;
+  if(!isInApp()){
+    /* BOT/WEB: watching = countdown stopped. Playing keeps the video's full window; when the player is
+       closed the countdown starts again from the full window (3 min / 2 h for Bachelor Point S5). */
+    const pm = document.getElementById('player-modal');
+    const wid = (pm && pm.classList.contains('open') && STATE.currentVideo && STATE.unlockExpiry[STATE.currentVideo.id]) ? STATE.currentVideo.id : null;
+    const save = ()=>{ try{ localStorage.setItem('ml_unlock_expiry', JSON.stringify(STATE.unlockExpiry)); }catch(e){} };
+    if(wid){
+      STATE.unlockExpiry[wid] = now + unlockWindowFor(wid);
+      STATE._watchingId = wid;
+      if(now - (STATE._expSavedAt||0) > 10000){ STATE._expSavedAt = now; save(); }
+    } else if(STATE._watchingId){ STATE._watchingId = null; save(); }
+  }
   Object.keys(STATE.unlockExpiry).forEach(id=>{
     if(STATE.unlockExpiry[id] <= now){
       if(isInApp() && STATE.currentVideo && STATE.currentVideo.id===id && document.getElementById('player-modal').classList.contains('open')){
         // watching right now: keep this session unlocked (all parts) while the player is open
-        STATE.unlockExpiry[id] = now + UNLOCK_WINDOW_MS;
+        STATE.unlockExpiry[id] = now + unlockWindowFor(id);
         localStorage.setItem('ml_unlock_expiry', JSON.stringify(STATE.unlockExpiry));
         return;
       }
@@ -2526,14 +2574,14 @@ setInterval(()=>{
     if(!ts){ return; }
     const remain = Math.max(0, ts-Date.now());
     const mm=Math.floor(remain/60000), ss=Math.floor((remain%60000)/1000);
-    el.textContent = mm+':'+String(ss).padStart(2,'0');
+    el.textContent = fmtRemain(remain);
   });
   document.querySelectorAll('.expiry-bar-fill').forEach(el=>{
     const id = el.dataset.vid;
     const ts = STATE.unlockExpiry[id];
     if(!ts){ return; }
     const remain = Math.max(0, ts-Date.now());
-    const pct = Math.max(0, Math.min(100, (remain/UNLOCK_WINDOW_MS)*100));
+    const pct = Math.max(0, Math.min(100, (remain/unlockWindowFor(id))*100));
     el.style.width = pct+'%';
   });
 },1000);
@@ -3424,7 +3472,12 @@ function cssEscape(s){ return String(s).replace(/["\\]/g,'\\$&'); }
    Inside the app: no landing pages / direct links — exactly 3 ads, then the in-app player.
    Telegram bot / Mini App / normal browser: everything works exactly as before. */
 function isInApp(){ return /MoviLoverApp/i.test(navigator.userAgent) || typeof window.AndroidApp !== 'undefined'; }
-function adsReq(v){ if(isInApp()) return 3; return 2; } // ওয়েব/টেলিগ্রাম: প্রতিটি ভিডিওতে ২টি ধাপ (ল্যান্ডিং পেজ + ডাইরেক্ট লিংক)
+function adsReq(v){ if(isInApp()) return 3; return botTaskCount(v); }
+/* ---- BOT / WEB flow: number of landing-page tasks per video ----
+   Default 2. Set BOT_TASKS_DEFAULT = 3 to make every video 3 tasks, or give a single
+   video its own count with a numeric field `botTasks` (2 or 3) on its Firestore doc. */
+const BOT_TASKS_DEFAULT = 2;
+function botTaskCount(v){ const n = parseInt(v && v.botTasks); return Math.min(3, Math.max(2, n || BOT_TASKS_DEFAULT)); } // ওয়েব/টেলিগ্রাম: প্রতিটি ভিডিওতে ২টি ধাপ (ল্যান্ডিং পেজ + ডাইরেক্ট লিংক)
 function videoParts(v){ return (v.parts && v.parts.length) ? v.parts : [{url:v.url}]; }
 function getTaskStep(id){ return STATE.taskStepByVideo[id]||0; }
 function setTaskStep(id, step){ STATE.taskStepByVideo[id]=step; localStorage.setItem('ml_task_step', JSON.stringify(STATE.taskStepByVideo)); }
@@ -3444,9 +3497,9 @@ function buildVideoCard(v){
   if(req>1){
     for(let i=1;i<=req;i++){
       let cls='unlock-dot';
-      let inner=`<span class="num">${i}</span><span class="lbl">AD</span>`;
+      let inner=`<span class="num">${i}</span><span class="lbl">${isInApp()?'AD':'TASK'}</span>`;
       if(i<=doneSteps) cls+=' done';
-      else if(i===doneSteps+1){ cls+=' active'; inner=`<span class="material-icons-round">local_movies</span><span class="lbl">AD</span>`; }
+      else if(i===doneSteps+1){ cls+=' active'; inner=`<span class="material-icons-round">local_movies</span><span class="lbl">${isInApp()?'AD':'TASK'}</span>`; }
       dotsHtml+=`<div class="${cls}" data-step="${i}">${inner}</div>`;
       if(i<req) dotsHtml+=`<div class="unlock-connector ${i<=doneSteps?'done':''}"></div>`;
     }
@@ -3456,11 +3509,11 @@ function buildVideoCard(v){
   if(unlocked){
     const remain = expiryTs ? Math.max(0, expiryTs - Date.now()) : 0;
     const mm = Math.floor(remain/60000), ss = Math.floor((remain%60000)/1000);
-    const pct = expiryTs ? Math.max(0, Math.min(100, (remain/UNLOCK_WINDOW_MS)*100)) : 100;
+    const pct = expiryTs ? Math.max(0, Math.min(100, (remain/unlockWindowFor(v))*100)) : 100;
     unlockedBlockHtml = `
       <div class="stamp-row">
         <div class="stamp"><span class="material-icons-round">check_circle</span>UNLOCKED</div>
-        <div class="expiry-text2">মেয়াদ শেষ <b class="expiry-countdown" data-vid="${v.id}">${mm}:${String(ss).padStart(2,'0')}</b> এ</div>
+        <div class="expiry-text2">মেয়াদ শেষ <b class="expiry-countdown" data-vid="${v.id}">${fmtRemain(remain)}</b> এ</div>
       </div>
       <div class="expiry-bar-track"><div class="expiry-bar-fill" data-vid="${v.id}" style="width:${pct}%;"></div></div>
       <button class="watch-now-btn ripple" onclick="event.stopPropagation();openWatchNow('${v.id}')"><span class="material-icons-round">play_arrow</span> Watch Now</button>
@@ -3472,8 +3525,9 @@ function buildVideoCard(v){
     pinnedRibbon = `<div class="badge-parts" style="left:auto;right:8px;bottom:auto;top:8px;background:rgba(240,180,41,0.85);color:#2a1c05;"><span class="material-icons-round" style="font-size:12px;">push_pin</span>PINNED</div>`;
   }
 
-  const btnHtml = unlocked ? '' : `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">local_movies</span> ${req>1?`বিজ্ঞাপন দেখুন <span class="cnt">${doneSteps}/${req}</span>`:'বিজ্ঞাপন দেখে আনলক'}</button>`;
+  let btnHtml = unlocked ? '' : `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">local_movies</span> ${req>1?`বিজ্ঞাপন দেখুন <span class="cnt">${doneSteps}/${req}</span>`:'বিজ্ঞাপন দেখে আনলক'}</button>`;
 
+  if(!unlocked && !isInApp()) btnHtml = botTaskBlock(v, doneSteps, req);
   card.innerHTML=`
     <div class="video-thumb-wrap">
       <div class="video-thumb" onclick="openVideoById('${v.id}')">
@@ -3496,7 +3550,7 @@ function buildVideoCard(v){
         <div class="video-stat"><span class="material-icons-round">schedule</span>${timeAgo(v.createdAt)}</div>
       </div>
       <div class="perf-divider"></div>
-      ${!unlocked?`<div class="video-hint"><span class="material-icons-round">info</span>${req>1?`দেখতে ${req}টি বিজ্ঞাপন দেখতে হবে (প্রতিবার একটি করে)`:'একটি বিজ্ঞাপন দেখে সাথে সাথে আনলক করুন — আনলকের পর ৩ মিনিট খোলা থাকবে'}</div>`:''}
+      ${!unlocked && isInApp()?`<div class="video-hint"><span class="material-icons-round">info</span>${req>1?`দেখতে ${req}টি বিজ্ঞাপন দেখতে হবে (প্রতিবার একটি করে)`:'একটি বিজ্ঞাপন দেখে সাথে সাথে আনলক করুন — আনলকের পর ৩ মিনিট খোলা থাকবে'}</div>`:''}
       ${!unlocked && req>1?`<div class="unlock-progress-row">${dotsHtml}</div>`:''}
       ${unlocked?unlockedBlockHtml:btnHtml}
       <div class="card-share-row">
@@ -3720,7 +3774,8 @@ function startUnlockFromCard(id){
   const req = adsReq(v);
   STATE.taskAdsRequired = req;
   STATE.taskStep = getTaskStep(id);
-  if(STATE.taskStep >= req){ finishUnlock(true); return; }     // সব টাস্ক আগেই শেষ — শুধু আনলক বাকি ছিল
+  if(STATE.taskStep >= req){ finishUnlock(true); return; }
+  if(!isInApp()){ runBotTaskStep(v, STATE.taskStep + 1, req); return; }   // BOT/WEB flow: inline cards, no modal. App flow below is untouched.     // সব টাস্ক আগেই শেষ — শুধু আনলক বাকি ছিল
   STATE.verifyModalOpen = true;
   document.getElementById('verify-modal').classList.add('open');
   resetAdModalToPlayingState();
@@ -3837,6 +3892,7 @@ function focusVideoCard(id, step){
 }
 
 function onSingleAdWatched(){
+  if(!isInApp() && STATE.currentVideo){ onBotTaskDone(); return; }   // BOT/WEB flow (see BOT TASK FLOW)
   registerAdWatched();
   const v = STATE.currentVideo;
   STATE.taskStep++;
@@ -3868,14 +3924,14 @@ function finishUnlock(quiet){
     registerVideoUnlock();
     rewardVideoUnlock(v);
   }
-  STATE.unlockExpiry[v.id] = Date.now() + UNLOCK_WINDOW_MS;
+  STATE.unlockExpiry[v.id] = Date.now() + unlockWindowFor(v);
   localStorage.setItem('ml_unlock_expiry', JSON.stringify(STATE.unlockExpiry));
   setTaskStep(v.id, 0);
   if(!quiet){
     unlockSnd();
     document.getElementById('tcp-icon').textContent = '🎟️';
     document.getElementById('tcp-title').textContent = 'আনলক সম্পন্ন!';
-    document.getElementById('tcp-sub').textContent = '৩ মিনিটের জন্য খোলা থাকবে — উপভোগ করুন।';
+    document.getElementById('tcp-sub').textContent = (unlockWindowFor(v) >= LONG_UNLOCK_MS ? '২ ঘণ্টার' : '৩ মিনিটের') + ' জন্য খোলা থাকবে — উপভোগ করুন।';
     document.getElementById('task-complete-popup').classList.add('open');
     setTimeout(()=>{ document.getElementById('task-complete-popup').classList.remove('open'); },1300);
   }
@@ -3931,6 +3987,103 @@ function randomAlnum(len){
   return Array.from(arr).map(b=>ch[b % ch.length]).join('');
 }
 function reopenUnlockLanding(){ if(STATE.unlockLandingUrl) openExternal(STATE.unlockLandingUrl); }
+/* ===================== BOT TASK FLOW (Telegram bot / Mini App / browser — NOT the Android app) =====================
+   Per video: N landing-page tasks (2 or 3). Each task:
+     tap "Start Task" / "Next Task" -> unlock_sessions/{token} (server timestamp) -> landing.html opens
+     -> visitor taps the hand, Monetag direct link opens + 6s timer -> landing writes unlock_done/{token}
+     -> back here: the card says "1st Task Completed" + "Next Task". After the last one: "All Tasks Completed"
+        and the video unlocks. No modal, no popup. The unlock_sessions/unlock_done security model is unchanged. */
+STATE.botWait = STATE.botWait || {};      // videoId -> { token, url, stop }  (task page open, waiting for confirmation)
+STATE.botAllDone = STATE.botAllDone || {}; // videoId -> true for ~1s before unlocking
+function ordinal(n){ return n + (['th','st','nd','rd'][(n%100>=11&&n%100<=13)?0:Math.min(n%10,4)>3?0:n%10]||'th'); }
+
+function botTaskBlock(v, done, total){
+  const id = v.id;
+  if(STATE.botAllDone[id]){
+    return `<div class="bt bt-ok"><span class="material-icons-round">verified</span><div><b>All Tasks Completed</b><small>ভিডিও আনলক হচ্ছে…</small></div></div>`;
+  }
+  if(STATE.botWait[id]){
+    return `<div class="bt bt-wait"><span class="bt-spin"></span><div><b>Waiting for Task ${done+1}</b><small>খোলা পেজে ট্যাপ করে টাইমার শেষ হলে ব্যাক করুন</small></div></div>
+      <div class="bt-row"><button class="unlock-btn ripple" onclick="event.stopPropagation();reopenBotTask('${id}')"><span class="material-icons-round">open_in_new</span> Reopen task page</button>
+      <button class="bt-link" onclick="event.stopPropagation();cancelBotTask('${id}')">Cancel</button></div>`;
+  }
+  if(done > 0){
+    return `<div class="bt bt-ok"><span class="material-icons-round">check_circle</span><div><b>${ordinal(done)} Task Completed</b><small>${done}/${total} done — আর ${total-done}টি বাকি</small></div></div>
+      <button class="unlock-btn ripple bt-next" onclick="event.stopPropagation();startUnlockFromCard('${id}')"><span class="material-icons-round">arrow_forward</span> Next Task</button>`;
+  }
+  return `<div class="bt bt-info"><span class="material-icons-round">info</span><div><b>${total} quick tasks to unlock</b><small>একবারে একটি করে — প্রতিটি মাত্র ৬ সেকেন্ড</small></div></div>
+    <button class="unlock-btn ripple" onclick="event.stopPropagation();startUnlockFromCard('${id}')"><span class="material-icons-round">play_arrow</span> Start Task 1</button>`;
+}
+
+async function runBotTaskStep(v, stepNum, total){
+  const old = STATE.botWait[v.id];
+  if(old){ openExternal(old.url); return; }                      // already open: just bring it back
+  const token = randomAlnum(20);
+  try{
+    await window._setDoc(window._doc(window._db,'unlock_sessions',token), {
+      userId: STATE.userId, videoId: v.id, step: stepNum, startedAt: window._serverTimestamp()
+    });
+  }catch(e){ toast('⚠️ শুরু করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।'); return; }
+
+  const base = new URL(LANDING_FILE, location.href); base.search = ''; base.hash = '';
+  const poolIdx = nextPoolIndex(v.id, stepNum); bumpPoolRotation();
+  const url = base.toString() + '?v=' + encodeURIComponent(v.id) + '&s=' + stepNum + '&n=' + total + '&k=' + token + '&r=' + poolIdx;
+  STATE.unlockLandingUrl = url;
+  try{ localStorage.setItem('ml_pending_unlock', JSON.stringify({ token, videoId: v.id, step: stepNum, ts: Date.now() })); }catch(e){}
+
+  let done = false, unsub = null, poll = null;
+  function stop(){
+    document.removeEventListener('visibilitychange', onVisible);
+    if(unsub){ try{ unsub(); }catch(e){} unsub = null; }
+    if(poll){ clearInterval(poll); poll = null; }
+  }
+  function confirmed(){
+    if(done) return; done = true; stop();
+    delete STATE.botWait[v.id];
+    try{ localStorage.removeItem('ml_pending_unlock'); }catch(e){}
+    if(getTaskStep(v.id) !== stepNum - 1){ renderVideos(STATE.filteredVideos); return; }   // already counted (e.g. by resume)
+    STATE.currentVideo = v; STATE.taskAdsRequired = total;
+    onSingleAdWatched();
+  }
+  function check(){ fbGetDoc('unlock_done', token).then(d=>{ if(d) confirmed(); }).catch(()=>{}); }
+  function onVisible(){ if(!document.hidden) check(); }
+  document.addEventListener('visibilitychange', onVisible);
+  try{ unsub = window._onSnapshot(window._doc(window._db,'unlock_done',token), snap=>{ if(snap.exists()) confirmed(); }, ()=>{}); }catch(e){}
+  poll = setInterval(check, 3000);
+
+  STATE.botWait[v.id] = { token, url, stop };
+  renderVideos(STATE.filteredVideos);
+  openExternal(url);
+}
+function reopenBotTask(id){ const w = STATE.botWait[id]; if(w) openExternal(w.url); }
+function cancelBotTask(id){
+  const w = STATE.botWait[id]; if(!w) return;
+  w.stop(); delete STATE.botWait[id];
+  try{ localStorage.removeItem('ml_pending_unlock'); }catch(e){}
+  renderVideos(STATE.filteredVideos);
+}
+function botFocusCard(id){
+  setTimeout(()=>{ const c = document.querySelector(`.video-card[data-vid="${cssEscape(id)}"]`); if(c){ try{ c.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(e){ c.scrollIntoView(); } } }, 160);
+}
+/* Called when landing.html confirmed a task (unlock_done exists) */
+function onBotTaskDone(){
+  registerAdWatched();
+  const v = STATE.currentVideo, total = STATE.taskAdsRequired || adsReq(v);
+  const step = getTaskStep(v.id) + 1;
+  setTaskStep(v.id, step); STATE.taskStep = step;
+  stepDoneSnd();
+  STATE._stepLockUntil = 0;
+  if(document.getElementById('player-modal').classList.contains('open')) closePlayer();
+  try{ showPage('home'); }catch(e){}
+  if(step >= total){
+    STATE.botAllDone[v.id] = true;                               // card shows "All Tasks Completed"
+    renderVideos(STATE.filteredVideos); botFocusCard(v.id);
+    setTimeout(()=>{ delete STATE.botAllDone[v.id]; STATE.currentVideo = v; finishUnlock(true); }, 1100);
+  } else {
+    renderVideos(STATE.filteredVideos); botFocusCard(v.id);      // card shows "1st Task Completed" + "Next Task"
+  }
+}
+
 async function runLandingUnlockStep(v, stepNum){
   const wait = STATE.landingWait || 5;
   const token = randomAlnum(20);
