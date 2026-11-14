@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0f1115">
+<title>Unlocking your video</title>
+<style>
+:root{
+  --ink:#0f1115; --panel:#171a21; --line:#262b36; --text:#eceef2; --muted:#8b93a3;
+  --gold:#f2b830; --gold-d:#d99a14; --ok:#2fd08a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--text);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali","Hind Siliguri",sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
+}
+.card{
+  width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);
+  border-radius:20px;padding:32px 24px 24px;text-align:center;
+}
+.task{
+  display:inline-block;font-size:13px;color:var(--muted);
+  border:1px solid var(--line);border-radius:99px;padding:3px 12px;margin-bottom:18px;
+}
+h1{font-size:22px;font-weight:700;line-height:1.25;margin-bottom:6px}
+.sub{color:var(--muted);font-size:14.5px;min-height:44px}
+
+.ring{position:relative;width:168px;height:168px;margin:26px auto 22px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:8}
+.ring .bg{stroke:var(--line)}
+.ring .fg{stroke:var(--gold);stroke-linecap:round;stroke-dasharray:339.3;stroke-dashoffset:0;transition:stroke-dashoffset .25s linear,stroke .3s}
+.ring.done .fg{stroke:var(--ok)}
+.num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.num b{font-size:54px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.num small{font-size:13px;color:var(--muted);margin-top:4px}
+.ring.done .num b{color:var(--ok);font-size:48px}
+
+.cta{
+  display:block;width:100%;padding:16px;border:0;border-radius:14px;cursor:pointer;
+  font:700 17px/1.2 inherit;color:#1a1305;text-decoration:none;
+  background:linear-gradient(180deg,var(--gold),var(--gold-d));
+}
+.cta:active{transform:scale(.98)}
+.cta:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.cta[hidden]{display:none}
+.auto{margin-top:12px;font-size:13.5px;color:var(--muted)}
+.auto button{background:none;border:0;color:var(--gold);font:inherit;text-decoration:underline;cursor:pointer;padding:4px}
+.auto[hidden]{display:none}
+
+.tip{margin-top:18px;font-size:13px;color:var(--muted)}
+.sponsor{
+  display:block;margin:14px auto 0;background:none;border:1px solid var(--line);color:var(--text);
+  border-radius:99px;padding:9px 18px;font:600 14px/1 inherit;cursor:pointer;
+}
+.sponsor[hidden]{display:none}
+.warn{margin-top:14px;font-size:12.5px;color:#ffb4bd}
+.warn[hidden]{display:none}
+#adSlot{margin:18px auto 0;min-height:0;max-width:100%;overflow:hidden}
+.foot{margin-top:18px;font-size:12px;color:#5d6575}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="card" id="page">
+  <span class="task" id="taskChip" hidden></span>
+  <h1 id="title"></h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="ring" id="ring" role="timer" aria-live="off">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <circle class="bg" cx="60" cy="60" r="54"/>
+      <circle class="fg" id="fg" cx="60" cy="60" r="54"/>
+    </svg>
+    <div class="num"><b id="sec">6</b><small id="unit"></small></div>
+  </div>
+
+  <a class="cta" id="cta" data-noad hidden></a>
+  <p class="auto" id="auto" data-noad hidden></p>
+
+  <p class="tip" id="tip"></p>
+  <button class="sponsor" id="sponsor" type="button" data-noad hidden></button>
+  <p class="warn" id="warn" hidden></p>
+
+  <!-- ===== AD SLOT (optional banner / native tag): paste your Monetag tag here ===== -->
+  <div id="adSlot" data-noad></div>
+  <!-- ===== /AD SLOT ===== -->
+
+  <p class="foot" id="foot"></p>
+</main>
+
+<!-- ===== MONETAG SCRIPT SLOT =====
+     Paste a Monetag In-Page Push / Interstitial tag here if you use one.
+     Don't combine a Popunder tag with the direct-link tap below: both fire on the
+     same first tap and browsers will block the second one.
+     <script src="https://YOUR-MONETAG-TAG.js" data-zone="000000" async></script>
+-->
+
+<script>
+(function(){
+"use strict";
+
+/* ================= CONFIG — edit this block only ================= */
+var CONFIG = {
+  BOT_USERNAME: "YourBotName",      // without @
+  START_PREFIX: "completed",        // deep link: ?start=completed_<task>_<chat_id>
+  WAIT_SECONDS: 6,                  // countdown length
+  AUTO_RETURN_SECONDS: 0,           // 0 = off. e.g. 3 = auto-return 3s after timer ends (user can cancel)
+  TAP_OPENS_DIRECT_LINK: true,      // first tap anywhere opens a sponsor page in a new tab (once)
+  DIRECT_LINKS: [                   // Monetag direct links; one is picked at random per visit
+    "https://YOUR-MONETAG-DIRECT-LINK-1",
+    "https://YOUR-MONETAG-DIRECT-LINK-2"
+  ]
+};
+
+var I18N = {
+  en:{
+    title:"Unlocking your video", sub:"Hang on for a moment while we verify your task.",
+    sec:"seconds", chip:"Task ", done:"Done", ready:"Verified. Tap below to head back to Telegram.",
+    cta:"Go back to Telegram", tip:"Tap anywhere to open a sponsor page in a new tab. Come back here afterwards.",
+    sponsor:"Open sponsor page", opened:"Sponsor page opened in a new tab. Return here to continue.",
+    blocked:"Your browser blocked the sponsor page. Use the button to open it.",
+    auto:"Returning to Telegram in ", cancel:"Cancel", bad:"This link looks incomplete. You can still return to the bot.",
+    foot:"Sponsor pages help keep videos free."
+  },
+  bn:{
+    title:"আপনার ভিডিও আনলক হচ্ছে", sub:"আপনার টাস্ক যাচাই করা হচ্ছে, একটু অপেক্ষা করুন।",
+    sec:"সেকেন্ড", chip:"টাস্ক ", done:"✓", ready:"যাচাই সম্পন্ন। নিচে ট্যাপ করে টেলিগ্রামে ফিরে যান।",
+    cta:"টেলিগ্রামে ফিরে যান", tip:"যেকোনো জায়গায় ট্যাপ করলে স্পনসর পেজ নতুন ট্যাবে খুলবে। এরপর এখানে ফিরে আসুন।",
+    sponsor:"স্পনসর পেজ খুলুন", opened:"স্পনসর পেজ নতুন ট্যাবে খুলেছে। এখানে ফিরে এসে চালিয়ে যান।",
+    blocked:"আপনার ব্রাউজার স্পনসর পেজ ব্লক করেছে। বাটনে ট্যাপ করে খুলুন।",
+    auto:"টেলিগ্রামে ফিরে যাচ্ছে ", cancel:"বাতিল", bad:"লিংকটি অসম্পূর্ণ। তবুও আপনি বটে ফিরে যেতে পারেন।",
+    foot:"স্পনসর পেজ ভিডিওগুলো ফ্রি রাখতে সাহায্য করে।"
+  }
+};
+/* ================================================================= */
+
+var $ = function(id){ return document.getElementById(id); };
+var q = new URLSearchParams(location.search);
+
+/* ---- language: ?lang=bn|en, else browser language ---- */
+var lang = q.get("lang");
+if(lang !== "bn" && lang !== "en") lang = /^bn/i.test(navigator.language || "") ? "bn" : "en";
+document.documentElement.lang = lang;
+var T = I18N[lang];
+
+/* ---- query params (validated before use) ---- */
+var chatId = (q.get("chat_id") || "").trim();
+var task   = (q.get("task") || "").trim();
+if(!/^-?\d{1,20}$/.test(chatId)) chatId = "";
+if(!/^[A-Za-z0-9-]{1,32}$/.test(task)) task = "";
+
+var startParam = [CONFIG.START_PREFIX, task, chatId].filter(Boolean).join("_");
+var paramsOk = !!(chatId && task) && startParam.length <= 64;
+var botUrl = "https://t.me/" + encodeURIComponent(CONFIG.BOT_USERNAME) +
+             (paramsOk ? "?start=" + encodeURIComponent(startParam) : "");
+
+/* ---- static text ---- */
+$("title").textContent = T.title;
+$("sub").textContent   = T.sub;
+$("unit").textContent  = T.sec;
+$("foot").textContent  = T.foot;
+$("tip").textContent   = CONFIG.TAP_OPENS_DIRECT_LINK ? T.tip : "";
+$("sponsor").textContent = T.sponsor;
+$("cta").textContent   = T.cta;
+$("cta").href          = botUrl;
+if(task){ $("taskChip").textContent = T.chip + task; $("taskChip").hidden = false; }
+if(!paramsOk){ $("warn").textContent = T.bad; $("warn").hidden = false; }
+
+/* ---- direct link (ignores unfilled placeholders) ---- */
+var links = CONFIG.DIRECT_LINKS.filter(function(u){ return /^https:\/\//i.test(u) && u.indexOf("YOUR-") === -1; });
+var adUrl = links.length ? links[Math.floor(Math.random() * links.length)] : "";
+var adOpened = false;
+
+function openAd(){
+  if(!adUrl || adOpened) return;
+  var w = null;
+  try{ w = window.open(adUrl, "_blank", "noopener"); }catch(e){}
+  if(w){
+    adOpened = true;
+    $("sponsor").hidden = true;
+    $("tip").textContent = T.opened;
+    $("warn").hidden = true;
+  }else{
+    $("warn").textContent = T.blocked;   // popup blocked: fall back to explicit button
+    $("warn").hidden = false;
+    $("sponsor").hidden = false;
+  }
+}
+
+/* One tap = one sponsor page. Must run inside a real user gesture, so it never fires on load. */
+if(CONFIG.TAP_OPENS_DIRECT_LINK && adUrl){
+  document.addEventListener("click", function(e){
+    if(adOpened || (e.target.closest && e.target.closest("[data-noad]"))) return;
+    openAd();
+  }, true);
+}
+$("sponsor").addEventListener("click", openAd);
+
+/* ---- countdown: starts immediately, based on real elapsed time ---- */
+var total = Math.max(1, CONFIG.WAIT_SECONDS);
+var CIRC = 339.3;
+var start = Date.now();
+var fg = $("fg"), secEl = $("sec"), ring = $("ring");
+var finished = false;
+
+function tick(){
+  var elapsed = (Date.now() - start) / 1000;
+  var left = Math.max(0, total - elapsed);
+  fg.style.strokeDashoffset = String(CIRC * (1 - left / total));
+  secEl.textContent = String(Math.ceil(left));
+  if(left <= 0){ finish(); return; }
+  setTimeout(tick, 200);
+}
+
+function finish(){
+  if(finished) return; finished = true;
+  ring.classList.add("done");
+  secEl.textContent = T.done;
+  $("unit").textContent = "";
+  $("sub").textContent = T.ready;
+  var cta = $("cta"); cta.hidden = false;
+  try{ cta.focus({preventScroll:true}); }catch(e){}
+  if(CONFIG.AUTO_RETURN_SECONDS > 0) autoReturn(CONFIG.AUTO_RETURN_SECONDS);
+}
+
+/* ---- optional auto-return (cancellable) ---- */
+function autoReturn(n){
+  var box = $("auto"), cancelled = false;
+  function render(){
+    box.textContent = T.auto + n + "… ";
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = T.cancel;
+    b.onclick = function(){ cancelled = true; box.hidden = true; };
+    box.appendChild(b);
+  }
+  box.hidden = false; render();
+  (function step(){
+    setTimeout(function(){
+      if(cancelled) return;
+      n -= 1;
+      if(n <= 0){ location.href = botUrl; return; }
+      render(); step();
+    }, 1000);
+  })();
+}
+
+tick();
+})();
+</script>
+</body>
+</html>
