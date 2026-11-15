@@ -1498,14 +1498,25 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
 .up-meta{display:flex;gap:14px;font-size:12px;color:var(--text-muted);margin:0 2px 14px}
 .up-meta span{display:flex;align-items:center;gap:4px}.up-meta .material-icons-round{font-size:15px}
 .up-card{background:var(--surface);border:1px solid var(--border-gold);border-radius:18px;padding:16px}
-.up-head{font-size:14px;color:var(--text);margin-bottom:12px;line-height:1.5}.up-head b{color:#f2b830}.up-head small{color:var(--text-muted);margin-left:4px}
-.up-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-.up-step{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:13px;background:var(--surface-2);border:1px solid var(--border)}
-.up-n{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:700 14px 'Rajdhani','Hind Siliguri',sans-serif;background:rgba(255,255,255,.06);color:var(--text-muted)}
-.up-n .material-icons-round{font-size:18px}
-.up-st b{display:block;font-size:13.5px;color:var(--text)}.up-st small{font-size:11px;color:var(--text-muted)}
-.up-step.cur{border-color:#f2b830;background:rgba(242,184,48,.08)}.up-step.cur .up-n{background:#f2b830;color:#2a1c05}
-.up-step.done{border-color:rgba(47,208,138,.4)}.up-step.done .up-n{background:#2fd08a;color:#052b1a}.up-step.done small{color:#2fd08a}
+.up-card{padding:14px 16px 16px !important}
+.up-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--text-muted);margin-bottom:14px}
+.up-head em{font:700 12px 'Rajdhani',sans-serif;font-style:normal;color:#f2b830;background:rgba(242,184,48,.12);border:1px solid rgba(242,184,48,.3);padding:2px 10px;border-radius:20px}
+.up-steps{display:flex;align-items:flex-start;justify-content:center;margin-bottom:16px}
+.up-s{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:64px}
+.up-s span{font-size:11px;color:var(--text-muted);font-weight:600}
+.up-c{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 14px 'Rajdhani','Hind Siliguri',sans-serif;background:var(--surface-2);border:1.5px solid var(--border);color:var(--text-muted);transition:.3s}
+.up-c .material-icons-round{font-size:19px}
+.up-s.cur .c,.up-s.cur .up-c{border-color:#f2b830;color:#f2b830;background:rgba(242,184,48,.1);animation:upPulse 1.8s ease-out infinite}
+.up-s.cur span{color:#ffd36a}
+.up-s.done .up-c{background:linear-gradient(135deg,#2fd08a,#1c9e68);border-color:transparent;color:#052b1a;animation:upPop .45s cubic-bezier(.22,.68,0,1.6)}
+.up-s.done span{color:#2fd08a}
+.up-l{flex:1;max-width:70px;min-width:28px;height:2px;margin-top:16px;background:var(--border);border-radius:2px;overflow:hidden}
+.up-l i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2fd08a,#f2b830)}
+.up-l.on i{animation:upFill .5s ease-out forwards}
+@keyframes upPulse{0%{box-shadow:0 0 0 0 rgba(242,184,48,.45)}100%{box-shadow:0 0 0 11px rgba(242,184,48,0)}}
+@keyframes upPop{0%{transform:scale(.5)}100%{transform:scale(1)}}
+@keyframes upFill{to{width:100%}}
+@media (prefers-reduced-motion:reduce){.up-s.cur .up-c,.up-s.done .up-c,.up-l.on i{animation:none}.up-l.on i{width:100%}}
 </style>
 </head>
 <body>
@@ -3665,7 +3676,7 @@ function openVideo(video){
 /* ---------- ভিডিও আনলক পেজ: কয়টি ধাপ লাগবে, কোনটি শেষ — সব এখানে ---------- */
 function openUnlockPage(id){
   const v = findVideo(id); if(!v) return;
-  STATE.currentVideo = v; STATE.upId = id;
+  STATE.currentVideo = v; STATE.upId = id; STATE._upSig = null;
   document.getElementById('up-modal').classList.add('open');
   renderUnlockPage();
 }
@@ -3684,14 +3695,18 @@ function renderUnlockPage(){
   document.getElementById('up-title').textContent = v.title || 'ভিডিও';
   document.getElementById('up-meta').innerHTML = `<span><span class="material-icons-round">visibility</span>${fmtNum(v.views||0)}</span><span><span class="material-icons-round">thumb_up</span>${fmtNum(v.likes||0)}</span><span><span class="material-icons-round">schedule</span>${timeAgo(v.createdAt)}</span>`;
   const unit = isInApp() ? 'বিজ্ঞাপন' : 'টাস্ক';
+  const w = !!STATE.botWait[v.id], wn = (STATE.botWarn && STATE.botWarn[v.id]) ? 1 : 0;
+  const sig = [v.id, done, req, w, wn, isInApp()].join('|');
+  if(STATE._upSig === sig) return;             // কিছু বদলায়নি — অ্যানিমেশন বারবার চলবে না
+  STATE._upSig = sig;
   let st = '';
   for(let i=1;i<=req;i++){
     const cls = i<=done ? 'done' : (i===done+1 ? 'cur' : '');
-    const txt = i<=done ? 'সম্পন্ন' : (i===done+1 ? 'এখন করুন' : 'অপেক্ষায়');
-    st += `<div class="up-step ${cls}"><div class="up-n">${i<=done?'<span class="material-icons-round">check</span>':bn(i)}</div><div class="up-st"><b>${unit} ${bn(i)}</b><small>${txt}</small></div></div>`;
+    st += `<div class="up-s ${cls}"><div class="up-c">${i<=done?'<span class="material-icons-round">check</span>':bn(i)}</div><span>${unit} ${bn(i)}</span></div>`;
+    if(i<req) st += `<div class="up-l ${i<=done?'on':''}"><i></i></div>`;
   }
   document.getElementById('up-steps').innerHTML = st;
-  document.getElementById('up-head').innerHTML = `ভিডিওটি দেখতে <b>${bn(req)}টি ${unit}</b> সম্পন্ন করুন <small>(${bn(done)}/${bn(req)} শেষ)</small>`;
+  document.getElementById('up-head').innerHTML = `<span>${bn(req)}টি ${unit} সম্পন্ন করলে ভিডিও আনলক হবে</span><em>${bn(done)}/${bn(req)}</em>`;
   document.getElementById('up-action').innerHTML = isInApp()
     ? `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">play_arrow</span> বিজ্ঞাপন দেখুন <span class="cnt">${done}/${req}</span></button>`
     : botTaskBlock(v, done, req);
@@ -3709,12 +3724,14 @@ async function loadVideoBotConfig(){
   // সাইট লিংক সেটিং (সবার জন্য পাবলিক): মেইন বটের ইউজারনেম ও মিনি অ্যাপ নাম
   try{
     const s = await fbGetDoc('settings','site');
+    STATE._siteBotSet = !!(s && s.botUsername);
     if(s && s.botUsername) TELEGRAM_BOT_USERNAME = String(s.botUsername).replace(/^@/,'');
     else if(STATE.videoBot && STATE.videoBot.botUsername) TELEGRAM_BOT_USERNAME = STATE.videoBot.botUsername;
     if(s && typeof s.appShort === 'string') TELEGRAM_WEBAPP_SHORT_NAME = s.appShort.replace(/[^A-Za-z0-9_]/g,'');
     STATE.refSlugChecked = false;
     try{ buildReferralLink(); }catch(e){}
   }catch(e){}
+  try{ ensureLiveBot(); }catch(e){}
 }
 function openTelegramUrl(url){
   const tg = window.Telegram?.WebApp;
@@ -3762,10 +3779,28 @@ function registerWatch(v){
 }
 /* After the video is sent, take the user INTO the bot chat and close the Mini App,
    so they see the video instead of staying on the site and tapping Watch Now again. */
-function goToBotChat(){
-  const bu = (STATE.videoBot && STATE.videoBot.botUsername) || '';
+/* টোকেন থেকেই আসল (চালু) বটের ইউজারনেম বের করা হয় — Firestore-এ পুরোনো/সাসপেন্ড বটের নাম থাকলেও
+   "Not available — violated Terms of Service" পপআপ আসবে না। বট অচল হলে চ্যাট খোলা হয় না। */
+async function ensureLiveBot(){
+  if(STATE._liveBot) return STATE._liveBot;
+  const fallback = (STATE.videoBot && STATE.videoBot.botUsername) || '';
+  if(!STATE.videoBot || !STATE.videoBot.token) return fallback;
+  try{
+    const r = await tgBot('getMe', {});
+    if(r && r.ok && r.result && r.result.username){
+      STATE._liveBot = r.result.username; STATE.videoBot.botUsername = STATE._liveBot;
+      if(!STATE._siteBotSet){ TELEGRAM_BOT_USERNAME = STATE._liveBot; try{ buildReferralLink(); }catch(e){} }
+      return STATE._liveBot;
+    }
+    if(r && r.ok === false) return '';           // টোকেন বাতিল/বট বন্ধ — কোনো লিংক খুলবো না
+  }catch(e){}
+  return fallback;                               // নেটওয়ার্ক সমস্যা — আগের মতোই
+}
+async function goToBotChat(){
+  const bu = await ensureLiveBot();
   const tg = window.Telegram && window.Telegram.WebApp;
   const url = bu ? 'https://t.me/' + bu : '';
+  if(!url){ toast('⚠️ ডেলিভারি বট এখন চালু নেই — অ্যাডমিনকে জানান।'); return; }
   if(tg){
     try{ if(url && typeof tg.openTelegramLink === 'function') tg.openTelegramLink(url); }catch(e){}
     setTimeout(()=>{ try{ tg.close(); }catch(e){} }, 450);
@@ -3816,7 +3851,7 @@ async function _deliverVideoToTelegram(v){
   if(failCode === 403 || failCode === 400){
     STATE.pendingDeliveryId = v.id;
     toast('🤖 বটে গিয়ে Start চাপুন, তারপর এই অ্যাপে ফিরে আসুন — ভিডিও অটো পাঠানো হবে');
-    if(STATE.videoBot.botUsername) openTelegramUrl('https://t.me/' + STATE.videoBot.botUsername + '?start=ready');
+    ensureLiveBot().then(u=>{ if(u) openTelegramUrl('https://t.me/' + u + '?start=ready'); else toast('⚠️ ডেলিভারি বট এখন চালু নেই — অ্যাডমিনকে জানান।'); });
   } else {
     toast('⚠️ ভিডিও পাঠানো যায়নি — একটু পর আবার চেষ্টা করুন।');
   }
