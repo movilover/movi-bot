@@ -1457,6 +1457,55 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
 .bt-link{background:none;border:0;color:var(--text-muted);font:600 12px inherit;text-decoration:underline;padding:8px;cursor:pointer}
 .bt-next{animation:stepBtn 1.1s ease-in-out 3}
 @media (prefers-reduced-motion:reduce){.bt-spin,.bt-next{animation:none}}
+.bt-warn{border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.09);animation:btshake .4s}
+.bt-warn .material-icons-round,.bt-warn b{color:#ff8a8a}
+.bt-slim{padding:8px 12px;margin-bottom:8px}
+@keyframes btshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+<style id="royal-night">
+/* ===== Royal Night থিম ===== */
+.hv-lock{display:none !important}
+#page-home .cat-tiles{background:none !important;border:none !important;box-shadow:none !important;padding:8px 2px 4px !important;gap:12px !important;backdrop-filter:none !important}
+#page-home .cat-tile{flex:0 0 72px !important;min-width:72px !important;max-width:72px !important;background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;gap:7px !important;color:#9d95b3 !important;transform:none}
+#page-home .cat-tile .ct-ico{width:60px !important;height:60px !important;border-radius:18px !important;background:#130f1d !important;border:1px solid rgba(167,139,250,.18) !important;color:#c4b5fd;transition:.25s}
+#page-home .cat-tile .ct-name{font-size:12px;font-weight:600;min-height:0}
+#page-home .cat-tile.active{color:#f2b830 !important}
+#page-home .cat-tile.active .ct-ico{border-color:#f2b830 !important;background:linear-gradient(160deg,rgba(242,184,48,.22),rgba(139,92,246,.12)) !important;color:#f2b830;box-shadow:0 0 0 3px rgba(242,184,48,.12),0 8px 20px rgba(242,184,48,.18) !important}
+#page-home .sec-head h3{border-left:3px solid #f2b830;padding-left:9px}
+/* ট্রেন্ডিং: এক লাইনে ৩টি, স্ক্রল করে বাকিগুলো */
+#page-home .tr-row{gap:10px !important;scroll-snap-type:x proximity !important}
+#page-home .tr-card{flex:0 0 calc((100% - 20px)/3) !important;flex-direction:column;min-height:0;position:relative;border-radius:14px;scroll-snap-align:start}
+#page-home .tr-thumb{flex:none;width:100%;aspect-ratio:3/4;min-height:0}
+#page-home .tr-body{position:static;padding:8px 8px 10px;gap:3px;justify-content:flex-start}
+#page-home .tr-badge{top:6px;right:6px;padding:2px 7px;border-radius:8px;font-size:10px}
+#page-home .tr-title{font-size:12.5px;line-height:1.25;padding-right:0;-webkit-line-clamp:2}
+#page-home .tr-body .hv-meta,#page-home .tr-desc{display:none}
+#page-home .tr-views{font-size:10.5px;gap:4px}#page-home .tr-views .material-icons-round{font-size:13px}
+#page-home .tr-thumb .hv-play{width:34px;height:34px}#page-home .tr-thumb .hv-play svg{width:15px;height:15px}
+/* হোমের Play বাটন */
+.unlock-btn.home-play{background:linear-gradient(180deg,rgba(242,184,48,.2),rgba(242,184,48,.06));border:1.5px solid rgba(242,184,48,.6);color:#ffd36a}
+/* ভিডিও আনলক পেজ */
+#up-modal{display:none;position:fixed;inset:0;z-index:560;background:var(--bg);flex-direction:column;overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#up-modal.open{display:flex;animation:fadeIn .2s}
+.up-bar{display:flex;align-items:center;gap:10px;padding:12px 14px;position:sticky;top:0;background:var(--bg);z-index:2}
+.up-back{width:38px;height:38px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text)}
+.up-bar-t{font:700 17px 'Rajdhani',sans-serif;color:var(--text)}
+.up-body{width:100%;max-width:560px;margin:0 auto;padding:0 14px 28px}
+.up-thumb{position:relative;aspect-ratio:16/9;border-radius:18px;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center;border:1px solid var(--border)}
+.up-thumb img{width:100%;height:100%;object-fit:cover}
+.up-shade{position:absolute;inset:0;background:rgba(7,6,13,.5);display:flex;align-items:center;justify-content:center}
+.up-shade .material-icons-round{font-size:58px;color:#f2b830;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6))}
+.up-title{font-size:18px;font-weight:700;color:var(--text);margin:14px 2px 6px;line-height:1.35}
+.up-meta{display:flex;gap:14px;font-size:12px;color:var(--text-muted);margin:0 2px 14px}
+.up-meta span{display:flex;align-items:center;gap:4px}.up-meta .material-icons-round{font-size:15px}
+.up-card{background:var(--surface);border:1px solid var(--border-gold);border-radius:18px;padding:16px}
+.up-head{font-size:14px;color:var(--text);margin-bottom:12px;line-height:1.5}.up-head b{color:#f2b830}.up-head small{color:var(--text-muted);margin-left:4px}
+.up-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.up-step{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:13px;background:var(--surface-2);border:1px solid var(--border)}
+.up-n{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:700 14px 'Rajdhani','Hind Siliguri',sans-serif;background:rgba(255,255,255,.06);color:var(--text-muted)}
+.up-n .material-icons-round{font-size:18px}
+.up-st b{display:block;font-size:13.5px;color:var(--text)}.up-st small{font-size:11px;color:var(--text-muted)}
+.up-step.cur{border-color:#f2b830;background:rgba(242,184,48,.08)}.up-step.cur .up-n{background:#f2b830;color:#2a1c05}
+.up-step.done{border-color:rgba(47,208,138,.4)}.up-step.done .up-n{background:#2fd08a;color:#052b1a}.up-step.done small{color:#2fd08a}
 </style>
 </head>
 <body>
@@ -1956,6 +2005,20 @@ nav{ background:linear-gradient(0deg,#07050c 0%,#0e0916 100%) !important; border
         <button class="pdp-action-btn pdp-copy-btn ripple" onclick="copyCurrentVideoLink()"><span class="material-icons-round">content_copy</span>কপি</button>
         <button class="pdp-action-btn pdp-share-btn ripple" onclick="shareCurrentVideo()"><span class="material-icons-round">share</span>শেয়ার</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="up-modal">
+  <div class="up-bar"><div class="up-back ripple" onclick="closeUnlockPage()"><span class="material-icons-round">arrow_back</span></div><div class="up-bar-t">ভিডিও</div></div>
+  <div class="up-body">
+    <div class="up-thumb" id="up-thumb"></div>
+    <div class="up-title" id="up-title"></div>
+    <div class="up-meta" id="up-meta"></div>
+    <div class="up-card">
+      <div class="up-head" id="up-head"></div>
+      <div class="up-steps" id="up-steps"></div>
+      <div id="up-action"></div>
     </div>
   </div>
 </div>
@@ -3454,7 +3517,7 @@ function renderHomeExtras(){
   try{ renderContinue(); }catch(e){ console.error(e); }
 }
 
-function renderVideos(videos){ renderVideosCore(videos); try{ refreshLocks(); }catch(e){} }
+function renderVideos(videos){ renderVideosCore(videos); try{ refreshLocks(); }catch(e){} try{ refreshUnlockPage(); }catch(e){} }
 function renderVideosCore(videos){
   const grid=document.getElementById('video-grid');
   grid.innerHTML='';
@@ -3516,7 +3579,7 @@ function buildVideoCard(v){
         <div class="expiry-text2">মেয়াদ শেষ <b class="expiry-countdown" data-vid="${v.id}">${fmtRemain(remain)}</b> এ</div>
       </div>
       <div class="expiry-bar-track"><div class="expiry-bar-fill" data-vid="${v.id}" style="width:${pct}%;"></div></div>
-      <button class="watch-now-btn ripple" onclick="event.stopPropagation();openWatchNow('${v.id}')"><span class="material-icons-round">play_arrow</span> Watch Now</button>
+      <button class="watch-now-btn ripple" onclick="event.stopPropagation();openWatchNow('${v.id}')"><span class="material-icons-round">play_arrow</span> Play</button>
     `;
   }
 
@@ -3527,7 +3590,7 @@ function buildVideoCard(v){
 
   let btnHtml = unlocked ? '' : `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">local_movies</span> ${req>1?`বিজ্ঞাপন দেখুন <span class="cnt">${doneSteps}/${req}</span>`:'বিজ্ঞাপন দেখে আনলক'}</button>`;
 
-  if(!unlocked && !isInApp()) btnHtml = botTaskBlock(v, doneSteps, req);
+  if(!unlocked) btnHtml = `<button class="unlock-btn ripple home-play" onclick="event.stopPropagation();openVideoById('${v.id}')"><span class="material-icons-round">play_arrow</span> Play</button>`;
   card.innerHTML=`
     <div class="video-thumb-wrap">
       <div class="video-thumb" onclick="openVideoById('${v.id}')">
@@ -3550,8 +3613,8 @@ function buildVideoCard(v){
         <div class="video-stat"><span class="material-icons-round">schedule</span>${timeAgo(v.createdAt)}</div>
       </div>
       <div class="perf-divider"></div>
-      ${!unlocked && isInApp()?`<div class="video-hint"><span class="material-icons-round">info</span>${req>1?`দেখতে ${req}টি বিজ্ঞাপন দেখতে হবে (প্রতিবার একটি করে)`:'একটি বিজ্ঞাপন দেখে সাথে সাথে আনলক করুন — আনলকের পর ৩ মিনিট খোলা থাকবে'}</div>`:''}
-      ${!unlocked && req>1?`<div class="unlock-progress-row">${dotsHtml}</div>`:''}
+      ${false?`<div class="video-hint"><span class="material-icons-round">info</span>${req>1?`দেখতে ${req}টি বিজ্ঞাপন দেখতে হবে (প্রতিবার একটি করে)`:'একটি বিজ্ঞাপন দেখে সাথে সাথে আনলক করুন — আনলকের পর ৩ মিনিট খোলা থাকবে'}</div>`:''}
+      
       ${unlocked?unlockedBlockHtml:btnHtml}
       <div class="card-share-row">
         <div class="card-share-btn ripple" onclick="shareVideoById('${v.id}',event)"><span class="material-icons-round">send</span>শেয়ার করুন</div>
@@ -3597,7 +3660,41 @@ function showFoundToast(){
 function openVideo(video){
   STATE.currentVideo=video;
   if(STATE.unlocked.includes(video.id)) openWatchNow(video.id);
-  else startUnlockFromCard(video.id);
+  else openUnlockPage(video.id);
+}
+/* ---------- ভিডিও আনলক পেজ: কয়টি ধাপ লাগবে, কোনটি শেষ — সব এখানে ---------- */
+function openUnlockPage(id){
+  const v = findVideo(id); if(!v) return;
+  STATE.currentVideo = v; STATE.upId = id;
+  document.getElementById('up-modal').classList.add('open');
+  renderUnlockPage();
+}
+function closeUnlockPage(){ STATE.upId = null; const m = document.getElementById('up-modal'); if(m) m.classList.remove('open'); }
+function refreshUnlockPage(){
+  if(!STATE.upId) return;
+  const v = findVideo(STATE.upId);
+  if(!v || STATE.unlocked.includes(v.id)){ closeUnlockPage(); return; }
+  renderUnlockPage();
+}
+function renderUnlockPage(){
+  const v = findVideo(STATE.upId); if(!v) return;
+  const req = adsReq(v), done = Math.min(getTaskStep(v.id), req);
+  const th = document.getElementById('up-thumb');
+  th.innerHTML = (v.thumbnail ? `<img src="${escHtml(v.thumbnail)}" alt="" onerror="this.style.display='none'"/>` : '<span style="font-size:42px">🎬</span>') + `<div class="up-shade"><span class="material-icons-round">play_circle_filled</span></div>`;
+  document.getElementById('up-title').textContent = v.title || 'ভিডিও';
+  document.getElementById('up-meta').innerHTML = `<span><span class="material-icons-round">visibility</span>${fmtNum(v.views||0)}</span><span><span class="material-icons-round">thumb_up</span>${fmtNum(v.likes||0)}</span><span><span class="material-icons-round">schedule</span>${timeAgo(v.createdAt)}</span>`;
+  const unit = isInApp() ? 'বিজ্ঞাপন' : 'টাস্ক';
+  let st = '';
+  for(let i=1;i<=req;i++){
+    const cls = i<=done ? 'done' : (i===done+1 ? 'cur' : '');
+    const txt = i<=done ? 'সম্পন্ন' : (i===done+1 ? 'এখন করুন' : 'অপেক্ষায়');
+    st += `<div class="up-step ${cls}"><div class="up-n">${i<=done?'<span class="material-icons-round">check</span>':bn(i)}</div><div class="up-st"><b>${unit} ${bn(i)}</b><small>${txt}</small></div></div>`;
+  }
+  document.getElementById('up-steps').innerHTML = st;
+  document.getElementById('up-head').innerHTML = `ভিডিওটি দেখতে <b>${bn(req)}টি ${unit}</b> সম্পন্ন করুন <small>(${bn(done)}/${bn(req)} শেষ)</small>`;
+  document.getElementById('up-action').innerHTML = isInApp()
+    ? `<button class="unlock-btn ripple" onclick="startUnlockFromCard('${v.id}')"><span class="material-icons-round">play_arrow</span> বিজ্ঞাপন দেখুন <span class="cnt">${done}/${req}</span></button>`
+    : botTaskBlock(v, done, req);
 }
 function openVideoById(id){ const v = findVideo(id); if(v) openVideo(v); }
 async function loadVideoBotConfig(){
@@ -4000,24 +4097,34 @@ function ordinal(n){ return n + (['th','st','nd','rd'][(n%100>=11&&n%100<=13)?0:
 function botTaskBlock(v, done, total){
   const id = v.id;
   if(STATE.botAllDone[id]){
-    return `<div class="bt bt-ok"><span class="material-icons-round">verified</span><div><b>All Tasks Completed</b><small>ভিডিও আনলক হচ্ছে…</small></div></div>`;
+    return `<div class="bt bt-ok bt-slim"><span class="material-icons-round">verified</span><div><b>Unlocked</b></div></div>`;
   }
   if(STATE.botWait[id]){
-    return `<div class="bt bt-wait"><span class="bt-spin"></span><div><b>Waiting for Task ${done+1}</b><small>খোলা পেজে ট্যাপ করে টাইমার শেষ হলে ব্যাক করুন</small></div></div>
-      <div class="bt-row"><button class="unlock-btn ripple" onclick="event.stopPropagation();reopenBotTask('${id}')"><span class="material-icons-round">open_in_new</span> Reopen task page</button>
+    const w = (STATE.landingWait || 6);
+    return `<div class="bt bt-wait bt-slim"><span class="bt-spin"></span><div><b>Task ${done+1}/${total}</b><small>ল্যান্ডিং পেজে ${bn(w)} সেকেন্ড থাকুন, তারপর ব্যাক করুন</small></div></div>
+      <div class="bt-row"><button class="unlock-btn ripple" onclick="event.stopPropagation();reopenBotTask('${id}')"><span class="material-icons-round">open_in_new</span> Reopen</button>
       <button class="bt-link" onclick="event.stopPropagation();cancelBotTask('${id}')">Cancel</button></div>`;
   }
-  if(done > 0){
-    return `<div class="bt bt-ok"><span class="material-icons-round">check_circle</span><div><b>${ordinal(done)} Task Completed</b><small>${done}/${total} done — আর ${total-done}টি বাকি</small></div></div>
-      <button class="unlock-btn ripple bt-next" onclick="event.stopPropagation();startUnlockFromCard('${id}')"><span class="material-icons-round">arrow_forward</span> Next Task</button>`;
-  }
-  return `<div class="bt bt-info"><span class="material-icons-round">info</span><div><b>${total} quick tasks to unlock</b><small>একবারে একটি করে — প্রতিটি মাত্র ৬ সেকেন্ড</small></div></div>
-    <button class="unlock-btn ripple" onclick="event.stopPropagation();startUnlockFromCard('${id}')"><span class="material-icons-round">play_arrow</span> Start Task 1</button>`;
+  const warn = STATE.botWarn && STATE.botWarn[id];
+  const warnHtml = warn ? `<div class="bt bt-warn"><span class="material-icons-round">warning</span><div><b>${warn.title}</b><small>${warn.msg}</small></div></div>` : '';
+  const label = done > 0 ? `Next Task <span class="cnt">${done}/${total}</span>` : 'Start Task 1';
+  const icon = done > 0 ? 'arrow_forward' : 'play_arrow';
+  return warnHtml + `<button class="unlock-btn ripple${done>0?' bt-next':''}" onclick="event.stopPropagation();startUnlockFromCard('${id}')"><span class="material-icons-round">${icon}</span> ${label}</button>`;
+}
+function botWarn(id, title, msg){
+  STATE.botWarn = STATE.botWarn || {};
+  STATE.botWarn[id] = { title, msg };
+  try{ toast('⚠️ ' + title); }catch(e){}
+  renderVideos(STATE.filteredVideos);
+  clearTimeout(STATE._botWarnT && STATE._botWarnT[id]);
+  STATE._botWarnT = STATE._botWarnT || {};
+  STATE._botWarnT[id] = setTimeout(()=>{ if(STATE.botWarn && STATE.botWarn[id]){ delete STATE.botWarn[id]; renderVideos(STATE.filteredVideos); } }, 15000);
 }
 
 async function runBotTaskStep(v, stepNum, total){
   const old = STATE.botWait[v.id];
   if(old){ openExternal(old.url); return; }                      // already open: just bring it back
+  if(STATE.botWarn) delete STATE.botWarn[v.id];
   const token = randomAlnum(20);
   try{
     await window._setDoc(window._doc(window._db,'unlock_sessions',token), {
@@ -4046,7 +4153,35 @@ async function runBotTaskStep(v, stepNum, total){
     onSingleAdWatched();
   }
   function check(){ fbGetDoc('unlock_done', token).then(d=>{ if(d) confirmed(); }).catch(()=>{}); }
-  function onVisible(){ if(!document.hidden) check(); }
+  let leftAt = 0;
+  function onVisible(){
+    if(done) return;
+    if(document.hidden){ if(!leftAt) leftAt = Date.now(); return; }
+    // user is back in the app
+    check();
+    if(!leftAt) return;
+    const stayed = (Date.now() - leftAt) / 1000; leftAt = 0;
+    const need = STATE.landingWait || 6;
+    // give Firestore a moment: the landing page may have just confirmed
+    setTimeout(()=>{
+      if(done) return;
+      fbGetDoc('unlock_done', token).then(d=>{
+        if(d){ confirmed(); return; }
+        if(done || !STATE.botWait[v.id]) return;
+        if(stayed < need){
+          const rem = Math.max(1, Math.ceil(need - stayed));
+          stop(); delete STATE.botWait[v.id];
+          try{ localStorage.removeItem('ml_pending_unlock'); }catch(e){}
+          botWarn(v.id, 'আপনি খুব তাড়াতাড়ি ফিরে এসেছেন',
+            `ল্যান্ডিং পেজে আরও প্রায় ${bn(rem)} সেকেন্ড থাকতে হতো। ভিডিও আনলক হয়নি — আবার চেষ্টা করুন এবং টাইমার শেষ না হওয়া পর্যন্ত পেজে থাকুন।`);
+        } else {
+          botWarn(v.id, 'টাস্ক সম্পন্ন হয়নি',
+            'ল্যান্ডিং পেজে হাতের আইকনে ট্যাপ করে টাইমার শেষ করতে হবে। "Reopen" চেপে আবার খুলুন।');
+          STATE.botWait[v.id] && renderVideos(STATE.filteredVideos);
+        }
+      }).catch(()=>{});
+    }, 1400);
+  }
   document.addEventListener('visibilitychange', onVisible);
   try{ unsub = window._onSnapshot(window._doc(window._db,'unlock_done',token), snap=>{ if(snap.exists()) confirmed(); }, ()=>{}); }catch(e){}
   poll = setInterval(check, 3000);
